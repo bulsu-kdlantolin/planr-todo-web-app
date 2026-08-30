@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description"
+    content="Planr is a clean, focused todo app and timer designed to help you organize your day with clarity, calm, and private on-device storage." />
+  <meta name="keywords"
+    content="todo, productivity, tasks, focus timer, pomodoro, reminders, clean app, private workspace" />
+  <meta name="theme-color" content="#faf9f6" />
+  <link rel="canonical" href="https://planr.lifestyle/" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
+  <!-- Content Security Policy -->
+  <meta http-equiv="Content-Security-Policy"
+    content="default-src 'self'; script-src 'self' 'unsafe-inline' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' https://images.unsplash.com data: blob:; connect-src 'self' blob: https://*.supabase.co wss://*.supabase.co; media-src 'self' blob: https://actions.google.com; worker-src 'self' blob:;" />
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://planr.lifestyle/" />
+  <meta property="og:title" content="Planr — Productivity, simplified." />
+  <meta property="og:description"
+    content="A clean, focused todo app and timer designed to help you get things done with clarity and calm." />
+  <meta property="og:image" content="/og-preview.png" />
+
+  <!-- Twitter Cards -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Planr — Productivity, simplified." />
+  <meta name="twitter:description"
+    content="A clean, focused todo app and timer designed to help you get things done with clarity and calm." />
+  <meta name="twitter:image" content="/og-preview.png" />
+
+  <title>Planr</title>
+
+  <!-- Google Fonts: Source Serif 4 & Hanken Grotesk -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&display=swap"
+    rel="stylesheet" />
+
+  <!-- JSON-LD Structured Data for SEO -->
+  <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Planr",
+        "url": "https://planr.lifestyle",
+        "applicationCategory": "ProductivityApplication",
+        "operatingSystem": "All",
+        "description": "A clean, focused todo app and timer designed to help you get things done with clarity and calm.",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        }
+      }
+    </script>
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+
+</html>

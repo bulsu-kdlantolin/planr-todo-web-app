@@ -1,0 +1,189 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Colors - Light Mode (Serene Clean / Warm Sandstone & Sage) */
+  --color-surface: #faf9f6;
+  --color-surface-dim: #dbdad7;
+  --color-surface-bright: #faf9f6;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #f4f3f1;
+  --color-surface-container: #efeeeb;
+  --color-surface-container-high: #e9e8e5;
+  --color-surface-container-highest: #e3e2e0;
+  --color-on-surface: #1a1c1a;
+  --color-on-surface-variant: #4d4540;
+  
+  /* Brand Sandstone / Taupe Brown Action Tokens (#9e9389 from Logo 'P') */
+  --color-primary: #8d8278;
+  --color-primary-container: #9e9389;
+  --color-on-primary: #ffffff;
+  --color-on-primary-container: #ffffff;
+  --color-primary-hover: #8d8278;
+
+  /* Secondary & Outline */
+  --color-secondary: #57514d;
+  --color-secondary-container: #e6deda;
+  --color-on-secondary-container: #4e4844;
+  
+  --color-tertiary: #65a30d;
+  --color-tertiary-dark: #3c6500;
+  --color-tertiary-container: #ecfccb;
+  --color-on-tertiary-container: #1a3300;
+
+  --color-outline: #7e756f;
+  --color-outline-variant: #d6cdc7;
+  --color-outline-subtle: rgba(214, 205, 199, 0.45);
+
+  --color-error: #ba1a1a;
+  --color-error-container: #ffdad6;
+  --color-on-error: #ffffff;
+
+  /* Motion & Animation Tokens */
+  --ease-gentle: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-in-out-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+  --duration-fast: 150ms;
+  --duration-base: 250ms;
+  --duration-slow: 400ms;
+
+  /* Border Radii */
+  --radius-xs: 2px;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-full: 9999px;
+
+  /* Shadows */
+  --shadow-ambient: 0 10px 30px -5px rgba(150, 140, 131, 0.08);
+  --shadow-ambient-hover: 0 16px 36px -6px rgba(150, 140, 131, 0.14);
+  --shadow-card: 0 4px 20px -4px rgba(150, 140, 131, 0.06);
+  --shadow-modal: 0 24px 48px -12px rgba(120, 111, 103, 0.18);
+  --shadow-dropdown: 0 10px 25px -5px rgba(120, 111, 103, 0.12), 0 8px 10px -6px rgba(120, 111, 103, 0.08);
+
+  --container-max-width: 1180px;
+}
+
+/* Dark Mode Theme */
+[data-theme="dark"] {
+  --color-surface: #181716;
+  --color-surface-dim: #131211;
+  --color-surface-bright: #242220;
+  --color-surface-container-lowest: #1e1c1a;
+  --color-surface-container-low: #242220;
+  --color-surface-container: #2b2826;
+  --color-surface-container-high: #33302d;
+  --color-surface-container-highest: #3e3a37;
+  --color-on-surface: #f1efeb;
+  --color-on-surface-variant: #b8b3ab;
+
+  /* Brand Sandstone / Taupe Brown in Dark Mode (#9e9389) */
+  --color-primary: #b8aea5;
+  --color-primary-container: #9e9389;
+  --color-on-primary: #1e1b19;
+  --color-on-primary-container: #ffffff;
+  --color-primary-hover: #8d8278;
+
+  --color-secondary: #b0aaa5;
+  --color-secondary-container: #363330;
+  --color-on-secondary-container: #d6d1cb;
+
+  --color-tertiary: #84cc16;
+  --color-tertiary-dark: #65a30d;
+  --color-tertiary-container: #253900;
+  --color-on-tertiary-container: #d9f99d;
+
+  --color-outline: #8c8680;
+  --color-outline-variant: #423e3b;
+  --color-outline-subtle: rgba(85, 79, 75, 0.5);
+
+  --shadow-ambient: 0 10px 30px -5px rgba(0, 0, 0, 0.4);
+  --shadow-ambient-hover: 0 16px 36px -6px rgba(0, 0, 0, 0.55);
+  --shadow-card: 0 4px 20px -4px rgba(0, 0, 0, 0.3);
+  --shadow-modal: 0 24px 48px -12px rgba(0, 0, 0, 0.6);
+  --shadow-dropdown: 0 12px 30px -4px rgba(0, 0, 0, 0.55);
+}
+
+body {
+  margin: 0;
+  background-color: var(--color-surface);
+  color: var(--color-on-surface);
+  font-family: 'Hanken Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, .font-serif {
+  font-family: 'Source Serif 4', Georgia, serif;
+}
+
+/* Custom Scrollbar for Serene Aesthetic */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-outline-variant);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-outline);
+}
+
+/* Dropdown Animation */
+@keyframes dropdownFadeIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.95) translateY(-4px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.animate-dropdown-in {
+  animation: dropdownFadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  transform-origin: top center;
+}
+
+/* Tactile Spring Bounce & Pulse Animations */
+@keyframes springBounce {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.22); }
+  75% { transform: scale(0.92); }
+  100% { transform: scale(1); }
+}
+
+.animate-spring-bounce {
+  animation: springBounce 0.35s var(--ease-spring) forwards;
+}
+
+/* Breathing Rhythm Guide (4s Inhale, 4s Hold, 4s Exhale) */
+@keyframes breathGuide {
+  0% { transform: scale(0.92); opacity: 0.4; }
+  33.3% { transform: scale(1.08); opacity: 0.9; }
+  66.6% { transform: scale(1.08); opacity: 0.9; }
+  100% { transform: scale(0.92); opacity: 0.4; }
+}
+
+.animate-breathe {
+  animation: breathGuide 12s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+/* Accessibility: Respect Reduced Motion Preferences */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
