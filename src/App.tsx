@@ -20,6 +20,7 @@ const TasksView = lazy(() => import('./views/TasksView').then((m) => ({ default:
 const RemindersView = lazy(() => import('./views/RemindersView').then((m) => ({ default: m.RemindersView })));
 const FocusView = lazy(() => import('./views/FocusView').then((m) => ({ default: m.FocusView })));
 const SettingsView = lazy(() => import('./views/SettingsView').then((m) => ({ default: m.SettingsView })));
+const ResetPasswordView = lazy(() => import('./views/ResetPasswordView').then((m) => ({ default: m.ResetPasswordView })));
 
 import { useHydration } from './hooks/useHydration';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
@@ -70,7 +71,7 @@ export const App: React.FC = () => {
     );
   }
 
-  const isFullPageView = ['landing', 'signin', 'signup', 'onboarding'].includes(activeView);
+  const isFullPageView = ['landing', 'signin', 'signup', 'onboarding', 'reset-password'].includes(activeView);
   const showSidebar = !isFullPageView && !fullScreenMode;
 
   return (
@@ -127,6 +128,7 @@ export const App: React.FC = () => {
             {activeView === 'reminders' && <RemindersView />}
             {activeView === 'focus' && <FocusView />}
             {activeView === 'settings' && <SettingsView />}
+            {activeView === 'reset-password' && <ResetPasswordView />}
           </Suspense>
         </main>
       </div>

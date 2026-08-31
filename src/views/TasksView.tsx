@@ -169,11 +169,11 @@ export const TasksView: React.FC = () => {
       {sortedTasks.length === 0 ? (
         <div className="bg-surface-low border border-dashed border-outline-variant rounded-lg p-12 text-center space-y-3">
           <CheckSquare className="w-8 h-8 text-secondary mx-auto opacity-50" aria-hidden="true" />
-          <h3 className="font-serif text-lg font-medium text-on-surface">No tasks found</h3>
+          <h3 className="font-serif text-lg font-medium text-on-surface">Clear slate. Clear mind.</h3>
           <p className="text-xs text-secondary max-w-sm mx-auto font-sans">
             {searchQuery
               ? `No tasks matching "${searchQuery}". Clear your search to see other tasks.`
-              : 'Your task list is completely clear. Add a task to get started.'}
+              : 'You have zero pending tasks in this view. Ready to schedule something meaningful?'}
           </p>
           <div className="flex items-center justify-center gap-2 pt-2">
             {searchQuery && (

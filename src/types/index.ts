@@ -105,7 +105,8 @@ export type ViewType =
   | 'tasks'
   | 'reminders'
   | 'focus'
-  | 'settings';
+  | 'settings'
+  | 'reset-password';
 
 export interface ToastMessage {
   id: string;

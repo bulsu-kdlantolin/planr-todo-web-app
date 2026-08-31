@@ -9,22 +9,43 @@ export function formatFriendlyAuthError(err: any): string {
   const message = (err.message || String(err)).toLowerCase();
 
   if (message.includes('email not confirmed') || message.includes('email_not_confirmed')) {
-    return 'Please check your email inbox to confirm your account, or continue in local mode.';
+    return 'Your email address is not verified yet. Please check your inbox for the confirmation link.';
   }
 
-  if (message.includes('invalid email') || message.includes('unable to validate email') || message.includes('email_address_invalid') || message.includes('is invalid')) {
+  if (
+    message.includes('invalid email') ||
+    message.includes('unable to validate email') ||
+    message.includes('email_address_invalid') ||
+    message.includes('is invalid') ||
+    message.includes('validation_failed')
+  ) {
     return 'Please enter a valid email address.';
   }
 
-  if (message.includes('invalid login credentials') || message.includes('invalid credentials') || message.includes('invalid_grant')) {
+  if (
+    message.includes('invalid login credentials') ||
+    message.includes('invalid credentials') ||
+    message.includes('invalid_grant') ||
+    message.includes('wrong password')
+  ) {
     return 'Incorrect email or password. Please verify and try again.';
   }
 
-  if (message.includes('user already registered') || message.includes('already exists') || message.includes('user_already_exists')) {
+  if (
+    message.includes('user already registered') ||
+    message.includes('already exists') ||
+    message.includes('user_already_exists') ||
+    message.includes('email already in use')
+  ) {
     return 'An account with this email address already exists. Please sign in instead.';
   }
 
-  if (message.includes('password should be at least') || message.includes('password is too short') || message.includes('weak_password')) {
+  if (
+    message.includes('password should be at least') ||
+    message.includes('password is too short') ||
+    message.includes('weak_password') ||
+    message.includes('at least 6 characters')
+  ) {
     return 'Password must be at least 6 characters long.';
   }
 
@@ -32,16 +53,58 @@ export function formatFriendlyAuthError(err: any): string {
     return 'Please provide a valid password to secure your account.';
   }
 
-  if (message.includes('over_email_send_rate_limit') || message.includes('email rate limit')) {
-    return 'Email rate limit reached. You can continue instantly in private local mode or try again later.';
+  if (
+    message.includes('token has expired') ||
+    message.includes('token is expired') ||
+    message.includes('otp_expired') ||
+    message.includes('expired token') ||
+    message.includes('link has expired')
+  ) {
+    return 'The verification link or code has expired. Please request a new one.';
   }
 
-  if (message.includes('rate limit') || message.includes('too many requests') || message.includes('over_request_rate_limit')) {
-    return 'Too many attempts. Please wait a minute before trying again, or continue in local mode.';
+  if (
+    message.includes('token is invalid') ||
+    message.includes('invalid token') ||
+    message.includes('otp_invalid') ||
+    message.includes('bad token') ||
+    message.includes('token not found')
+  ) {
+    return 'Invalid or incorrect verification link. Please check your email or request a new one.';
   }
 
-  if (message.includes('failed to fetch') || message.includes('network') || message.includes('load failed') || message.includes('cors')) {
-    return 'Unable to reach the cloud server. Please check your internet connection or continue in local mode.';
+  if (
+    message.includes('over_email_send_rate_limit') ||
+    message.includes('email rate limit') ||
+    message.includes('for security purposes, you can only request')
+  ) {
+    return 'Email rate limit reached. Please wait a moment before requesting another email.';
+  }
+
+  if (
+    message.includes('rate limit') ||
+    message.includes('too many requests') ||
+    message.includes('over_request_rate_limit')
+  ) {
+    return 'Too many attempts. Please wait a minute before trying again.';
+  }
+
+  if (
+    message.includes('failed to fetch') ||
+    message.includes('network') ||
+    message.includes('load failed') ||
+    message.includes('cors') ||
+    message.includes('connection refused')
+  ) {
+    return 'Unable to reach the server. Please check your internet connection and try again.';
+  }
+
+  if (message.includes('user not found') || message.includes('no user found')) {
+    return 'No account found with this email address. Please create an account first.';
+  }
+
+  if (message.includes('same_password') || message.includes('new password should be different')) {
+    return 'New password must be different from your old password.';
   }
 
   // Fallback cleanly without exposing technical stack traces

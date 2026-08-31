@@ -59,3 +59,18 @@ export function getPriorityLabel(priority: PriorityLevel): string {
 export function getPriorityBadgeClasses(priority: PriorityLevel): string {
   return PRIORITY_CONFIG[priority]?.badgeClass ?? PRIORITY_CONFIG.medium.badgeClass;
 }
+
+export function weightToPriority(weight: number): PriorityLevel {
+  switch (weight) {
+    case 4:
+      return 'urgent';
+    case 3:
+      return 'high';
+    case 2:
+      return 'medium';
+    case 1:
+    default:
+      return 'low';
+  }
+}
+

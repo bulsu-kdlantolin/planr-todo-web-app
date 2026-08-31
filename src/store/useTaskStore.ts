@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { Task, Subtask, TaskFilterType, TaskSortType } from '../types';
-import { dbPutTask, dbDeleteTask } from '../db/indexedDB';
+import { supabase } from '../lib/supabase/client';
+import { insertTaskDb, updateTaskDb, deleteTaskDb } from '../lib/supabase/tasks';
 import { audioManager } from '../utils/audio';
 import { generateUUID } from '../utils/id';
 
@@ -21,6 +22,15 @@ interface TaskState {
   restoreTask: (task: Task) => Promise<void>;
   reorderTasks: (startIndex: number, endIndex: number) => void;
 }
+
+const getUserId = async (): Promise<string | null> => {
+  try {
+    const { data } = await supabase.auth.getSession();
+    return data.session?.user?.id || null;
+  } catch {
+    return null;
+  }
+};
 
 export const useTaskStore = create<TaskState>((set, get) => ({
   tasks: [],
@@ -45,7 +55,13 @@ export const useTaskStore = create<TaskState>((set, get) => ({
     };
 
     set((state) => ({ tasks: [newTask, ...state.tasks] }));
-    await dbPutTask(newTask);
+
+    const userId = await getUserId();
+    if (userId) {
+      insertTaskDb(newTask, userId).catch((err) =>
+        console.error('Failed to sync task creation to Supabase:', err)
+      );
+    }
     return newTask;
   },
 
@@ -67,7 +83,12 @@ export const useTaskStore = create<TaskState>((set, get) => ({
     });
 
     if (updatedTask) {
-      await dbPutTask(updatedTask);
+      const userId = await getUserId();
+      if (userId) {
+        updateTaskDb(updatedTask, userId).catch((err) =>
+          console.error('Failed to sync task update to Supabase:', err)
+        );
+      }
     }
     return updatedTask;
   },
@@ -89,7 +110,13 @@ export const useTaskStore = create<TaskState>((set, get) => ({
     set((state) => ({
       tasks: state.tasks.map((t) => (t.id === id ? updated : t))
     }));
-    await dbPutTask(updated);
+
+    const userId = await getUserId();
+    if (userId) {
+      updateTaskDb(updated, userId).catch((err) =>
+        console.error('Failed to sync task toggle to Supabase:', err)
+      );
+    }
   },
 
   toggleSubtask: async (taskId, subtaskId) => {
@@ -110,7 +137,13 @@ export const useTaskStore = create<TaskState>((set, get) => ({
     set((state) => ({
       tasks: state.tasks.map((t) => (t.id === taskId ? updated : t))
     }));
-    await dbPutTask(updated);
+
+    const userId = await getUserId();
+    if (userId) {
+      updateTaskDb(updated, userId).catch((err) =>
+        console.error('Failed to sync subtask toggle to Supabase:', err)
+      );
+    }
   },
 
   deleteTask: async (id) => {
@@ -120,7 +153,13 @@ export const useTaskStore = create<TaskState>((set, get) => ({
     set((state) => ({
       tasks: state.tasks.filter((t) => t.id !== id)
     }));
-    await dbDeleteTask(id);
+
+    const userId = await getUserId();
+    if (userId) {
+      deleteTaskDb(id, userId).catch((err) =>
+        console.error('Failed to sync task deletion to Supabase:', err)
+      );
+    }
     return target;
   },
 
@@ -133,7 +172,13 @@ export const useTaskStore = create<TaskState>((set, get) => ({
     set((state) => ({
       tasks: [restored, ...state.tasks]
     }));
-    await dbPutTask(restored);
+
+    const userId = await getUserId();
+    if (userId) {
+      insertTaskDb(restored, userId).catch((err) =>
+        console.error('Failed to restore task in Supabase:', err)
+      );
+    }
   },
 
   reorderTasks: (startIndex, endIndex) => {

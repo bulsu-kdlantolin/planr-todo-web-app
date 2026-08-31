@@ -71,7 +71,7 @@ export function generateIntentionCardImage(
   // Footer
   ctx.fillStyle = '#a8a29e';
   ctx.font = '16px -apple-system, sans-serif';
-  ctx.fillText('Crafted with Planr • Private, Local Productivity', 90, 540);
+  ctx.fillText('Crafted with Planr • Intentional Focus & Clarity', 90, 540);
 
   // Export image download
   const link = document.createElement('a');

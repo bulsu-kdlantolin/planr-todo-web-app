@@ -20,17 +20,12 @@ export const OnboardingView: React.FC = () => {
 
   const setActiveView = useUIStore((state) => state.setActiveView);
   const showToast = useUIStore((state) => state.showToast);
-  const { user: authUser, syncNow } = useAuth();
+  const { user: authUser } = useAuth();
 
-  const [name, setName] = useState(
-    user.name ||
-      (authUser?.email?.split('@')[0]
-        ? authUser.email.split('@')[0].charAt(0).toUpperCase() + authUser.email.split('@')[0].slice(1)
-        : 'Friend')
-  );
-  const [title, setTitle] = useState(user.title || 'Productivity Explorer');
-  const [tagline, setTagline] = useState(user.tagline || 'Simple Focus');
-  const [goal, setGoal] = useState(intention || 'Focus on what truly moves the needle today.');
+  const [name, setName] = useState(user.name || '');
+  const [title, setTitle] = useState(user.title || '');
+  const [tagline, setTagline] = useState(user.tagline || '');
+  const [goal, setGoal] = useState('');
   const [preferredDuration, setPreferredDuration] = useState<25 | 50>(25);
   const [seedSampleData, setSeedSampleData] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -39,8 +34,10 @@ export const OnboardingView: React.FC = () => {
     e.preventDefault();
     setIsSaving(true);
 
+    const resolvedName = name.trim() || (authUser?.email?.split('@')[0] ? authUser.email.split('@')[0].charAt(0).toUpperCase() + authUser.email.split('@')[0].slice(1) : 'Friend');
+
     await updateUser({
-      name: name.trim() || 'Friend',
+      name: resolvedName,
       title: title.trim() || 'Productivity User',
       tagline: tagline.trim() || 'Simple Focus',
       isLoggedIn: true
@@ -92,12 +89,8 @@ export const OnboardingView: React.FC = () => {
       });
     }
 
-    if (authUser?.id) {
-      syncNow().catch(() => {});
-    }
-
     setIsSaving(false);
-    showToast(`Welcome to Planr, ${name.split(' ')[0]}! 🌿`, 'success');
+    showToast(`Welcome to Planr, ${resolvedName.split(' ')[0]}! 🌿`, 'success');
     setActiveView('daily');
   };
 
@@ -126,15 +119,11 @@ export const OnboardingView: React.FC = () => {
       {/* Main Onboarding Card */}
       <div className="w-full max-w-lg sm:max-w-xl bg-surface-lowest border border-outline-variant rounded-2xl p-8 sm:p-12 shadow-card space-y-7">
         <div className="text-center space-y-2">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-low border border-outline-subtle text-xs font-semibold text-tertiary-dark uppercase tracking-wider mb-1">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Personalize Your Rhythm</span>
-          </div>
           <h1 className="font-serif text-2xl sm:text-3xl font-semibold text-on-surface tracking-tight">
-            Tailor your Planr space
+            Set up your focus space
           </h1>
           <p className="text-sm text-secondary font-sans max-w-sm mx-auto">
-            Set up your name, daily intention, and focus preferences.
+            A 30-second setup to calibrate your daily rhythm.
           </p>
         </div>
 
@@ -142,7 +131,7 @@ export const OnboardingView: React.FC = () => {
           {/* Display Name */}
           <div>
             <label htmlFor="onboarding-name" className="block text-xs font-semibold uppercase tracking-wider text-secondary mb-2 font-sans">
-              Your Name / Preferred Title
+              What should we call you?
             </label>
             <div className="relative">
               <User className="w-4 h-4 text-secondary absolute left-4 top-1/2 -translate-y-1/2" aria-hidden="true" />
@@ -162,7 +151,7 @@ export const OnboardingView: React.FC = () => {
           {/* Title or Role */}
           <div>
             <label htmlFor="onboarding-title" className="block text-xs font-semibold uppercase tracking-wider text-secondary mb-2 font-sans">
-              Professional Role or Passion
+              Your Craft / Focus Area (e.g. Software Engineer, Designer, Writer)
             </label>
             <div className="relative">
               <Briefcase className="w-4 h-4 text-secondary absolute left-4 top-1/2 -translate-y-1/2" aria-hidden="true" />
@@ -180,7 +169,7 @@ export const OnboardingView: React.FC = () => {
           {/* Core Daily Intention */}
           <div>
             <label htmlFor="onboarding-goal" className="block text-xs font-semibold uppercase tracking-wider text-secondary mb-2 font-sans">
-              Today's Main Focus Intention
+              Today's Core Intention
             </label>
             <div className="relative">
               <Quote className="w-4 h-4 text-secondary absolute left-4 top-3.5" aria-hidden="true" />
@@ -189,7 +178,7 @@ export const OnboardingView: React.FC = () => {
                 rows={2}
                 value={goal}
                 onChange={(e) => setGoal(e.target.value)}
-                placeholder="What is the single most meaningful outcome for today?"
+                placeholder="e.g. Ship the new landing page with zero distractions"
                 className="w-full pl-11 pr-4 py-2.5 bg-surface-low border border-outline-variant rounded-xl text-sm text-on-surface placeholder:text-secondary/60 focus:border-primary-container focus:ring-2 focus:ring-primary-container/20 focus:outline-none transition-all resize-none"
               />
             </div>

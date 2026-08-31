@@ -40,7 +40,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, setMobileOpen }) =
   const tasks = useTaskStore((state) => state.tasks);
   const reminders = useReminderStore((state) => state.reminders);
   const user = useMetaStore((state) => state.user);
-  const { syncStatus, isOnline, isConfigured } = useAuth();
 
   // Focus mini player state
   const isTimerRunning = useTimerStore((state) => state.isRunning);
@@ -232,38 +231,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, setMobileOpen }) =
                 {user.title || (user.isLoggedIn ? 'Productivity User' : 'Click to Sign In')}
               </p>
             </div>
-          </div>
-
-          {/* Sync Status Badge */}
-          <div className="flex items-center gap-1.5 px-2 py-1 bg-surface-low/80 rounded-md text-[10px] font-sans text-secondary border border-outline-subtle/50">
-            {!isOnline ? (
-              <>
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
-                <span>Offline (Local DB)</span>
-              </>
-            ) : user.isLoggedIn && isConfigured ? (
-              syncStatus === 'syncing' ? (
-                <>
-                  <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-ping" />
-                  <span>Syncing with Cloud...</span>
-                </>
-              ) : syncStatus === 'error' ? (
-                <>
-                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                  <span>Sync Paused</span>
-                </>
-              ) : (
-                <>
-                  <span className="w-1.5 h-1.5 rounded-full bg-lime-600" />
-                  <span>Cloud Synced</span>
-                </>
-              )
-            ) : (
-              <>
-                <span className="w-1.5 h-1.5 rounded-full bg-stone-400" />
-                <span>Private Local Workspace</span>
-              </>
-            )}
           </div>
         </div>
       </aside>

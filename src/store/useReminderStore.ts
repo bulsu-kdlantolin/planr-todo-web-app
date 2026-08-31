@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { Reminder } from '../types';
-import { dbPutReminder, dbDeleteReminder } from '../db/indexedDB';
+import { supabase } from '../lib/supabase/client';
+import { insertReminderDb, updateReminderDb, deleteReminderDb } from '../lib/supabase/reminders';
 import { audioManager } from '../utils/audio';
 import { generateUUID } from '../utils/id';
 
@@ -15,6 +16,15 @@ interface ReminderState {
   deleteReminder: (id: string) => Promise<Reminder | null>;
   restoreReminder: (reminder: Reminder) => Promise<void>;
 }
+
+const getUserId = async (): Promise<string | null> => {
+  try {
+    const { data } = await supabase.auth.getSession();
+    return data.session?.user?.id || null;
+  } catch {
+    return null;
+  }
+};
 
 export const useReminderStore = create<ReminderState>((set, get) => ({
   reminders: [],
@@ -35,7 +45,13 @@ export const useReminderStore = create<ReminderState>((set, get) => ({
     };
 
     set((state) => ({ reminders: [...state.reminders, newRem] }));
-    await dbPutReminder(newRem);
+
+    const userId = await getUserId();
+    if (userId) {
+      insertReminderDb(newRem, userId).catch((err) =>
+        console.error('Failed to sync reminder to Supabase:', err)
+      );
+    }
     return newRem;
   },
 
@@ -54,7 +70,13 @@ export const useReminderStore = create<ReminderState>((set, get) => ({
     set((state) => ({
       reminders: state.reminders.map((r) => (r.id === id ? updated : r))
     }));
-    await dbPutReminder(updated);
+
+    const userId = await getUserId();
+    if (userId) {
+      updateReminderDb(updated, userId).catch((err) =>
+        console.error('Failed to sync reminder update to Supabase:', err)
+      );
+    }
     return updated;
   },
 
@@ -75,7 +97,13 @@ export const useReminderStore = create<ReminderState>((set, get) => ({
     set((state) => ({
       reminders: state.reminders.map((r) => (r.id === id ? updated : r))
     }));
-    await dbPutReminder(updated);
+
+    const userId = await getUserId();
+    if (userId) {
+      updateReminderDb(updated, userId).catch((err) =>
+        console.error('Failed to sync snoozed reminder to Supabase:', err)
+      );
+    }
     return updated;
   },
 
@@ -86,7 +114,13 @@ export const useReminderStore = create<ReminderState>((set, get) => ({
     set((state) => ({
       reminders: state.reminders.filter((r) => r.id !== id)
     }));
-    await dbDeleteReminder(id);
+
+    const userId = await getUserId();
+    if (userId) {
+      deleteReminderDb(id, userId).catch((err) =>
+        console.error('Failed to sync reminder deletion to Supabase:', err)
+      );
+    }
     return target;
   },
 
@@ -99,6 +133,12 @@ export const useReminderStore = create<ReminderState>((set, get) => ({
     set((state) => ({
       reminders: [...state.reminders, restored]
     }));
-    await dbPutReminder(restored);
+
+    const userId = await getUserId();
+    if (userId) {
+      insertReminderDb(restored, userId).catch((err) =>
+        console.error('Failed to restore reminder in Supabase:', err)
+      );
+    }
   }
 }));

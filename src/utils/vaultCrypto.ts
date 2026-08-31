@@ -1,4 +1,4 @@
-// Web Crypto API AES-GCM-256 Local Vault Protection (OWASP 2024 Compliant - 600,000 PBKDF2 iterations)
+// Web Crypto API AES-GCM-256 Client Vault Protection (OWASP 2024 Compliant - 600,000 PBKDF2 iterations)
 const ITERATIONS_V2 = 600000;
 const ITERATIONS_V1 = 100000;
 const V2_PREFIX = 'PLNR_V2_';

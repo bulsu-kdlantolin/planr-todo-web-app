@@ -1,45 +1,63 @@
 import { Task, Reminder, FocusSession, UserProfile, AppSettings } from '../types';
-import { dbExportJSON } from '../db/indexedDB';
+import { useTaskStore } from '../store/useTaskStore';
+import { useReminderStore } from '../store/useReminderStore';
+import { useTimerStore } from '../store/useTimerStore';
+import { useMetaStore } from '../store/useMetaStore';
+import { supabase } from '../lib/supabase/client';
+import { insertTaskDb } from '../lib/supabase/tasks';
+import { insertReminderDb } from '../lib/supabase/reminders';
+import { insertFocusSessionDb } from '../lib/supabase/focus';
+import { upsertUserProfileDb } from '../lib/supabase/profiles';
 import { getTodayDateString } from './date';
 
 export interface ExportBundle {
+  version: number;
+  exportedAt: string;
   tasks: Task[];
   reminders: Reminder[];
   focusSessions: FocusSession[];
-  user: UserProfile;
-  settings: AppSettings;
-  intention: string;
+  meta: {
+    user: UserProfile;
+    settings: AppSettings;
+    intention: string;
+  };
 }
 
 /**
  * Export tasks and sessions to Markdown format (Obsidian Vault friendly)
  */
-export function exportToMarkdown(bundle: ExportBundle): string {
+export function exportToMarkdown(bundle: {
+  tasks: Task[];
+  reminders: Reminder[];
+  focusSessions: FocusSession[];
+  intention: string;
+  user: UserProfile;
+  settings?: AppSettings;
+}): string {
   const { tasks, reminders, focusSessions, intention, user } = bundle;
   const dateStr = getTodayDateString();
 
   let md = `---
 title: Planr Workspace Export - ${dateStr}
-author: ${user.name}
-intention: "${intention}"
+author: ${user.name || 'User'}
+intention: "${intention || ''}"
 exported_at: ${new Date().toISOString()}
 total_tasks: ${tasks.length}
-completed_tasks: ${tasks.filter(t => t.completed).length}
+completed_tasks: ${tasks.filter((t) => t.completed).length}
 ---
 
 # 🌿 Planr Workspace Export
 
-> *"Daily Focus Goal: ${intention}"*
+> *"Daily Focus Goal: ${intention || 'Focus on what truly moves the needle today.'}"*
 
 ## 📋 Tasks & Milestones
 
 `;
 
-  // Group tasks by category
-  const categories = Array.from(new Set(tasks.map(t => t.category || 'General')));
+  const categories = Array.from(new Set(tasks.map((t) => t.category || 'General')));
   for (const cat of categories) {
     md += `### ${cat}\n`;
-    const catTasks = tasks.filter(t => (t.category || 'General') === cat);
+    const catTasks = tasks.filter((t) => (t.category || 'General') === cat);
     for (const t of catTasks) {
       const check = t.completed ? '[x]' : '[ ]';
       const due = t.dueDate ? ` (Due: ${t.dueDate})` : '';
@@ -66,7 +84,10 @@ completed_tasks: ${tasks.filter(t => t.completed).length}
   }
 
   md += `\n## 🧘 Focus Log Summary\n\n`;
-  md += `Total Focus Sessions: **${focusSessions.length}** | Total Focus Time: **${focusSessions.reduce((acc, s) => acc + s.durationMinutes, 0)} minutes**\n\n`;
+  md += `Total Focus Sessions: **${focusSessions.length}** | Total Focus Time: **${focusSessions.reduce(
+    (acc, s) => acc + s.durationMinutes,
+    0
+  )} minutes**\n\n`;
   for (const s of focusSessions.slice(0, 10)) {
     md += `- ${s.completedAt.split('T')[0]}: **${s.taskTitle}** (${s.durationMinutes}m focus)\n`;
   }
@@ -78,8 +99,19 @@ completed_tasks: ${tasks.filter(t => t.completed).length}
  * Export tasks to CSV format
  */
 export function exportToCSV(tasks: Task[]): string {
-  const headers = ['ID', 'Title', 'Description', 'Category', 'Priority', 'Due Date', 'Completed', 'Pomodoros Estimated', 'Pomodoros Completed', 'Created At'];
-  const rows = tasks.map(t => [
+  const headers = [
+    'ID',
+    'Title',
+    'Description',
+    'Category',
+    'Priority',
+    'Due Date',
+    'Completed',
+    'Pomodoros Estimated',
+    'Pomodoros Completed',
+    'Created At'
+  ];
+  const rows = tasks.map((t) => [
     `"${t.id}"`,
     `"${t.title.replace(/"/g, '""')}"`,
     `"${(t.description || '').replace(/"/g, '""')}"`,
@@ -92,18 +124,18 @@ export function exportToCSV(tasks: Task[]): string {
     `"${t.createdAt}"`
   ]);
 
-  return [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+  return [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
 }
 
 /**
- * Export tasks and reminders to iCalendar (.ics) RFC 5545 format
+ * Export tasks and reminders to iCalendar (.ics) format
  */
 export function exportToICalendar(tasks: Task[], reminders: Reminder[]): string {
   const formatICSDate = (date: Date) => {
     return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
   };
 
-  let ics = [
+  const ics = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
     'PRODID:-//Planr Lifestyle//Planr Calendar Export//EN',
@@ -111,10 +143,8 @@ export function exportToICalendar(tasks: Task[], reminders: Reminder[]): string 
     'METHOD:PUBLISH'
   ];
 
-  // Tasks with due dates
   for (const t of tasks) {
     if (!t.dueDate) continue;
-    const due = new Date(t.dueDate);
 
     ics.push(
       'BEGIN:VEVENT',
@@ -128,7 +158,6 @@ export function exportToICalendar(tasks: Task[], reminders: Reminder[]): string 
     );
   }
 
-  // Reminders
   for (const r of reminders) {
     const [hh, mm] = r.time.split(':');
     const remDate = new Date();
@@ -164,31 +193,85 @@ export function downloadFile(content: string, filename: string, mimeType: string
   URL.revokeObjectURL(url);
 }
 
-export async function exportWorkspaceAsJSON(): Promise<void> {
-  const backup = await dbExportJSON();
+export function exportWorkspaceAsJSON(): void {
+  const bundle: ExportBundle = {
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    tasks: useTaskStore.getState().tasks,
+    reminders: useReminderStore.getState().reminders,
+    focusSessions: useTimerStore.getState().focusSessions,
+    meta: {
+      user: useMetaStore.getState().user,
+      settings: useMetaStore.getState().settings,
+      intention: useMetaStore.getState().intention
+    }
+  };
+
   const dateStr = getTodayDateString();
-  downloadFile(JSON.stringify(backup, null, 2), `planr-backup-${dateStr}.json`, 'application/json');
+  downloadFile(
+    JSON.stringify(bundle, null, 2),
+    `planr-backup-${dateStr}.json`,
+    'application/json'
+  );
+}
+
+export async function restoreWorkspaceFromJSON(backupData: any): Promise<boolean> {
+  if (!backupData || typeof backupData !== 'object') return false;
+
+  try {
+    const tasks: Task[] = Array.isArray(backupData.tasks) ? backupData.tasks : [];
+    const reminders: Reminder[] = Array.isArray(backupData.reminders) ? backupData.reminders : [];
+    const focusSessions: FocusSession[] = Array.isArray(backupData.focusSessions)
+      ? backupData.focusSessions
+      : [];
+
+    useTaskStore.getState().setTasks(tasks);
+    useReminderStore.getState().setReminders(reminders);
+    useTimerStore.getState().setFocusSessions(focusSessions);
+
+    if (backupData.meta?.user) {
+      useMetaStore.getState().setUser(backupData.meta.user);
+    }
+    if (backupData.meta?.settings) {
+      useMetaStore.getState().setSettings(backupData.meta.settings);
+    }
+    if (backupData.meta?.intention) {
+      useMetaStore.getState().setIntention(backupData.meta.intention);
+    }
+
+    const {
+      data: { session }
+    } = await supabase.auth.getSession();
+    const userId = session?.user?.id;
+
+    if (userId) {
+      await Promise.all([
+        ...tasks.map((t) => insertTaskDb(t, userId)),
+        ...reminders.map((r) => insertReminderDb(r, userId)),
+        ...focusSessions.map((f) => insertFocusSessionDb(f, userId)),
+        upsertUserProfileDb(
+          userId,
+          backupData.meta?.user,
+          backupData.meta?.settings,
+          backupData.meta?.intention
+        )
+      ]);
+    }
+    return true;
+  } catch (err) {
+    console.error('Failed to restore backup data:', err);
+    return false;
+  }
 }
 
 export function exportTasksAsMarkdown(tasks: Task[]): void {
+  const meta = useMetaStore.getState();
   const md = exportToMarkdown({
     tasks,
-    reminders: [],
-    focusSessions: [],
-    user: { name: 'User', email: '', isLoggedIn: true, tagline: '', title: '' },
-    settings: {
-      theme: 'light',
-      timeFormat: '12h',
-      soundEffects: true,
-      soundVolume: 0.5,
-      focusDuration: 25,
-      deepFocusDuration: 50,
-      shortBreakDuration: 5,
-      longBreakDuration: 15,
-      autoStartBreaks: false,
-      notificationsEnabled: false
-    },
-    intention: 'Focus on what matters'
+    reminders: useReminderStore.getState().reminders,
+    focusSessions: useTimerStore.getState().focusSessions,
+    user: meta.user,
+    intention: meta.intention
   });
   const dateStr = getTodayDateString();
   downloadFile(md, `planr-tasks-${dateStr}.md`, 'text/markdown');

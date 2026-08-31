@@ -1,9 +1,23 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase, isSupabaseConfigured } from '../lib/supabase/client';
-import { syncEngine, SyncStatus } from '../lib/db/syncEngine';
 import { useMetaStore } from '../store/useMetaStore';
+import { useTaskStore } from '../store/useTaskStore';
+import { useReminderStore } from '../store/useReminderStore';
+import { useTimerStore } from '../store/useTimerStore';
+import { fetchUserProfile } from '../lib/supabase/profiles';
+import { fetchUserTasks } from '../lib/supabase/tasks';
+import { fetchUserReminders } from '../lib/supabase/reminders';
+import { fetchUserFocusSessions } from '../lib/supabase/focus';
+import { subscribeToUserRealtime, unsubscribeFromUserRealtime } from '../lib/supabase/realtime';
 import { formatFriendlyAuthError } from '../utils/errors';
+
+export type OtpVerificationType = 'email' | 'signup' | 'recovery' | 'magiclink';
+
+interface SignUpResult {
+  error: Error | null;
+  needsEmailConfirmation?: boolean;
+}
 
 interface AuthContextType {
   user: User | null;
@@ -11,12 +25,17 @@ interface AuthContextType {
   isLoading: boolean;
   isConfigured: boolean;
   isOnline: boolean;
-  syncStatus: SyncStatus;
   signInWithEmail: (email: string, password: string) => Promise<{ error: Error | null }>;
-  signUpWithEmail: (email: string, password: string, name?: string) => Promise<{ error: Error | null }>;
+  signUpWithEmail: (email: string, password: string, name?: string) => Promise<SignUpResult>;
   signInWithMagicLink: (email: string) => Promise<{ error: Error | null }>;
+  signInWithGoogle: () => Promise<{ error: Error | null }>;
+  sendEmailOtp: (email: string, isSignUp?: boolean) => Promise<{ error: Error | null }>;
+  verifyEmailOtp: (email: string, token: string, type?: OtpVerificationType) => Promise<{ error: Error | null }>;
+  resendVerificationEmail: (email: string) => Promise<{ error: Error | null }>;
+  sendPasswordResetEmail: (email: string) => Promise<{ error: Error | null }>;
+  updatePassword: (newPassword: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<{ error: Error | null }>;
-  syncNow: () => Promise<void>;
+  refreshData: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -26,17 +45,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
-  const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle');
 
   const updateUserMeta = useMetaStore((state) => state.updateUser);
+  const setMetaUser = useMetaStore((state) => state.setUser);
+  const setSettings = useMetaStore((state) => state.setSettings);
+  const setIntention = useMetaStore((state) => state.setIntention);
+  const setTasks = useTaskStore((state) => state.setTasks);
+  const setReminders = useReminderStore((state) => state.setReminders);
+  const setFocusSessions = useTimerStore((state) => state.setFocusSessions);
+
   const isConfigured = isSupabaseConfigured();
 
   // Track online/offline status
   useEffect(() => {
-    const handleOnline = () => {
-      setIsOnline(true);
-      if (user?.id) syncEngine.syncAll(user.id);
-    };
+    const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
 
     window.addEventListener('online', handleOnline);
@@ -46,15 +68,49 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
-  }, [user?.id]);
-
-  // Subscribe to sync status
-  useEffect(() => {
-    const unsubscribe = syncEngine.subscribe(setSyncStatus);
-    return () => unsubscribe();
   }, []);
 
-  // Supabase Auth State Listener
+  const hydrateUserData = async (userId: string, currentSessionUser: User) => {
+    try {
+      const [profileData, tasks, reminders, focusSessions] = await Promise.all([
+        fetchUserProfile(userId),
+        fetchUserTasks(userId),
+        fetchUserReminders(userId),
+        fetchUserFocusSessions(userId)
+      ]);
+
+      if (profileData) {
+        setMetaUser({
+          ...profileData.profile,
+          email: currentSessionUser.email || profileData.profile.email,
+          isLoggedIn: true
+        });
+        setSettings(profileData.settings);
+        setIntention(profileData.intention);
+      } else {
+        setMetaUser({
+          name:
+            currentSessionUser.user_metadata?.name ||
+            currentSessionUser.email?.split('@')[0] ||
+            'User',
+          title: 'Productivity User',
+          tagline: 'Simple Focus',
+          email: currentSessionUser.email || '',
+          isLoggedIn: true
+        });
+      }
+
+      setTasks(tasks);
+      setReminders(reminders);
+      setFocusSessions(focusSessions);
+
+      subscribeToUserRealtime(userId);
+    } catch (err) {
+      console.error('Error hydrating user data on auth event:', err);
+    }
+  };
+
+  // Auth State Listener
   useEffect(() => {
     if (!isConfigured) {
       setIsLoading(false);
@@ -66,50 +122,58 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
-        updateUserMeta({
-          email: session.user.email || '',
-          name: session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'User',
-          isLoggedIn: true
-        });
-        syncEngine.syncAll(session.user.id);
+        hydrateUserData(session.user.id, session.user);
       }
       setIsLoading(false);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const {
+      data: { subscription }
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
+
+      if (event === 'PASSWORD_RECOVERY') {
+        window.location.hash = '#reset-password';
+      }
+
       if (session?.user) {
-        updateUserMeta({
-          email: session.user.email || '',
-          name: session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'User',
-          isLoggedIn: true
+        hydrateUserData(session.user.id, session.user);
+      } else if (event === 'SIGNED_OUT') {
+        unsubscribeFromUserRealtime();
+        setMetaUser({
+          name: '',
+          title: '',
+          tagline: '',
+          email: '',
+          isLoggedIn: false
         });
-        syncEngine.syncAll(session.user.id);
-      } else {
-        updateUserMeta({ isLoggedIn: false });
+        setTasks([]);
+        setReminders([]);
+        setFocusSessions([]);
       }
       setIsLoading(false);
     });
 
     return () => {
       subscription.unsubscribe();
+      unsubscribeFromUserRealtime();
     };
-  }, [isConfigured, updateUserMeta]);
+  }, [isConfigured]);
 
   const signInWithEmail = async (email: string, password: string) => {
+    const trimmedEmail = email.trim();
     if (!isConfigured) {
-      // Local fallback
       updateUserMeta({
-        email,
-        name: email.split('@')[0] || 'User',
+        email: trimmedEmail,
+        name: trimmedEmail.split('@')[0] || 'User',
         isLoggedIn: true
       });
       return { error: null };
     }
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      const { error } = await supabase.auth.signInWithPassword({ email: trimmedEmail, password });
       if (error) {
         return { error: new Error(formatFriendlyAuthError(error)) };
       }
@@ -119,40 +183,204 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  const signUpWithEmail = async (email: string, password: string, name?: string) => {
+  const signUpWithEmail = async (email: string, password: string, name?: string): Promise<SignUpResult> => {
+    const trimmedEmail = email.trim();
     if (!isConfigured) {
-      // Local fallback
       updateUserMeta({
-        email,
-        name: name || email.split('@')[0] || 'User',
+        email: trimmedEmail,
+        name: name || trimmedEmail.split('@')[0] || 'User',
+        isLoggedIn: true
+      });
+      return { error: null, needsEmailConfirmation: false };
+    }
+
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email: trimmedEmail,
+        password,
+        options: {
+          data: { name: name || trimmedEmail.split('@')[0] },
+          emailRedirectTo: window.location.origin
+        }
+      });
+
+      if (error) {
+        return { error: new Error(formatFriendlyAuthError(error)), needsEmailConfirmation: false };
+      }
+
+      // Check if user already exists:
+      // When email confirmations are enabled in Supabase, an existing user sign-up returns
+      // data.user with empty identities (identities.length === 0)!
+      if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+        return {
+          error: new Error('An account with this email address already exists. Please sign in instead.'),
+          needsEmailConfirmation: false
+        };
+      }
+
+      if (data?.user) {
+        if (data.session) {
+          // Session is immediately active
+          updateUserMeta({
+            email: data.user.email || trimmedEmail,
+            name: name || data.user.user_metadata?.name || trimmedEmail.split('@')[0] || 'User',
+            isLoggedIn: true
+          });
+          setSession(data.session);
+          setUser(data.user);
+          hydrateUserData(data.user.id, data.user);
+          return { error: null, needsEmailConfirmation: false };
+        } else {
+          // Email confirmation is required
+          return { error: null, needsEmailConfirmation: true };
+        }
+      }
+
+      return { error: null, needsEmailConfirmation: false };
+    } catch (err: any) {
+      return { error: new Error(formatFriendlyAuthError(err)), needsEmailConfirmation: false };
+    }
+  };
+
+  const signInWithGoogle = async () => {
+    if (!isConfigured) {
+      updateUserMeta({
+        email: 'google.user@planr.app',
+        name: 'Google User',
         isLoggedIn: true
       });
       return { error: null };
     }
 
     try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
         options: {
-          data: { name: name || email.split('@')[0] }
+          redirectTo: window.location.origin
         }
       });
       if (error) {
         return { error: new Error(formatFriendlyAuthError(error)) };
       }
+      return { error: null };
+    } catch (err: any) {
+      return { error: new Error(formatFriendlyAuthError(err)) };
+    }
+  };
 
-      if (data?.user) {
-        updateUserMeta({
-          email: data.user.email || email,
-          name: name || data.user.user_metadata?.name || email.split('@')[0] || 'User',
-          isLoggedIn: true
-        });
-        if (data.session) {
-          setSession(data.session);
-          setUser(data.user);
-          syncEngine.syncAll(data.user.id);
+  const sendEmailOtp = async (email: string, isSignUp = false) => {
+    const trimmedEmail = email.trim();
+    if (!isConfigured) {
+      return { error: null };
+    }
+
+    try {
+      const { error } = await supabase.auth.signInWithOtp({
+        email: trimmedEmail,
+        options: {
+          shouldCreateUser: isSignUp,
+          emailRedirectTo: window.location.origin
         }
+      });
+      if (error) {
+        return { error: new Error(formatFriendlyAuthError(error)) };
+      }
+      return { error: null };
+    } catch (err: any) {
+      return { error: new Error(formatFriendlyAuthError(err)) };
+    }
+  };
+
+  const verifyEmailOtp = async (
+    email: string,
+    token: string,
+    type: OtpVerificationType = 'email'
+  ) => {
+    const trimmedEmail = email.trim();
+    if (!isConfigured) {
+      updateUserMeta({
+        email: trimmedEmail,
+        name: trimmedEmail.split('@')[0] || 'User',
+        isLoggedIn: true
+      });
+      return { error: null };
+    }
+
+    try {
+      const { data, error } = await supabase.auth.verifyOtp({
+        email: trimmedEmail,
+        token: token.trim(),
+        type: type as any
+      });
+
+      if (error) {
+        return { error: new Error(formatFriendlyAuthError(error)) };
+      }
+
+      if (data?.session) {
+        setSession(data.session);
+        setUser(data.user);
+        if (data.user?.id) {
+          hydrateUserData(data.user.id, data.user);
+        }
+      }
+      return { error: null };
+    } catch (err: any) {
+      return { error: new Error(formatFriendlyAuthError(err)) };
+    }
+  };
+
+  const resendVerificationEmail = async (email: string) => {
+    const trimmedEmail = email.trim();
+    if (!isConfigured) return { error: null };
+
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: trimmedEmail,
+        options: {
+          emailRedirectTo: window.location.origin
+        }
+      });
+      if (error) {
+        return { error: new Error(formatFriendlyAuthError(error)) };
+      }
+      return { error: null };
+    } catch (err: any) {
+      return { error: new Error(formatFriendlyAuthError(err)) };
+    }
+  };
+
+  const sendPasswordResetEmail = async (email: string) => {
+    const trimmedEmail = email.trim();
+    if (!isConfigured) {
+      return { error: null };
+    }
+
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(trimmedEmail, {
+        redirectTo: `${window.location.origin}/#reset-password`
+      });
+      if (error) {
+        return { error: new Error(formatFriendlyAuthError(error)) };
+      }
+      return { error: null };
+    } catch (err: any) {
+      return { error: new Error(formatFriendlyAuthError(err)) };
+    }
+  };
+
+  const updatePassword = async (newPassword: string) => {
+    if (!isConfigured) {
+      return { error: null };
+    }
+
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+      if (error) {
+        return { error: new Error(formatFriendlyAuthError(error)) };
       }
       return { error: null };
     } catch (err: any) {
@@ -161,37 +389,48 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const signInWithMagicLink = async (email: string) => {
+    const trimmedEmail = email.trim();
     if (!isConfigured) {
-      updateUserMeta({ email, isLoggedIn: true });
+      updateUserMeta({ email: trimmedEmail, isLoggedIn: true });
       return { error: null };
     }
 
     try {
       const { error } = await supabase.auth.signInWithOtp({
-        email,
+        email: trimmedEmail,
         options: {
           emailRedirectTo: window.location.origin
         }
       });
-      return { error };
+      return { error: error ? new Error(formatFriendlyAuthError(error)) : null };
     } catch (err: any) {
-      return { error: err };
+      return { error: new Error(formatFriendlyAuthError(err)) };
     }
   };
 
   const signOut = async () => {
+    unsubscribeFromUserRealtime();
     if (isConfigured) {
       await supabase.auth.signOut();
     }
-    updateUserMeta({ isLoggedIn: false });
+    setMetaUser({
+      name: '',
+      title: '',
+      tagline: '',
+      email: '',
+      isLoggedIn: false
+    });
+    setTasks([]);
+    setReminders([]);
+    setFocusSessions([]);
     setUser(null);
     setSession(null);
     return { error: null };
   };
 
-  const syncNow = async () => {
+  const refreshData = async () => {
     if (user?.id) {
-      await syncEngine.syncAll(user.id);
+      await hydrateUserData(user.id, user);
     }
   };
 
@@ -203,12 +442,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         isLoading,
         isConfigured,
         isOnline,
-        syncStatus,
         signInWithEmail,
         signUpWithEmail,
+        signInWithGoogle,
+        sendEmailOtp,
+        verifyEmailOtp,
+        resendVerificationEmail,
+        sendPasswordResetEmail,
+        updatePassword,
         signInWithMagicLink,
         signOut,
-        syncNow
+        refreshData
       }}
     >
       {children}

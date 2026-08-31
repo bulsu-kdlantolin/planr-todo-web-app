@@ -211,9 +211,9 @@ export const FocusView: React.FC = () => {
             <span>Ambient Sounds</span>
           </div>
 
-          {/* Solfeggio Tuning Selector */}
+          {/* Sound Tone Tuning Selector */}
           <div className="flex items-center gap-1 text-[11px]">
-            <span className="text-secondary font-medium mr-1">Pitch:</span>
+            <span className="text-secondary font-medium mr-1">Tone:</span>
             {([432, 528, 639] as const).map((freq) => (
               <button
                 key={freq}
@@ -228,8 +228,8 @@ export const FocusView: React.FC = () => {
                   freq === 432
                     ? '432Hz (Deep Calm)'
                     : freq === 528
-                    ? '528Hz (Focus & Clarity)'
-                    : '639Hz (Balance)'
+                    ? '528Hz (Mental Clarity)'
+                    : '639Hz (Balanced Focus)'
                 }
               >
                 {freq}Hz
@@ -261,6 +261,16 @@ export const FocusView: React.FC = () => {
               {snd.label}
             </button>
           ))}
+        </div>
+
+        {/* Active Focus Tone Explanation */}
+        <div className="text-[11px] text-secondary font-sans bg-surface-low/60 rounded-lg p-2 flex items-center justify-between border border-outline-subtle/50">
+          <span>
+            {solfeggioFreq === 432 && '🌿 432Hz — Deep Calm & Stress Release'}
+            {solfeggioFreq === 528 && '✨ 528Hz — Mental Clarity & Deep Focus'}
+            {solfeggioFreq === 639 && '⚖️ 639Hz — Harmonic Balance & Concentration'}
+          </span>
+          <span className="text-[10px] font-medium text-tertiary uppercase font-sans">Ambient Flow</span>
         </div>
       </div>
     </div>

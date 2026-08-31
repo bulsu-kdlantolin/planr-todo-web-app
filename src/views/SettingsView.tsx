@@ -8,8 +8,7 @@ import { useAuth } from '../context/AuthContext';
 import { Select } from '../components/common/Select';
 import { ToggleSwitch } from '../components/common/ToggleSwitch';
 import { ProfileModal } from '../components/modals/ProfileModal';
-import { exportWorkspaceAsJSON, exportTasksAsMarkdown, exportTasksAsCSV } from '../utils/exportEngines';
-import { dbImportJSON } from '../db/indexedDB';
+import { exportWorkspaceAsJSON, exportTasksAsMarkdown, exportTasksAsCSV, restoreWorkspaceFromJSON } from '../utils/exportEngines';
 import { TimeFormat } from '../types';
 import {
   Moon,
@@ -27,7 +26,10 @@ import {
   Command,
   LogOut,
   LogIn,
-  CheckCircle2
+  CheckCircle2,
+  Lock,
+  KeyRound,
+  AlertCircle
 } from 'lucide-react';
 
 export const SettingsView: React.FC = () => {
@@ -44,13 +46,19 @@ export const SettingsView: React.FC = () => {
 
   const showToast = useUIStore((state) => state.showToast);
   const openShortcutsModal = useUIStore((state) => state.openShortcutsModal);
-  const openAuthModal = useUIStore((state) => state.openAuthModal);
   const setActiveView = useUIStore((state) => state.setActiveView);
 
-  const { signOut } = useAuth();
+  const { signOut, updatePassword, session } = useAuth();
 
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [importing, setImporting] = useState(false);
+
+  // Password change state
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [passwordSuccess, setPasswordSuccess] = useState(false);
 
   const handleExportJSON = () => {
     exportWorkspaceAsJSON();
@@ -67,6 +75,37 @@ export const SettingsView: React.FC = () => {
     showToast('Exported tasks (CSV spreadsheet)');
   };
 
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newPassword || !confirmPassword || isUpdatingPassword) return;
+
+    if (newPassword.length < 6) {
+      setPasswordError('Password must be at least 6 characters long.');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setPasswordError('Passwords do not match.');
+      return;
+    }
+
+    setIsUpdatingPassword(true);
+    setPasswordError(null);
+
+    const { error } = await updatePassword(newPassword);
+    setIsUpdatingPassword(false);
+
+    if (error) {
+      setPasswordError(error.message);
+    } else {
+      setPasswordSuccess(true);
+      setNewPassword('');
+      setConfirmPassword('');
+      showToast('Password updated successfully! 🔒', 'success');
+      setTimeout(() => setPasswordSuccess(false), 4000);
+    }
+  };
+
   const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -76,15 +115,9 @@ export const SettingsView: React.FC = () => {
       const text = await file.text();
       const backupData = JSON.parse(text);
 
-      const success = await dbImportJSON(backupData);
+      const success = await restoreWorkspaceFromJSON(backupData);
       if (success) {
-        if (backupData.tasks) setTasks(backupData.tasks);
-        if (backupData.reminders) setReminders(backupData.reminders);
-        if (backupData.focusSessions) setFocusSessions(backupData.focusSessions);
-        if (backupData.meta?.user) useMetaStore.getState().updateUser(backupData.meta.user);
-        if (backupData.meta?.settings) useMetaStore.getState().updateSettings(backupData.meta.settings);
-
-        showToast('Backup restored successfully!', 'success');
+        showToast('Backup restored successfully! 📦', 'success');
       } else {
         showToast('Failed to import database file.', 'error');
       }
@@ -96,13 +129,15 @@ export const SettingsView: React.FC = () => {
     }
   };
 
+  const isOAuthUser = session?.user?.app_metadata?.provider === 'google';
+
   return (
     <div className="max-w-4xl mx-auto px-6 py-8 animate-fade-in space-y-8">
       {/* Header */}
       <div className="pb-5 border-b border-outline-subtle">
         <h1 className="font-serif text-3xl sm:text-4xl font-semibold text-on-surface">Settings</h1>
-        <p className="text-sm text-secondary mt-1">
-          Customize your workspace, time preferences, sounds, cloud sync, and local backups.
+        <p className="text-sm text-secondary">
+          Customize your workspace, time preferences, security, cloud sync, and workspace backups.
         </p>
       </div>
 
@@ -164,6 +199,109 @@ export const SettingsView: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Security & Password Card (For logged in users) */}
+      {user.isLoggedIn && (
+        <div className="bg-surface-lowest border border-outline-variant rounded-xl p-6 shadow-card space-y-5">
+          <div className="flex items-center gap-2 border-b border-outline-subtle pb-3">
+            <KeyRound className="w-5 h-5 text-primary" aria-hidden="true" />
+            <h2 className="font-serif text-xl font-semibold text-on-surface">Security & Password</h2>
+          </div>
+
+          {isOAuthUser ? (
+            <div className="p-4 rounded-lg bg-surface-low border border-outline-subtle text-xs text-secondary flex items-center gap-3">
+              <ShieldCheck className="w-5 h-5 text-emerald-600 flex-shrink-0" />
+              <div>
+                <p className="font-semibold text-on-surface">Google Account Authentication</p>
+                <p>You are signed in using Google OAuth. Password changes are managed through your Google account security settings.</p>
+              </div>
+            </div>
+          ) : (
+            <form onSubmit={handleChangePassword} className="space-y-4 max-w-xl">
+              <p className="text-xs text-secondary">
+                Update your account password. Choose at least 6 characters.
+              </p>
+
+              {passwordError && (
+                <div
+                  role="alert"
+                  className="p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded-lg flex items-center gap-2 text-xs text-red-800 dark:text-red-300"
+                >
+                  <AlertCircle className="w-4 h-4 flex-shrink-0 text-red-600 dark:text-red-400" />
+                  <span>{passwordError}</span>
+                </div>
+              )}
+
+              {passwordSuccess && (
+                <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-lg flex items-center gap-2 text-xs text-emerald-800 dark:text-emerald-300">
+                  <CheckCircle2 className="w-4 h-4 flex-shrink-0 text-emerald-600 dark:text-emerald-400" />
+                  <span>Password updated successfully!</span>
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label
+                    htmlFor="settings-new-password"
+                    className="block text-xs font-semibold uppercase tracking-wider text-secondary mb-1.5 font-sans"
+                  >
+                    New Password
+                  </label>
+                  <div className="relative">
+                    <Lock className="w-4 h-4 text-secondary absolute left-3.5 top-1/2 -translate-y-1/2" />
+                    <input
+                      id="settings-new-password"
+                      type="password"
+                      required
+                      value={newPassword}
+                      onChange={(e) => {
+                        setNewPassword(e.target.value);
+                        if (passwordError) setPasswordError(null);
+                      }}
+                      placeholder="••••••••"
+                      className="w-full pl-10 pr-3.5 py-2.5 bg-surface-low border border-outline-variant rounded-lg text-xs text-on-surface focus:border-primary-container focus:ring-2 focus:ring-primary-container/20 focus:outline-none transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="settings-confirm-password"
+                    className="block text-xs font-semibold uppercase tracking-wider text-secondary mb-1.5 font-sans"
+                  >
+                    Confirm Password
+                  </label>
+                  <div className="relative">
+                    <Lock className="w-4 h-4 text-secondary absolute left-3.5 top-1/2 -translate-y-1/2" />
+                    <input
+                      id="settings-confirm-password"
+                      type="password"
+                      required
+                      value={confirmPassword}
+                      onChange={(e) => {
+                        setConfirmPassword(e.target.value);
+                        if (passwordError) setPasswordError(null);
+                      }}
+                      placeholder="••••••••"
+                      className="w-full pl-10 pr-3.5 py-2.5 bg-surface-low border border-outline-variant rounded-lg text-xs text-on-surface focus:border-primary-container focus:ring-2 focus:ring-primary-container/20 focus:outline-none transition-all"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-1">
+                <button
+                  type="submit"
+                  disabled={isUpdatingPassword || !newPassword}
+                  className="px-5 py-2.5 bg-primary-container text-on-primary-container hover:bg-primary rounded-md text-xs font-semibold uppercase tracking-wider transition-colors shadow-sm disabled:opacity-50"
+                >
+                  {isUpdatingPassword ? 'Updating Password...' : 'Save New Password'}
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
+      )}
 
       {/* Appearance & Time Format */}
       <div className="bg-surface-lowest border border-outline-variant rounded-xl p-6 shadow-card space-y-6">
@@ -290,17 +428,17 @@ export const SettingsView: React.FC = () => {
         </div>
       </div>
 
-      {/* Private Local Storage & Backups */}
+      {/* Sync & Workspace Backups */}
       <div className="bg-surface-lowest border border-outline-variant rounded-xl p-6 shadow-card space-y-6">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <ShieldCheck className="w-5 h-5 text-tertiary" aria-hidden="true" />
             <h2 className="font-serif text-xl font-semibold text-on-surface">
-              Private Data & Workspace Backups
+              Sync & Workspace Backups
             </h2>
           </div>
           <p className="text-xs text-secondary">
-            Your tasks and notes are stored securely on this device. You can download a backup at any time or restore from an existing file.
+            Your tasks and focus sessions sync automatically across your devices. You own 100% of your data. Export your notes to Markdown or download a full backup snapshot anytime.
           </p>
         </div>
 

@@ -11,11 +11,13 @@ const VALID_VIEWS: ViewType[] = [
   'tasks',
   'reminders',
   'focus',
-  'settings'
+  'settings',
+  'reset-password'
 ];
 
 /**
- * Hook to manage URL hash-based navigation with route validation and fallback.
+ * Hook to manage URL hash-based navigation with route validation,
+ * OAuth callback detection, and password reset handling.
  */
 export function useHashRouter() {
   const activeView = useUIStore((state) => state.activeView);
@@ -23,11 +25,30 @@ export function useHashRouter() {
 
   useEffect(() => {
     const handleHashChange = () => {
-      const hash = window.location.hash.replace('#', '') as ViewType;
-      if (VALID_VIEWS.includes(hash)) {
-        setActiveView(hash);
-      } else if (window.location.hash === '' || window.location.hash === '#') {
-        // Keep current view or default to landing
+      const rawHash = window.location.hash;
+      const cleanHash = rawHash.replace('#', '') as ViewType;
+
+      // Detect Supabase Password Recovery fragment
+      if (rawHash.includes('type=recovery') || cleanHash === 'reset-password') {
+        setActiveView('reset-password');
+        return;
+      }
+
+      // Detect Supabase OAuth Token Callback fragment (e.g. #access_token=...&refresh_token=...)
+      if (rawHash.includes('access_token=') || rawHash.includes('error_description=')) {
+        // Let Supabase Auth client ingest the tokens; default to daily workspace
+        setActiveView('daily');
+        return;
+      }
+
+      if (cleanHash.startsWith('landing')) {
+        setActiveView('landing');
+        return;
+      }
+
+      if (VALID_VIEWS.includes(cleanHash)) {
+        setActiveView(cleanHash);
+      } else if (rawHash === '' || rawHash === '#') {
         if (!VALID_VIEWS.includes(activeView)) {
           setActiveView('landing');
         }

@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { FocusSession } from '../types';
-import { dbPutFocusSession } from '../db/indexedDB';
+import { supabase } from '../lib/supabase/client';
+import { insertFocusSessionDb } from '../lib/supabase/focus';
 import { audioManager } from '../utils/audio';
 import { sendBrowserNotification } from '../utils/notifications';
 import { generateUUID } from '../utils/id';
@@ -45,6 +46,15 @@ function getWorker(): Worker | null {
   return worker;
 }
 
+const getUserId = async (): Promise<string | null> => {
+  try {
+    const { data } = await supabase.auth.getSession();
+    return data.session?.user?.id || null;
+  } catch {
+    return null;
+  }
+};
+
 export const useTimerStore = create<TimerState>((set, get) => {
   const w = getWorker();
   if (w) {
@@ -70,8 +80,8 @@ export const useTimerStore = create<TimerState>((set, get) => {
     setSelectedTaskId: (selectedTaskId) => set({ selectedTaskId }),
 
     setPreset: (currentPreset, mins) => {
-      const w = getWorker();
-      if (w) w.postMessage({ type: 'RESET' });
+      const workerInstance = getWorker();
+      if (workerInstance) workerInstance.postMessage({ type: 'RESET' });
       const secs = mins * 60;
       set({
         currentPreset,
@@ -94,9 +104,9 @@ export const useTimerStore = create<TimerState>((set, get) => {
       audioManager.init();
       const state = get();
       const targetEndTime = Date.now() + state.remainingSec * 1000;
-      const w = getWorker();
-      if (w) {
-        w.postMessage({ type: 'START', targetEndTime });
+      const workerInstance = getWorker();
+      if (workerInstance) {
+        workerInstance.postMessage({ type: 'START', targetEndTime });
       }
 
       if (state.ambientType !== 'none') {
@@ -106,8 +116,8 @@ export const useTimerStore = create<TimerState>((set, get) => {
     },
 
     pauseTimer: () => {
-      const w = getWorker();
-      if (w) w.postMessage({ type: 'PAUSE' });
+      const workerInstance = getWorker();
+      if (workerInstance) workerInstance.postMessage({ type: 'PAUSE' });
       set({ isRunning: false });
     },
 
@@ -120,8 +130,8 @@ export const useTimerStore = create<TimerState>((set, get) => {
     },
 
     resetTimer: () => {
-      const w = getWorker();
-      if (w) w.postMessage({ type: 'RESET' });
+      const workerInstance = getWorker();
+      if (workerInstance) workerInstance.postMessage({ type: 'RESET' });
       set((state) => ({
         isRunning: false,
         remainingSec: state.durationSec
@@ -151,7 +161,12 @@ export const useTimerStore = create<TimerState>((set, get) => {
         focusSessions: [newSession, ...s.focusSessions]
       }));
 
-      await dbPutFocusSession(newSession);
+      const userId = await getUserId();
+      if (userId) {
+        insertFocusSessionDb(newSession, userId).catch((err) =>
+          console.error('Failed to log focus session to Supabase:', err)
+        );
+      }
 
       audioManager.playChime();
       sendBrowserNotification('Focus Block Complete', {

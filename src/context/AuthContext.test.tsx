@@ -5,11 +5,11 @@ import { AuthProvider, useAuth } from './AuthContext';
 import { formatFriendlyAuthError } from '../utils/errors';
 
 const TestComponent = () => {
-  const { isOnline, syncStatus } = useAuth();
+  const { isOnline, isConfigured } = useAuth();
   return (
     <div>
       <span data-testid="online-status">{isOnline ? 'online' : 'offline'}</span>
-      <span data-testid="sync-status">{syncStatus}</span>
+      <span data-testid="configured-status">{isConfigured ? 'configured' : 'not-configured'}</span>
     </div>
   );
 };
@@ -23,12 +23,12 @@ describe('AuthContext & Error Translations', () => {
     );
 
     expect(screen.getByTestId('online-status')).toBeDefined();
-    expect(screen.getByTestId('sync-status').textContent).toBe('idle');
+    expect(screen.getByTestId('configured-status')).toBeDefined();
   });
 
   it('translates network and rate-limit errors to friendly user messages', () => {
     expect(formatFriendlyAuthError({ message: 'Failed to fetch' })).toContain(
-      'Unable to reach the cloud server'
+      'Unable to reach the server'
     );
     expect(formatFriendlyAuthError({ message: 'over_email_send_rate_limit' })).toContain(
       'Email rate limit reached'

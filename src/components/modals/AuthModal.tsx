@@ -3,7 +3,8 @@ import { useUIStore } from '../../store/useUIStore';
 import { useAuth } from '../../context/AuthContext';
 import { Modal } from '../common/Modal';
 import { Logo } from '../common/Logo';
-import { UserCheck, Mail, Lock, User, AlertCircle } from 'lucide-react';
+import { GoogleButton } from '../auth/GoogleButton';
+import { Mail, Lock, User, AlertCircle } from 'lucide-react';
 
 export const AuthModal: React.FC = () => {
   const authModalOpen = useUIStore((state) => state.authModalOpen);
@@ -15,7 +16,7 @@ export const AuthModal: React.FC = () => {
   const {
     signInWithEmail,
     signUpWithEmail,
-    isConfigured,
+    signInWithGoogle,
     isLoading: isAuthLoading
   } = useAuth();
 
@@ -23,6 +24,7 @@ export const AuthModal: React.FC = () => {
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleSignIn = async (e: React.FormEvent) => {
@@ -38,7 +40,7 @@ export const AuthModal: React.FC = () => {
     if (error) {
       setErrorMessage(error.message);
     } else {
-      showToast('Signed in successfully', 'success');
+      showToast('Signed in successfully ☀️', 'success');
       closeAuthModal();
     }
   };
@@ -50,23 +52,30 @@ export const AuthModal: React.FC = () => {
     setIsSubmitting(true);
     setErrorMessage(null);
 
-    const { error } = await signUpWithEmail(email, password, name);
+    const result = await signUpWithEmail(email, password, name);
     setIsSubmitting(false);
 
-    if (error) {
-      setErrorMessage(error.message);
+    if (result.error) {
+      setErrorMessage(result.error.message);
+    } else if (result.needsEmailConfirmation) {
+      showToast('Verification email sent! Check your inbox ✉️', 'info');
+      closeAuthModal();
     } else {
-      showToast('Account created successfully', 'success');
+      showToast('Account created successfully 🌿', 'success');
       closeAuthModal();
     }
   };
 
-  const handleDemoLogin = async () => {
-    setIsSubmitting(true);
-    await signInWithEmail('demo@planr.app', 'intentional');
-    setIsSubmitting(false);
-    showToast('Entered workspace in private local mode', 'info');
-    closeAuthModal();
+  const handleGoogleAuth = async () => {
+    setIsGoogleLoading(true);
+    setErrorMessage(null);
+    const { error } = await signInWithGoogle();
+    setIsGoogleLoading(false);
+    if (error) {
+      setErrorMessage(error.message);
+    } else {
+      closeAuthModal();
+    }
   };
 
   return (
@@ -76,7 +85,7 @@ export const AuthModal: React.FC = () => {
       title={authMode === 'signin' ? 'Sign In' : 'Create Account'}
       maxWidthClass="max-w-md"
     >
-      <div className="text-center mb-6">
+      <div className="text-center mb-5">
         <div className="flex justify-center mb-3">
           <Logo size="md" />
         </div>
@@ -201,22 +210,22 @@ export const AuthModal: React.FC = () => {
           </button>
         </div>
 
-        <div className="relative my-3 text-center">
-          <hr className="border-outline-subtle" />
-          <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-surface-lowest px-2 text-[10px] text-secondary">
-            or
-          </span>
-        </div>
+        {/* 🌟 Google OAuth Option Below */}
+        <div className="space-y-3 pt-2">
+          <div className="relative text-center">
+            <hr className="border-outline-subtle" />
+            <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-surface-lowest px-2 text-[10px] text-secondary">
+              or continue with
+            </span>
+          </div>
 
-        <button
-          type="button"
-          onClick={handleDemoLogin}
-          disabled={isSubmitting}
-          className="w-full py-2 bg-surface-low hover:bg-surface-container text-on-surface border border-outline-variant text-xs font-medium rounded-md flex items-center justify-center gap-2 transition-colors"
-        >
-          <UserCheck className="w-3.5 h-3.5 text-tertiary" aria-hidden="true" />
-          <span>Continue in Private Local Mode</span>
-        </button>
+          <GoogleButton
+            onClick={handleGoogleAuth}
+            isLoading={isGoogleLoading}
+            disabled={isSubmitting}
+            label={authMode === 'signin' ? 'Continue with Google' : 'Sign Up with Google'}
+          />
+        </div>
       </form>
     </Modal>
   );

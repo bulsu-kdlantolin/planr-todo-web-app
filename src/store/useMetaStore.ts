@@ -1,6 +1,11 @@
 import { create } from 'zustand';
 import { UserProfile, AppSettings, ThemeMode } from '../types';
-import { dbPutMeta, INITIAL_USER, INITIAL_SETTINGS, INITIAL_INTENTION } from '../db/indexedDB';
+import { supabase } from '../lib/supabase/client';
+import {
+  DEFAULT_USER_PROFILE,
+  DEFAULT_SETTINGS,
+  upsertUserProfileDb
+} from '../lib/supabase/profiles';
 import { audioManager } from '../utils/audio';
 
 interface MetaState {
@@ -22,10 +27,19 @@ interface MetaState {
   refreshStorageQuota: () => Promise<void>;
 }
 
+const getUserId = async (): Promise<string | null> => {
+  try {
+    const { data } = await supabase.auth.getSession();
+    return data.session?.user?.id || null;
+  } catch {
+    return null;
+  }
+};
+
 export const useMetaStore = create<MetaState>((set, get) => ({
-  user: INITIAL_USER,
-  settings: INITIAL_SETTINGS,
-  intention: INITIAL_INTENTION,
+  user: DEFAULT_USER_PROFILE,
+  settings: DEFAULT_SETTINGS,
+  intention: '',
   isLoading: true,
   storageUsageBytes: null,
   storageQuotaBytes: null,
@@ -38,13 +52,18 @@ export const useMetaStore = create<MetaState>((set, get) => ({
   updateUser: async (updates) => {
     const updated: UserProfile = { ...get().user, ...updates };
     set({ user: updated });
-    await dbPutMeta('user', updated);
+
+    const userId = await getUserId();
+    if (userId) {
+      upsertUserProfileDb(userId, updated).catch((err) =>
+        console.error('Failed to sync profile update to Supabase:', err)
+      );
+    }
   },
 
   updateSettings: async (updates) => {
     const updated: AppSettings = { ...get().settings, ...updates };
     set({ settings: updated });
-    await dbPutMeta('settings', updated);
 
     if (updates.theme) {
       document.documentElement.setAttribute('data-theme', updates.theme);
@@ -52,11 +71,24 @@ export const useMetaStore = create<MetaState>((set, get) => ({
     if (typeof updates.soundVolume === 'number') {
       audioManager.setVolume(updates.soundVolume);
     }
+
+    const userId = await getUserId();
+    if (userId) {
+      upsertUserProfileDb(userId, undefined, updated).catch((err) =>
+        console.error('Failed to sync settings update to Supabase:', err)
+      );
+    }
   },
 
   updateIntention: async (newIntention) => {
     set({ intention: newIntention });
-    await dbPutMeta('intention', newIntention);
+
+    const userId = await getUserId();
+    if (userId) {
+      upsertUserProfileDb(userId, undefined, undefined, newIntention).catch((err) =>
+        console.error('Failed to sync intention to Supabase:', err)
+      );
+    }
   },
 
   toggleTheme: () => {
