@@ -107,6 +107,15 @@ export function formatFriendlyAuthError(err: any): string {
     return 'New password must be different from your old password.';
   }
 
+  if (
+    message.includes('auth session missing') ||
+    message.includes('session_not_found') ||
+    message.includes('not authenticated') ||
+    message.includes('session has expired')
+  ) {
+    return 'Your reset session has expired or is invalid. Please request a new password reset link.';
+  }
+
   // Fallback cleanly without exposing technical stack traces
   return err.message || 'Unable to complete request. Please try again.';
 }

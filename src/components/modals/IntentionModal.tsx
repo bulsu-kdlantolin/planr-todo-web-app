@@ -3,6 +3,8 @@ import { useMetaStore } from '../../store/useMetaStore';
 import { useUIStore } from '../../store/useUIStore';
 import { Modal } from '../common/Modal';
 import { Logo } from '../common/Logo';
+import { AlertCircle } from 'lucide-react';
+import { triggerHapticFeedback, getFieldValidationClass } from '../../utils/validation';
 
 interface IntentionModalProps {
   isOpen: boolean;
@@ -15,18 +17,23 @@ export const IntentionModal: React.FC<IntentionModalProps> = ({ isOpen, onClose 
   const showToast = useUIStore((state) => state.showToast);
 
   const [value, setValue] = useState(intention);
+  const [intentionError, setIntentionError] = useState<string | null>(null);
 
   useEffect(() => {
     setValue(intention);
+    setIntentionError(null);
   }, [intention, isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (value.trim()) {
-      await updateIntention(value.trim());
-      showToast('Daily grounding intention updated');
-      onClose();
+    if (!value.trim()) {
+      triggerHapticFeedback();
+      setIntentionError('Please set a focus or grounding intention for today');
+      return;
     }
+    await updateIntention(value.trim());
+    showToast('Daily grounding intention updated', 'success');
+    onClose();
   };
 
   return (
@@ -38,20 +45,30 @@ export const IntentionModal: React.FC<IntentionModalProps> = ({ isOpen, onClose 
       maxWidthClass="max-w-md"
       icon={<Logo size="sm" showWordmark={false} />}
     >
-      <form onSubmit={handleSubmit} className="space-y-4 my-2">
+      <form noValidate onSubmit={handleSubmit} className="space-y-4 my-2">
         <div>
           <label htmlFor="daily-intention-input" className="block text-xs font-semibold text-secondary uppercase tracking-wider mb-2">
-            Set your grounding thought or primary focus
+            Set your grounding thought or primary focus <span className="text-red-500">*</span>
           </label>
           <textarea
             id="daily-intention-input"
             rows={3}
-            required
             value={value}
-            onChange={(e) => setValue(e.target.value)}
+            onChange={(e) => {
+              setValue(e.target.value);
+              if (intentionError) setIntentionError(null);
+            }}
             placeholder="e.g. Move through the day with stillness, clarity, and deep focus..."
-            className="w-full px-3.5 py-2.5 bg-surface-low border border-outline-variant rounded-md text-sm text-on-surface focus:border-primary-container focus:outline-none focus:ring-2 focus:ring-primary-container/20 font-serif italic resize-y"
+            className={`w-full px-3.5 py-2.5 bg-surface-low border rounded-md text-sm text-on-surface font-serif italic resize-y transition-all focus:outline-none ${getFieldValidationClass(
+              !!intentionError
+            )}`}
           />
+          {intentionError && (
+            <p className="text-[11px] text-red-500 mt-1.5 flex items-center gap-1 animate-fade-in font-medium" role="alert">
+              <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+              <span>{intentionError}</span>
+            </p>
+          )}
         </div>
 
         <div className="flex justify-end gap-3 pt-3 border-t border-outline-subtle">

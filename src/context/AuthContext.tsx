@@ -14,9 +14,10 @@ import { formatFriendlyAuthError } from '../utils/errors';
 
 export type OtpVerificationType = 'email' | 'signup' | 'recovery' | 'magiclink';
 
-interface SignUpResult {
+export interface SignUpResult {
   error: Error | null;
   needsEmailConfirmation?: boolean;
+  isExistingUnconfirmed?: boolean;
 }
 
 interface AuthContextType {
@@ -88,14 +89,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setSettings(profileData.settings);
         setIntention(profileData.intention);
       } else {
+        const meta = currentSessionUser.user_metadata;
         setMetaUser({
           name:
-            currentSessionUser.user_metadata?.name ||
+            meta?.name ||
+            meta?.full_name ||
             currentSessionUser.email?.split('@')[0] ||
             'User',
-          title: 'Productivity User',
-          tagline: 'Simple Focus',
+          title: meta?.title || 'Productivity User',
+          tagline: meta?.tagline || 'Simple Focus',
           email: currentSessionUser.email || '',
+          avatar: meta?.avatar_url || meta?.picture || meta?.avatar || undefined,
           isLoggedIn: true
         });
       }
@@ -208,19 +212,36 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         return { error: new Error(formatFriendlyAuthError(error)), needsEmailConfirmation: false };
       }
 
-      // Check if user already exists:
-      // When email confirmations are enabled in Supabase, an existing user sign-up returns
-      // data.user with empty identities (identities.length === 0)!
-      if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
-        return {
-          error: new Error('An account with this email address already exists. Please sign in instead.'),
-          needsEmailConfirmation: false
-        };
-      }
-
       if (data?.user) {
+        const isConfirmed = Boolean(data.user.email_confirmed_at);
+        const hasNoIdentities = Array.isArray(data.user.identities) && data.user.identities.length === 0;
+
+        // Calculate creation age
+        const createdAt = data.user.created_at ? new Date(data.user.created_at).getTime() : Date.now();
+        const confirmationSentAt = data.user.confirmation_sent_at
+          ? new Date(data.user.confirmation_sent_at).getTime()
+          : createdAt;
+        const isOldAccount = confirmationSentAt - createdAt > 10000 || Date.now() - createdAt > 20000;
+
+        // Scenario 1: Account already exists and is confirmed, or returned empty identities
+        if (hasNoIdentities || isConfirmed) {
+          return {
+            error: new Error('An account with this email address already exists. Please sign in instead.'),
+            needsEmailConfirmation: false
+          };
+        }
+
+        // Scenario 2: Account was registered earlier but remains unconfirmed
+        if (isOldAccount) {
+          return {
+            error: new Error('An account with this email is already registered. A fresh verification link has been sent to your email.'),
+            needsEmailConfirmation: true,
+            isExistingUnconfirmed: true
+          };
+        }
+
+        // Scenario 3: New account with immediate active session (email confirmation off / auto-confirmed)
         if (data.session) {
-          // Session is immediately active
           updateUserMeta({
             email: data.user.email || trimmedEmail,
             name: name || data.user.user_metadata?.name || trimmedEmail.split('@')[0] || 'User',
@@ -230,10 +251,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           setUser(data.user);
           hydrateUserData(data.user.id, data.user);
           return { error: null, needsEmailConfirmation: false };
-        } else {
-          // Email confirmation is required
-          return { error: null, needsEmailConfirmation: true };
         }
+
+        // Scenario 4: New account requiring email confirmation
+        return { error: null, needsEmailConfirmation: true };
       }
 
       return { error: null, needsEmailConfirmation: false };

@@ -6,7 +6,7 @@ import { useUIStore } from '../store/useUIStore';
 import { useAuth } from '../context/AuthContext';
 import { Logo } from '../components/common/Logo';
 import { getTodayDateString } from '../utils/date';
-import { User, Briefcase, Quote, Sparkles, ArrowRight, Clock, Layers } from 'lucide-react';
+import { User, Briefcase, Quote, Sparkles, ArrowRight, Clock, Layers, Loader2 } from 'lucide-react';
 
 export const OnboardingView: React.FC = () => {
   const user = useMetaStore((state) => state.user);
@@ -127,7 +127,7 @@ export const OnboardingView: React.FC = () => {
           </p>
         </div>
 
-        <form onSubmit={handleFinishOnboarding} className="space-y-5">
+        <form noValidate onSubmit={handleFinishOnboarding} className="space-y-5">
           {/* Display Name */}
           <div>
             <label htmlFor="onboarding-name" className="block text-xs font-semibold uppercase tracking-wider text-secondary mb-2 font-sans">
@@ -138,7 +138,6 @@ export const OnboardingView: React.FC = () => {
               <input
                 id="onboarding-name"
                 type="text"
-                required
                 autoFocus
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -245,10 +244,19 @@ export const OnboardingView: React.FC = () => {
             <button
               type="submit"
               disabled={isSaving}
-              className="w-full py-3 px-5 bg-primary-container hover:bg-primary text-on-primary-container text-sm font-semibold uppercase tracking-wider rounded-xl shadow-sm transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
+              className="w-full py-3.5 px-5 bg-primary-container hover:bg-primary text-on-primary-container text-sm font-semibold uppercase tracking-wider rounded-xl shadow-sm transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
             >
-              <span>{isSaving ? 'Saving profile...' : 'Enter Workspace'}</span>
-              <ArrowRight className="w-4 h-4" aria-hidden="true" />
+              {isSaving ? (
+                <span className="flex items-center gap-2">
+                  <span>Setting up workspace...</span>
+                  <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
+                </span>
+              ) : (
+                <>
+                  <span>Enter Workspace</span>
+                  <ArrowRight className="w-4 h-4" aria-hidden="true" />
+                </>
+              )}
             </button>
 
             <button

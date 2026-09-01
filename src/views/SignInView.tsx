@@ -3,26 +3,24 @@ import { useAuth } from '../context/AuthContext';
 import { useUIStore } from '../store/useUIStore';
 import { Logo } from '../components/common/Logo';
 import { GoogleButton } from '../components/auth/GoogleButton';
-import { OtpInput } from '../components/auth/OtpInput';
 import {
   Mail,
   Lock,
   ArrowRight,
   AlertCircle,
   Clock,
+  Loader2,
   CheckCircle2,
-  Send,
   RefreshCw
 } from 'lucide-react';
+import { triggerHapticFeedback, getFieldValidationClass } from '../utils/validation';
 
-type SignInMode = 'password' | 'link' | 'forgot_password';
+type SignInMode = 'signin' | 'forgot_password';
 
 export const SignInView: React.FC = () => {
   const {
     signInWithEmail,
     signInWithGoogle,
-    sendEmailOtp,
-    verifyEmailOtp,
     sendPasswordResetEmail,
     resendVerificationEmail,
     isLoading: authLoading
@@ -31,11 +29,10 @@ export const SignInView: React.FC = () => {
   const setActiveView = useUIStore((state) => state.setActiveView);
   const showToast = useUIStore((state) => state.showToast);
 
-  const [mode, setMode] = useState<SignInMode>('password');
+  const [mode, setMode] = useState<SignInMode>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [otpCode, setOtpCode] = useState('');
-  const [linkSent, setLinkSent] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({});
   const [resetSent, setResetSent] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
 
@@ -69,16 +66,29 @@ export const SignInView: React.FC = () => {
 
   const handlePasswordSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
-    const cleanEmail = email.trim();
-    if (!cleanEmail || !password || isSubmitting || lockoutRemaining > 0) return;
+    if (isSubmitting || lockoutRemaining > 0) return;
 
-    if (!isValidEmail(cleanEmail)) {
-      setErrorMessage('Please enter a valid email address.');
+    const errors: { email?: string; password?: string } = {};
+    const cleanEmail = email.trim();
+    if (!cleanEmail) {
+      errors.email = 'Please enter your email address.';
+    } else if (!isValidEmail(cleanEmail)) {
+      errors.email = 'Please enter a valid email address.';
+    }
+
+    if (!password) {
+      errors.password = 'Please enter your password.';
+    }
+
+    if (Object.keys(errors).length > 0) {
+      triggerHapticFeedback();
+      setFieldErrors(errors);
       return;
     }
 
     setIsSubmitting(true);
     setErrorMessage(null);
+    setFieldErrors({});
 
     const { error } = await signInWithEmail(cleanEmail, password);
     setIsSubmitting(false);
@@ -109,62 +119,26 @@ export const SignInView: React.FC = () => {
     }
   };
 
-  const handleSendLink = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const cleanEmail = email.trim();
-    if (!cleanEmail || isSubmitting) return;
-
-    if (!isValidEmail(cleanEmail)) {
-      setErrorMessage('Please enter a valid email address.');
-      return;
-    }
-
-    setIsSubmitting(true);
-    setErrorMessage(null);
-
-    const { error } = await sendEmailOtp(cleanEmail, false);
-    setIsSubmitting(false);
-
-    if (error) {
-      setErrorMessage(error.message);
-    } else {
-      setLinkSent(true);
-      setResendCooldown(60);
-      showToast(`Sign-in link sent to ${cleanEmail} ✉️`, 'info');
-    }
-  };
-
-  const handleVerifyOtp = async (codeToVerify?: string) => {
-    const code = codeToVerify || otpCode;
-    const cleanEmail = email.trim();
-    if (!cleanEmail || code.length !== 6 || isSubmitting) return;
-
-    setIsSubmitting(true);
-    setErrorMessage(null);
-
-    const { error } = await verifyEmailOtp(cleanEmail, code, 'email');
-    setIsSubmitting(false);
-
-    if (error) {
-      setErrorMessage(error.message);
-    } else {
-      showToast('Verified & Signed in! ☀️', 'success');
-      setActiveView('daily');
-    }
-  };
-
   const handleSendPasswordReset = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
+
     const cleanEmail = email.trim();
-    if (!cleanEmail || isSubmitting) return;
+    if (!cleanEmail) {
+      triggerHapticFeedback();
+      setFieldErrors({ email: 'Please enter your email address.' });
+      return;
+    }
 
     if (!isValidEmail(cleanEmail)) {
-      setErrorMessage('Please enter a valid email address.');
+      triggerHapticFeedback();
+      setFieldErrors({ email: 'Please enter a valid email address.' });
       return;
     }
 
     setIsSubmitting(true);
     setErrorMessage(null);
+    setFieldErrors({});
 
     const { error } = await sendPasswordResetEmail(cleanEmail);
     setIsSubmitting(false);
@@ -214,54 +188,14 @@ export const SignInView: React.FC = () => {
       <div className="w-full max-w-lg sm:max-w-xl bg-surface-lowest border border-outline-variant rounded-2xl p-8 sm:p-12 shadow-card space-y-6">
         <div className="text-center space-y-2">
           <h1 className="font-serif text-2xl sm:text-3xl font-semibold text-on-surface tracking-tight">
-            {mode === 'forgot_password'
-              ? 'Reset your password'
-              : mode === 'link'
-              ? 'Sign in with Email Link'
-              : 'Welcome back'}
+            {mode === 'forgot_password' ? 'Reset your password' : 'Welcome back'}
           </h1>
           <p className="text-sm text-secondary font-sans max-w-sm mx-auto">
             {mode === 'forgot_password'
               ? 'We will send a password reset link to your email address.'
-              : mode === 'link'
-              ? 'Enter your email to receive an instant sign-in link.'
               : 'Sign in to access your focused workspace and daily schedule.'}
           </p>
         </div>
-
-        {/* Mode Switch Tabs */}
-        {mode !== 'forgot_password' && (
-          <div className="grid grid-cols-2 p-1 rounded-xl bg-surface-low border border-outline-subtle text-xs font-semibold">
-            <button
-              type="button"
-              onClick={() => {
-                setMode('password');
-                setErrorMessage(null);
-              }}
-              className={`py-2 rounded-lg transition-all ${
-                mode === 'password'
-                  ? 'bg-surface-lowest text-on-surface shadow-xs font-bold'
-                  : 'text-secondary hover:text-on-surface'
-              }`}
-            >
-              Password
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setMode('link');
-                setErrorMessage(null);
-              }}
-              className={`py-2 rounded-lg transition-all ${
-                mode === 'link'
-                  ? 'bg-surface-lowest text-on-surface shadow-xs font-bold'
-                  : 'text-secondary hover:text-on-surface'
-              }`}
-            >
-              Email Link
-            </button>
-          </div>
-        )}
 
         {errorMessage && (
           <div
@@ -282,27 +216,36 @@ export const SignInView: React.FC = () => {
                   disabled={isSubmitting || resendCooldown > 0}
                   className="text-xs font-semibold underline hover:text-red-950 dark:hover:text-white inline-flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
                 >
-                  <RefreshCw className={`w-3 h-3 ${isSubmitting ? 'animate-spin' : ''}`} />
-                  <span>
-                    {resendCooldown > 0
-                      ? `Resend available in ${resendCooldown}s`
-                      : 'Resend Verification Email'}
-                  </span>
+                  {isSubmitting ? (
+                    <span className="flex items-center gap-1.5">
+                      <span>Resending verification email...</span>
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                    </span>
+                  ) : (
+                    <>
+                      <RefreshCw className="w-3 h-3" />
+                      <span>
+                        {resendCooldown > 0
+                          ? `Resend available in ${resendCooldown}s`
+                          : 'Resend Verification Email'}
+                      </span>
+                    </>
+                  )}
                 </button>
               </div>
             )}
           </div>
         )}
 
-        {/* 1. Standard Password Sign In */}
-        {mode === 'password' && (
-          <form onSubmit={handlePasswordSignIn} className="space-y-4">
+        {/* 1. Standard Email & Password Sign In Form */}
+        {mode === 'signin' && (
+          <form noValidate onSubmit={handlePasswordSignIn} className="space-y-4">
             <div>
               <label
                 htmlFor="signin-email"
                 className="block text-xs font-semibold uppercase tracking-wider text-secondary mb-2 font-sans"
               >
-                Email Address
+                Email Address <span className="text-red-500">*</span>
               </label>
               <div className="relative">
                 <Mail
@@ -312,18 +255,26 @@ export const SignInView: React.FC = () => {
                 <input
                   id="signin-email"
                   type="email"
-                  required
                   autoFocus
                   disabled={isSubmitting || isLockedOut}
                   value={email}
                   onChange={(e) => {
                     setEmail(e.target.value);
+                    if (fieldErrors.email) setFieldErrors((prev) => ({ ...prev, email: undefined }));
                     if (errorMessage) setErrorMessage(null);
                   }}
                   placeholder="name@example.com"
-                  className="w-full pl-11 pr-4 py-3 bg-surface-low border border-outline-variant rounded-xl text-sm text-on-surface placeholder:text-secondary/60 focus:border-primary-container focus:ring-2 focus:ring-primary-container/20 focus:outline-none transition-all disabled:opacity-50"
+                  className={`w-full pl-11 pr-4 py-3 bg-surface-low border rounded-xl text-sm text-on-surface placeholder:text-secondary/60 focus:outline-none transition-all disabled:opacity-50 ${getFieldValidationClass(
+                    !!fieldErrors.email
+                  )}`}
                 />
               </div>
+              {fieldErrors.email && (
+                <p className="text-[11px] text-red-500 mt-1.5 flex items-center gap-1 animate-fade-in font-medium" role="alert">
+                  <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                  <span>{fieldErrors.email}</span>
+                </p>
+              )}
             </div>
 
             <div>
@@ -332,13 +283,14 @@ export const SignInView: React.FC = () => {
                   htmlFor="signin-password"
                   className="block text-xs font-semibold uppercase tracking-wider text-secondary font-sans"
                 >
-                  Password
+                  Password <span className="text-red-500">*</span>
                 </label>
                 <button
                   type="button"
                   onClick={() => {
                     setMode('forgot_password');
                     setErrorMessage(null);
+                    setFieldErrors({});
                   }}
                   className="text-xs text-primary hover:text-primary-container hover:underline transition-colors cursor-pointer"
                 >
@@ -353,27 +305,38 @@ export const SignInView: React.FC = () => {
                 <input
                   id="signin-password"
                   type="password"
-                  required
                   disabled={isSubmitting || isLockedOut}
                   value={password}
                   onChange={(e) => {
                     setPassword(e.target.value);
+                    if (fieldErrors.password) setFieldErrors((prev) => ({ ...prev, password: undefined }));
                     if (errorMessage) setErrorMessage(null);
                   }}
                   placeholder="••••••••"
-                  className="w-full pl-11 pr-4 py-3 bg-surface-low border border-outline-variant rounded-xl text-sm text-on-surface placeholder:text-secondary/60 focus:border-primary-container focus:ring-2 focus:ring-primary-container/20 focus:outline-none transition-all disabled:opacity-50"
+                  className={`w-full pl-11 pr-4 py-3 bg-surface-low border rounded-xl text-sm text-on-surface placeholder:text-secondary/60 focus:outline-none transition-all disabled:opacity-50 ${getFieldValidationClass(
+                    !!fieldErrors.password
+                  )}`}
                 />
               </div>
+              {fieldErrors.password && (
+                <p className="text-[11px] text-red-500 mt-1.5 flex items-center gap-1 animate-fade-in font-medium" role="alert">
+                  <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                  <span>{fieldErrors.password}</span>
+                </p>
+              )}
             </div>
 
             <div className="pt-2">
               <button
                 type="submit"
-                disabled={isSubmitting || authLoading || !email || !password || isLockedOut}
+                disabled={isSubmitting || authLoading || isLockedOut}
                 className="w-full py-3.5 px-5 bg-primary-container hover:bg-primary text-on-primary-container text-sm font-semibold uppercase tracking-wider rounded-xl shadow-sm transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed"
               >
                 {isSubmitting ? (
-                  <span>Signing In...</span>
+                  <span className="flex items-center gap-2">
+                    <span>Signing in...</span>
+                    <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
+                  </span>
                 ) : isLockedOut ? (
                   <span className="flex items-center gap-2">
                     <Clock className="w-4 h-4" /> Wait {lockoutRemaining}s
@@ -389,92 +352,7 @@ export const SignInView: React.FC = () => {
           </form>
         )}
 
-        {/* 2. Email Link Sign In */}
-        {mode === 'link' && (
-          <div className="space-y-4">
-            {!linkSent ? (
-              <form onSubmit={handleSendLink} className="space-y-4">
-                <div>
-                  <label
-                    htmlFor="signin-link-email"
-                    className="block text-xs font-semibold uppercase tracking-wider text-secondary mb-2 font-sans"
-                  >
-                    Your Email Address
-                  </label>
-                  <div className="relative">
-                    <Mail
-                      className="w-4 h-4 text-secondary absolute left-4 top-1/2 -translate-y-1/2"
-                      aria-hidden="true"
-                    />
-                    <input
-                      id="signin-link-email"
-                      type="email"
-                      required
-                      autoFocus
-                      disabled={isSubmitting}
-                      value={email}
-                      onChange={(e) => {
-                        setEmail(e.target.value);
-                        if (errorMessage) setErrorMessage(null);
-                      }}
-                      placeholder="name@example.com"
-                      className="w-full pl-11 pr-4 py-3 bg-surface-low border border-outline-variant rounded-xl text-sm text-on-surface placeholder:text-secondary/60 focus:border-primary-container focus:ring-2 focus:ring-primary-container/20 focus:outline-none transition-all"
-                    />
-                  </div>
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={isSubmitting || !email}
-                  className="w-full py-3.5 px-5 bg-primary-container hover:bg-primary text-on-primary-container text-sm font-semibold uppercase tracking-wider rounded-xl shadow-sm transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  <Send className="w-4 h-4" />
-                  <span>{isSubmitting ? 'Sending Link...' : 'Send Sign-In Link'}</span>
-                </button>
-              </form>
-            ) : (
-              <div className="p-6 bg-surface-low rounded-xl border border-outline-subtle text-center space-y-4 animate-fade-in">
-                <CheckCircle2 className="w-10 h-10 text-emerald-600 dark:text-emerald-400 mx-auto" />
-                <div className="space-y-1.5">
-                  <h3 className="font-serif text-lg font-semibold text-on-surface">Check your inbox</h3>
-                  <p className="text-xs text-secondary max-w-sm mx-auto leading-relaxed">
-                    We sent an instant sign-in link to <span className="font-semibold text-on-surface">{email}</span>. Click the link in your email to access your workspace.
-                  </p>
-                </div>
-
-                <div className="pt-2 flex flex-col gap-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setLinkSent(false);
-                      setErrorMessage(null);
-                    }}
-                    className="text-xs text-secondary hover:text-on-surface underline transition-colors cursor-pointer"
-                  >
-                    Use a different email address
-                  </button>
-
-                  {/* Optional OTP Code input fallback if their email includes a 6-digit token */}
-                  <div className="pt-3 border-t border-outline-subtle/60 text-left space-y-2">
-                    <span className="text-[11px] font-medium text-secondary">Received a 6-digit code instead?</span>
-                    <OtpInput
-                      value={otpCode}
-                      onChange={setOtpCode}
-                      onComplete={(code) => handleVerifyOtp(code)}
-                      onResend={async () => {
-                        await sendEmailOtp(email, false);
-                      }}
-                      disabled={isSubmitting}
-                      isSubmitting={isSubmitting}
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* 3. Password Reset Flow */}
+        {/* 2. Password Reset Request Flow */}
         {mode === 'forgot_password' && (
           <div className="space-y-4">
             {resetSent ? (
@@ -489,8 +367,9 @@ export const SignInView: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => {
-                    setMode('password');
+                    setMode('signin');
                     setResetSent(false);
+                    setFieldErrors({});
                   }}
                   className="px-5 py-2 bg-surface-lowest hover:bg-surface border border-outline-variant text-xs font-semibold rounded-lg text-on-surface transition-colors cursor-pointer"
                 >
@@ -498,13 +377,13 @@ export const SignInView: React.FC = () => {
                 </button>
               </div>
             ) : (
-              <form onSubmit={handleSendPasswordReset} className="space-y-4">
+              <form noValidate onSubmit={handleSendPasswordReset} className="space-y-4">
                 <div>
                   <label
                     htmlFor="reset-email"
                     className="block text-xs font-semibold uppercase tracking-wider text-secondary mb-2 font-sans"
                   >
-                    Account Email Address
+                    Account Email Address <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
                     <Mail
@@ -514,39 +393,57 @@ export const SignInView: React.FC = () => {
                     <input
                       id="reset-email"
                       type="email"
-                      required
                       autoFocus
                       disabled={isSubmitting}
                       value={email}
                       onChange={(e) => {
                         setEmail(e.target.value);
+                        if (fieldErrors.email) setFieldErrors((prev) => ({ ...prev, email: undefined }));
                         if (errorMessage) setErrorMessage(null);
                       }}
                       placeholder="name@example.com"
-                      className="w-full pl-11 pr-4 py-3 bg-surface-low border border-outline-variant rounded-xl text-sm text-on-surface placeholder:text-secondary/60 focus:border-primary-container focus:ring-2 focus:ring-primary-container/20 focus:outline-none transition-all"
+                      className={`w-full pl-11 pr-4 py-3 bg-surface-low border rounded-xl text-sm text-on-surface placeholder:text-secondary/60 focus:outline-none transition-all ${getFieldValidationClass(
+                        !!fieldErrors.email
+                      )}`}
                     />
                   </div>
+                  {fieldErrors.email && (
+                    <p className="text-[11px] text-red-500 mt-1.5 flex items-center gap-1 animate-fade-in font-medium" role="alert">
+                      <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                      <span>{fieldErrors.email}</span>
+                    </p>
+                  )}
                 </div>
 
                 <div className="space-y-2 pt-2">
                   <button
                     type="submit"
-                    disabled={isSubmitting || !email}
-                    className="w-full py-3 px-5 bg-primary-container hover:bg-primary text-on-primary-container text-sm font-semibold uppercase tracking-wider rounded-xl shadow-sm transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
+                    disabled={isSubmitting}
+                    className="w-full py-3.5 px-5 bg-primary-container hover:bg-primary text-on-primary-container text-sm font-semibold uppercase tracking-wider rounded-xl shadow-sm transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
                   >
-                    <span>{isSubmitting ? 'Sending Reset Link...' : 'Send Password Reset Link'}</span>
-                    <ArrowRight className="w-4 h-4" aria-hidden="true" />
+                    {isSubmitting ? (
+                      <span className="flex items-center gap-2">
+                        <span>Sending reset link...</span>
+                        <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
+                      </span>
+                    ) : (
+                      <>
+                        <span>Send Password Reset Link</span>
+                        <ArrowRight className="w-4 h-4" aria-hidden="true" />
+                      </>
+                    )}
                   </button>
 
                   <button
                     type="button"
                     onClick={() => {
-                      setMode('password');
+                      setMode('signin');
                       setErrorMessage(null);
+                      setFieldErrors({});
                     }}
-                    className="w-full text-center text-xs font-medium text-secondary hover:text-on-surface transition-colors py-1.5 cursor-pointer"
+                    className="w-full py-2.5 text-center text-xs font-semibold text-secondary hover:text-on-surface transition-colors cursor-pointer"
                   >
-                    Cancel & Return to Sign In
+                    Cancel and Return to Sign In
                   </button>
                 </div>
               </form>

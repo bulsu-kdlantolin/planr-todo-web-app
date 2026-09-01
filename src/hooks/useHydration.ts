@@ -60,11 +60,13 @@ export function useHydration() {
               setIntention(profileData.intention);
               audioManager.setVolume(profileData.settings.soundVolume ?? 0.5);
             } else {
+              const meta = session.user.user_metadata;
               setUser({
-                name: session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'User',
-                title: 'Productivity User',
-                tagline: 'Simple Focus',
+                name: meta?.name || meta?.full_name || session.user.email?.split('@')[0] || 'User',
+                title: meta?.title || 'Productivity User',
+                tagline: meta?.tagline || 'Simple Focus',
                 email: session.user.email || '',
+                avatar: meta?.avatar_url || meta?.picture || meta?.avatar || undefined,
                 isLoggedIn: true
               });
             }

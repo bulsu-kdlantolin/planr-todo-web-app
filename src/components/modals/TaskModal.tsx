@@ -15,8 +15,10 @@ import {
   CheckCircle2,
   Trash2,
   Plus,
-  Clock
+  Clock,
+  AlertCircle
 } from 'lucide-react';
+import { triggerHapticFeedback, getFieldValidationClass } from '../../utils/validation';
 
 export const TaskModal: React.FC = () => {
   const taskModalOpen = useUIStore((state) => state.taskModalOpen);
@@ -28,15 +30,17 @@ export const TaskModal: React.FC = () => {
   const updateTask = useTaskStore((state) => state.updateTask);
 
   const [title, setTitle] = useState('');
+  const [titleError, setTitleError] = useState<string | null>(null);
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState<TaskCategory>('Work');
   const [priority, setPriority] = useState<PriorityLevel>('medium');
-  const [dueDate, setDueDate] = useState('');
+  const [dueDate, setDueDate] = useState<string>('');
   const [estimatedPomodoros, setEstimatedPomodoros] = useState(1);
   const [subtasks, setSubtasks] = useState<Subtask[]>([]);
   const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
 
   useEffect(() => {
+    setTitleError(null);
     if (editingTask) {
       setTitle(editingTask.title);
       setDescription(editingTask.description || '');
@@ -59,7 +63,7 @@ export const TaskModal: React.FC = () => {
   const handleAddSubtask = () => {
     if (!newSubtaskTitle.trim()) return;
     const newSub: Subtask = {
-      id: generateUUID('sub'),
+      id: generateUUID(),
       title: newSubtaskTitle.trim(),
       completed: false
     };
@@ -71,12 +75,16 @@ export const TaskModal: React.FC = () => {
     setSubtasks(subtasks.filter((s) => s.id !== id));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim()) return;
+    if (!title.trim()) {
+      triggerHapticFeedback();
+      setTitleError('Please enter a task title');
+      return;
+    }
 
     if (editingTask) {
-      await updateTask(editingTask.id, {
+      updateTask(editingTask.id, {
         title: title.trim(),
         description: description.trim() || undefined,
         category,
@@ -85,9 +93,9 @@ export const TaskModal: React.FC = () => {
         estimatedPomodoros,
         subtasks
       });
-      showToast('Task updated');
+      showToast('Task updated', 'success');
     } else {
-      await addTask({
+      addTask({
         title: title.trim(),
         description: description.trim() || undefined,
         category,
@@ -96,7 +104,7 @@ export const TaskModal: React.FC = () => {
         estimatedPomodoros,
         subtasks
       });
-      showToast('Task added');
+      showToast('Task added', 'success');
     }
     closeTaskModal();
   };
@@ -122,7 +130,7 @@ export const TaskModal: React.FC = () => {
       maxWidthClass="max-w-lg"
       icon={<Logo size="sm" showWordmark={false} />}
     >
-      <form onSubmit={handleSubmit} className="space-y-4 my-2">
+      <form noValidate onSubmit={handleSubmit} className="space-y-4 my-2">
         {/* Title Input */}
         <div>
           <label htmlFor="task-title-input" className="block text-xs font-semibold uppercase tracking-wider text-secondary mb-1 font-sans">
@@ -131,12 +139,22 @@ export const TaskModal: React.FC = () => {
           <input
             id="task-title-input"
             type="text"
-            required
             value={title}
-            onChange={(e) => setTitle(e.target.value)}
+            onChange={(e) => {
+              setTitle(e.target.value);
+              if (titleError) setTitleError(null);
+            }}
             placeholder="e.g. Write design documentation..."
-            className="w-full px-3.5 py-2.5 bg-surface-low border border-outline-variant rounded-md text-xs text-on-surface focus:border-primary-container focus:outline-none transition-colors shadow-card"
+            className={`w-full px-3.5 py-2.5 bg-surface-low border rounded-md text-xs text-on-surface transition-all shadow-card focus:outline-none ${getFieldValidationClass(
+              !!titleError
+            )}`}
           />
+          {titleError && (
+            <p className="text-[11px] text-red-500 mt-1.5 flex items-center gap-1 animate-fade-in font-medium" role="alert">
+              <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+              <span>{titleError}</span>
+            </p>
+          )}
         </div>
 
         {/* Description */}

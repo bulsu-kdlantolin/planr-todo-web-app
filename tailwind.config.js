@@ -73,6 +73,7 @@ export default {
         'pulse-halo': 'pulseHalo 4s infinite cubic-bezier(0.4, 0, 0.2, 1)',
         'fade-in': 'fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards',
         'scale-in': 'scaleIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+        'shake': 'shake 0.35s cubic-bezier(0.36, 0.07, 0.19, 0.97) both',
       },
       keyframes: {
         pulseHalo: {
@@ -87,6 +88,12 @@ export default {
         scaleIn: {
           from: { opacity: '0', transform: 'scale(0.96)' },
           to: { opacity: '1', transform: 'scale(1)' },
+        },
+        shake: {
+          '10%, 90%': { transform: 'translate3d(-2px, 0, 0)' },
+          '20%, 80%': { transform: 'translate3d(3px, 0, 0)' },
+          '30%, 50%, 70%': { transform: 'translate3d(-4px, 0, 0)' },
+          '40%, 60%': { transform: 'translate3d(4px, 0, 0)' },
         },
       }
     },

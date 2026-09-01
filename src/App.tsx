@@ -27,7 +27,7 @@ import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useHashRouter } from './hooks/useHashRouter';
 import { useDragDropRestore } from './hooks/useDragDropRestore';
 import { useThemeSync } from './hooks/useThemeSync';
-import { Upload } from 'lucide-react';
+import { Upload, Minimize2 } from 'lucide-react';
 
 export const App: React.FC = () => {
   // 1. Theme synchronization hook
@@ -50,6 +50,7 @@ export const App: React.FC = () => {
     mobileSidebarOpen,
     setMobileSidebarOpen,
     fullScreenMode,
+    toggleFullScreenMode,
     intentionModalOpen,
     closeIntentionModal
   } = useUIStore(
@@ -57,6 +58,7 @@ export const App: React.FC = () => {
       mobileSidebarOpen: state.mobileSidebarOpen,
       setMobileSidebarOpen: state.setMobileSidebarOpen,
       fullScreenMode: state.fullScreenMode,
+      toggleFullScreenMode: state.toggleFullScreenMode,
       intentionModalOpen: state.intentionModalOpen,
       closeIntentionModal: state.closeIntentionModal
     }))
@@ -72,7 +74,7 @@ export const App: React.FC = () => {
   }
 
   const isFullPageView = ['landing', 'signin', 'signup', 'onboarding', 'reset-password'].includes(activeView);
-  const showSidebar = !isFullPageView && !fullScreenMode;
+  const showSidebar = !isFullPageView;
 
   return (
     <div className="min-h-screen min-h-[100dvh] bg-surface text-on-surface font-sans antialiased transition-colors duration-200">
@@ -97,8 +99,22 @@ export const App: React.FC = () => {
         </div>
       )}
 
-      <div className="flex h-screen overflow-hidden">
-        {/* Left Desktop Sidebar Navigation */}
+      {/* Floating Exit Zen / Full Screen Button */}
+      {fullScreenMode && !isFullPageView && (
+        <button
+          type="button"
+          onClick={toggleFullScreenMode}
+          className="fixed top-4 left-4 z-50 flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-surface-lowest/95 backdrop-blur-md border border-outline-variant shadow-ambient text-xs font-semibold text-secondary hover:text-on-surface hover:bg-surface-low transition-all animate-fade-in cursor-pointer active:scale-95"
+          title="Exit Full Screen Mode (F)"
+          aria-label="Exit Full Screen Mode"
+        >
+          <Minimize2 className="w-3.5 h-3.5 text-primary" aria-hidden="true" />
+          <span>Exit Full Screen (F)</span>
+        </button>
+      )}
+
+      <div className="flex h-screen overflow-hidden relative">
+        {/* Left Desktop Sidebar Navigation with Smooth CSS Slide Animation */}
         {showSidebar && (
           <Sidebar
             mobileOpen={mobileSidebarOpen}
@@ -106,11 +122,13 @@ export const App: React.FC = () => {
           />
         )}
 
-        {/* Primary View Container with Suspense Fallback */}
+        {/* Primary View Container with Smooth Re-centering Margin Transition */}
         <main
           id="main-content"
           tabIndex={-1}
-          className="flex-1 overflow-y-auto overflow-x-hidden flex flex-col pb-20 md:pb-0 focus:outline-none"
+          className={`flex-1 overflow-y-auto overflow-x-hidden flex flex-col pb-20 md:pb-0 focus:outline-none transition-all duration-300 ease-in-out ${
+            !isFullPageView && !fullScreenMode ? 'lg:pl-64' : 'pl-0'
+          }`}
         >
           <Suspense
             fallback={

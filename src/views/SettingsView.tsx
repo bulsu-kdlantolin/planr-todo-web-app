@@ -29,8 +29,10 @@ import {
   CheckCircle2,
   Lock,
   KeyRound,
-  AlertCircle
+  AlertCircle,
+  Loader2
 } from 'lucide-react';
+import { triggerHapticFeedback, getFieldValidationClass } from '../utils/validation';
 
 export const SettingsView: React.FC = () => {
   const user = useMetaStore((state) => state.user);
@@ -56,6 +58,7 @@ export const SettingsView: React.FC = () => {
   // Password change state
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<{ newPassword?: string; confirmPassword?: string }>({});
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [passwordSuccess, setPasswordSuccess] = useState(false);
@@ -77,20 +80,30 @@ export const SettingsView: React.FC = () => {
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newPassword || !confirmPassword || isUpdatingPassword) return;
+    if (isUpdatingPassword) return;
 
-    if (newPassword.length < 6) {
-      setPasswordError('Password must be at least 6 characters long.');
-      return;
+    const errors: { newPassword?: string; confirmPassword?: string } = {};
+    if (!newPassword) {
+      errors.newPassword = 'Please enter a new password.';
+    } else if (newPassword.length < 6) {
+      errors.newPassword = 'Password must be at least 6 characters long.';
     }
 
-    if (newPassword !== confirmPassword) {
-      setPasswordError('Passwords do not match.');
+    if (!confirmPassword) {
+      errors.confirmPassword = 'Please confirm your new password.';
+    } else if (newPassword && confirmPassword && newPassword !== confirmPassword) {
+      errors.confirmPassword = 'Passwords do not match.';
+    }
+
+    if (Object.keys(errors).length > 0) {
+      triggerHapticFeedback();
+      setFieldErrors(errors);
       return;
     }
 
     setIsUpdatingPassword(true);
     setPasswordError(null);
+    setFieldErrors({});
 
     const { error } = await updatePassword(newPassword);
     setIsUpdatingPassword(false);
@@ -144,12 +157,16 @@ export const SettingsView: React.FC = () => {
       {/* User Profile & Auth Card */}
       <div className="bg-surface-lowest border border-outline-variant rounded-xl p-6 shadow-card flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center text-primary-container font-serif text-lg font-bold">
-            {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
+          <div className="w-14 h-14 rounded-full bg-surface-container flex items-center justify-center text-primary-container font-serif text-xl font-bold overflow-hidden border-2 border-outline-variant shadow-xs flex-shrink-0">
+            {user.avatar ? (
+              <img src={user.avatar} alt={user.name || 'User'} className="w-full h-full object-cover" />
+            ) : (
+              <span>{user.name ? user.name.charAt(0).toUpperCase() : 'U'}</span>
+            )}
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="font-serif text-lg font-semibold text-on-surface">{user.name}</h3>
+              <h3 className="font-serif text-lg font-semibold text-on-surface">{user.name || 'User'}</h3>
               {user.isLoggedIn && (
                 <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
                   <CheckCircle2 className="w-3 h-3" /> Signed In
@@ -167,7 +184,7 @@ export const SettingsView: React.FC = () => {
           <button
             type="button"
             onClick={() => setProfileModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded-md bg-surface-low hover:bg-surface-container border border-outline-variant text-xs font-semibold uppercase tracking-wider text-on-surface transition-colors"
+            className="flex items-center gap-2 px-4 py-2 rounded-md bg-surface-low hover:bg-surface-container border border-outline-variant text-xs font-semibold uppercase tracking-wider text-on-surface transition-colors cursor-pointer"
           >
             <User className="w-3.5 h-3.5" aria-hidden="true" />
             <span>Edit Profile</span>
@@ -181,7 +198,7 @@ export const SettingsView: React.FC = () => {
                 showToast('Signed out of Planr', 'info');
                 setActiveView('landing');
               }}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-md bg-surface-low hover:bg-surface-container text-red-600 dark:text-red-400 border border-outline-variant text-xs font-semibold uppercase tracking-wider transition-colors"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-md bg-surface-low hover:bg-surface-container text-red-600 dark:text-red-400 border border-outline-variant text-xs font-semibold uppercase tracking-wider transition-colors cursor-pointer"
               title="Sign Out"
             >
               <LogOut className="w-3.5 h-3.5" aria-hidden="true" />
@@ -191,7 +208,7 @@ export const SettingsView: React.FC = () => {
             <button
               type="button"
               onClick={() => setActiveView('signin')}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-md bg-primary-container text-on-primary-container hover:bg-primary text-xs font-semibold uppercase tracking-wider transition-colors shadow-sm"
+              className="flex items-center gap-1.5 px-4 py-2 rounded-md bg-primary-container text-on-primary-container hover:bg-primary text-xs font-semibold uppercase tracking-wider transition-colors shadow-sm cursor-pointer"
             >
               <LogIn className="w-3.5 h-3.5" aria-hidden="true" />
               <span>Sign In</span>
@@ -217,7 +234,7 @@ export const SettingsView: React.FC = () => {
               </div>
             </div>
           ) : (
-            <form onSubmit={handleChangePassword} className="space-y-4 max-w-xl">
+            <form noValidate onSubmit={handleChangePassword} className="space-y-4 max-w-xl">
               <p className="text-xs text-secondary">
                 Update your account password. Choose at least 6 characters.
               </p>
@@ -245,23 +262,31 @@ export const SettingsView: React.FC = () => {
                     htmlFor="settings-new-password"
                     className="block text-xs font-semibold uppercase tracking-wider text-secondary mb-1.5 font-sans"
                   >
-                    New Password
+                    New Password <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
                     <Lock className="w-4 h-4 text-secondary absolute left-3.5 top-1/2 -translate-y-1/2" />
                     <input
                       id="settings-new-password"
                       type="password"
-                      required
                       value={newPassword}
                       onChange={(e) => {
                         setNewPassword(e.target.value);
+                        if (fieldErrors.newPassword) setFieldErrors((prev) => ({ ...prev, newPassword: undefined }));
                         if (passwordError) setPasswordError(null);
                       }}
                       placeholder="••••••••"
-                      className="w-full pl-10 pr-3.5 py-2.5 bg-surface-low border border-outline-variant rounded-lg text-xs text-on-surface focus:border-primary-container focus:ring-2 focus:ring-primary-container/20 focus:outline-none transition-all"
+                      className={`w-full pl-10 pr-3.5 py-2.5 bg-surface-low border rounded-lg text-xs text-on-surface focus:outline-none transition-all ${getFieldValidationClass(
+                        !!fieldErrors.newPassword
+                      )}`}
                     />
                   </div>
+                  {fieldErrors.newPassword && (
+                    <p className="text-[11px] text-red-500 mt-1.5 flex items-center gap-1 animate-fade-in font-medium" role="alert">
+                      <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                      <span>{fieldErrors.newPassword}</span>
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -269,33 +294,48 @@ export const SettingsView: React.FC = () => {
                     htmlFor="settings-confirm-password"
                     className="block text-xs font-semibold uppercase tracking-wider text-secondary mb-1.5 font-sans"
                   >
-                    Confirm Password
+                    Confirm Password <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
                     <Lock className="w-4 h-4 text-secondary absolute left-3.5 top-1/2 -translate-y-1/2" />
                     <input
                       id="settings-confirm-password"
                       type="password"
-                      required
                       value={confirmPassword}
                       onChange={(e) => {
                         setConfirmPassword(e.target.value);
+                        if (fieldErrors.confirmPassword) setFieldErrors((prev) => ({ ...prev, confirmPassword: undefined }));
                         if (passwordError) setPasswordError(null);
                       }}
                       placeholder="••••••••"
-                      className="w-full pl-10 pr-3.5 py-2.5 bg-surface-low border border-outline-variant rounded-lg text-xs text-on-surface focus:border-primary-container focus:ring-2 focus:ring-primary-container/20 focus:outline-none transition-all"
+                      className={`w-full pl-10 pr-3.5 py-2.5 bg-surface-low border rounded-lg text-xs text-on-surface focus:outline-none transition-all ${getFieldValidationClass(
+                        !!fieldErrors.confirmPassword
+                      )}`}
                     />
                   </div>
+                  {fieldErrors.confirmPassword && (
+                    <p className="text-[11px] text-red-500 mt-1.5 flex items-center gap-1 animate-fade-in font-medium" role="alert">
+                      <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                      <span>{fieldErrors.confirmPassword}</span>
+                    </p>
+                  )}
                 </div>
               </div>
 
               <div className="pt-1">
                 <button
                   type="submit"
-                  disabled={isUpdatingPassword || !newPassword}
-                  className="px-5 py-2.5 bg-primary-container text-on-primary-container hover:bg-primary rounded-md text-xs font-semibold uppercase tracking-wider transition-colors shadow-sm disabled:opacity-50"
+                  disabled={isUpdatingPassword}
+                  className="px-5 py-2.5 bg-primary-container text-on-primary-container hover:bg-primary rounded-md text-xs font-semibold uppercase tracking-wider transition-colors shadow-sm disabled:opacity-50 flex items-center gap-2 cursor-pointer"
                 >
-                  {isUpdatingPassword ? 'Updating Password...' : 'Save New Password'}
+                  {isUpdatingPassword ? (
+                    <span className="flex items-center gap-2">
+                      <span>Updating password...</span>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" />
+                    </span>
+                  ) : (
+                    <span>Save New Password</span>
+                  )}
                 </button>
               </div>
             </form>
@@ -479,11 +519,20 @@ export const SettingsView: React.FC = () => {
           </div>
 
           <label className="flex items-center gap-2 px-4 py-2 bg-primary-container text-on-primary-container hover:bg-primary rounded-md text-xs font-semibold uppercase tracking-wider cursor-pointer shadow-sm transition-all active:scale-[0.98]">
-            <Upload className="w-3.5 h-3.5" aria-hidden="true" />
-            <span>{importing ? 'Restoring...' : 'Import JSON'}</span>
+            {importing ? (
+              <span className="flex items-center gap-2">
+                <span>Restoring backup...</span>
+                <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" />
+              </span>
+            ) : (
+              <>
+                <Upload className="w-3.5 h-3.5" aria-hidden="true" />
+                <span>Import JSON</span>
+              </>
+            )}
             <input
               type="file"
-              accept=".json"
+              accept=".json,application/json"
               onChange={handleImportFile}
               disabled={importing}
               className="hidden"

@@ -55,9 +55,11 @@ export const useMetaStore = create<MetaState>((set, get) => ({
 
     const userId = await getUserId();
     if (userId) {
-      upsertUserProfileDb(userId, updated).catch((err) =>
-        console.error('Failed to sync profile update to Supabase:', err)
-      );
+      try {
+        await upsertUserProfileDb(userId, updates);
+      } catch (err) {
+        console.error('Failed to sync profile update to Supabase:', err);
+      }
     }
   },
 
@@ -74,9 +76,11 @@ export const useMetaStore = create<MetaState>((set, get) => ({
 
     const userId = await getUserId();
     if (userId) {
-      upsertUserProfileDb(userId, undefined, updated).catch((err) =>
-        console.error('Failed to sync settings update to Supabase:', err)
-      );
+      try {
+        await upsertUserProfileDb(userId, undefined, updates);
+      } catch (err) {
+        console.error('Failed to sync settings update to Supabase:', err);
+      }
     }
   },
 
@@ -85,9 +89,11 @@ export const useMetaStore = create<MetaState>((set, get) => ({
 
     const userId = await getUserId();
     if (userId) {
-      upsertUserProfileDb(userId, undefined, undefined, newIntention).catch((err) =>
-        console.error('Failed to sync intention to Supabase:', err)
-      );
+      try {
+        await upsertUserProfileDb(userId, undefined, undefined, newIntention);
+      } catch (err) {
+        console.error('Failed to sync intention to Supabase:', err);
+      }
     }
   },
 

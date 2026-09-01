@@ -206,9 +206,6 @@ export const LandingView: React.FC = () => {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-outline-subtle mb-6">
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <span className="text-[10px] font-bold text-secondary uppercase tracking-widest font-sans">
-                  Interactive Workspace Demo
-                </span>
                 <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 dark:bg-emerald-400 animate-pulse" />
                   Live Preview
