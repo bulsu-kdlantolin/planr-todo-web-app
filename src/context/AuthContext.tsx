@@ -35,7 +35,7 @@ interface AuthContextType {
   resendVerificationEmail: (email: string) => Promise<{ error: Error | null }>;
   sendPasswordResetEmail: (email: string) => Promise<{ error: Error | null }>;
   updatePassword: (newPassword: string) => Promise<{ error: Error | null }>;
-  signOut: () => Promise<{ error: Error | null }>;
+  signOut: (scope?: 'local' | 'global') => Promise<{ error: Error | null }>;
   refreshData: () => Promise<void>;
 }
 
@@ -110,7 +110,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       subscribeToUserRealtime(userId);
     } catch (err) {
-      console.error('Error hydrating user data on auth event:', err);
+      console.error('Failed to hydrate user cloud data:', err);
     }
   };
 
@@ -177,10 +177,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email: trimmedEmail, password });
+      const { data, error } = await supabase.auth.signInWithPassword({ 
+        email: trimmedEmail, 
+        password 
+      });
       if (error) {
         return { error: new Error(formatFriendlyAuthError(error)) };
       }
+      
+      if (data.user) {
+        await hydrateUserData(data.user.id, data.user);
+      }
+      
       return { error: null };
     } catch (err: any) {
       return { error: new Error(formatFriendlyAuthError(err)) };
@@ -209,57 +217,21 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       });
 
       if (error) {
-        return { error: new Error(formatFriendlyAuthError(error)), needsEmailConfirmation: false };
+        return { error: new Error(formatFriendlyAuthError(error)) };
       }
 
-      if (data?.user) {
-        const isConfirmed = Boolean(data.user.email_confirmed_at);
-        const hasNoIdentities = Array.isArray(data.user.identities) && data.user.identities.length === 0;
-
-        // Calculate creation age
-        const createdAt = data.user.created_at ? new Date(data.user.created_at).getTime() : Date.now();
-        const confirmationSentAt = data.user.confirmation_sent_at
-          ? new Date(data.user.confirmation_sent_at).getTime()
-          : createdAt;
-        const isOldAccount = confirmationSentAt - createdAt > 10000 || Date.now() - createdAt > 20000;
-
-        // Scenario 1: Account already exists and is confirmed, or returned empty identities
-        if (hasNoIdentities || isConfirmed) {
-          return {
-            error: new Error('An account with this email address already exists. Please sign in instead.'),
-            needsEmailConfirmation: false
-          };
-        }
-
-        // Scenario 2: Account was registered earlier but remains unconfirmed
-        if (isOldAccount) {
-          return {
-            error: new Error('An account with this email is already registered. A fresh verification link has been sent to your email.'),
-            needsEmailConfirmation: true,
-            isExistingUnconfirmed: true
-          };
-        }
-
-        // Scenario 3: New account with immediate active session (email confirmation off / auto-confirmed)
-        if (data.session) {
-          updateUserMeta({
-            email: data.user.email || trimmedEmail,
-            name: name || data.user.user_metadata?.name || trimmedEmail.split('@')[0] || 'User',
-            isLoggedIn: true
-          });
-          setSession(data.session);
-          setUser(data.user);
-          hydrateUserData(data.user.id, data.user);
-          return { error: null, needsEmailConfirmation: false };
-        }
-
-        // Scenario 4: New account requiring email confirmation
-        return { error: null, needsEmailConfirmation: true };
+      if (data.user && data.user.identities && data.user.identities.length === 0) {
+        return { error: null, isExistingUnconfirmed: true };
       }
 
-      return { error: null, needsEmailConfirmation: false };
+      const needsConfirmation = !data.session;
+      if (data.user && data.session) {
+        await hydrateUserData(data.user.id, data.user);
+      }
+
+      return { error: null, needsEmailConfirmation: needsConfirmation };
     } catch (err: any) {
-      return { error: new Error(formatFriendlyAuthError(err)), needsEmailConfirmation: false };
+      return { error: new Error(formatFriendlyAuthError(err)) };
     }
   };
 
@@ -318,6 +290,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     type: OtpVerificationType = 'email'
   ) => {
     const trimmedEmail = email.trim();
+    const trimmedToken = token.trim();
+    
     if (!isConfigured) {
       updateUserMeta({
         email: trimmedEmail,
@@ -328,23 +302,25 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
 
     try {
+      let otpType: 'signup' | 'recovery' | 'magiclink' | 'email' = 'email';
+      if (type === 'signup') otpType = 'signup';
+      else if (type === 'recovery') otpType = 'recovery';
+      else if (type === 'magiclink') otpType = 'magiclink';
+
       const { data, error } = await supabase.auth.verifyOtp({
         email: trimmedEmail,
-        token: token.trim(),
-        type: type as any
+        token: trimmedToken,
+        type: otpType
       });
 
       if (error) {
         return { error: new Error(formatFriendlyAuthError(error)) };
       }
 
-      if (data?.session) {
-        setSession(data.session);
-        setUser(data.user);
-        if (data.user?.id) {
-          hydrateUserData(data.user.id, data.user);
-        }
+      if (data.user) {
+        await hydrateUserData(data.user.id, data.user);
       }
+      
       return { error: null };
     } catch (err: any) {
       return { error: new Error(formatFriendlyAuthError(err)) };
@@ -429,10 +405,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  const signOut = async () => {
+  const signOut = async (scope: 'local' | 'global' = 'local') => {
     unsubscribeFromUserRealtime();
     if (isConfigured) {
-      await supabase.auth.signOut();
+      await supabase.auth.signOut({ scope });
     }
     setMetaUser({
       name: '',

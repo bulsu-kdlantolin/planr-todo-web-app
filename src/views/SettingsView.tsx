@@ -145,7 +145,7 @@ export const SettingsView: React.FC = () => {
   const isOAuthUser = session?.user?.app_metadata?.provider === 'google';
 
   return (
-    <div className="max-w-4xl mx-auto px-6 py-8 animate-fade-in space-y-8">
+    <div className="max-w-5xl mx-auto px-6 py-8 animate-fade-in space-y-8">
       {/* Header */}
       <div className="pb-5 border-b border-outline-subtle">
         <h1 className="font-serif text-3xl sm:text-4xl font-semibold text-on-surface">Settings</h1>
@@ -340,6 +340,28 @@ export const SettingsView: React.FC = () => {
               </div>
             </form>
           )}
+
+          {/* Active Sessions & Security Controls */}
+          <div className="pt-4 border-t border-outline-subtle flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <p className="text-xs font-semibold text-on-surface">Active Device Sessions</p>
+              <p className="text-[11px] text-secondary">
+                Revoke access tokens and sign out of Planr across all phones, tablets, and computers.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={async () => {
+                await signOut('global');
+                showToast('Signed out of all devices', 'info');
+                setActiveView('landing');
+              }}
+              className="flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-md bg-surface-low hover:bg-surface-container text-red-600 dark:text-red-400 border border-outline-variant text-xs font-semibold uppercase tracking-wider transition-colors cursor-pointer"
+            >
+              <LogOut className="w-3.5 h-3.5" aria-hidden="true" />
+              <span>Sign Out All Devices</span>
+            </button>
+          </div>
         </div>
       )}
 

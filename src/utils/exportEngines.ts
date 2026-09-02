@@ -96,7 +96,22 @@ completed_tasks: ${tasks.filter((t) => t.completed).length}
 }
 
 /**
- * Export tasks to CSV format
+ * Sanitize cell values against CSV formula injection (CWE-1236)
+ */
+function sanitizeCSVField(value: string | number | boolean | undefined | null): string {
+  if (value === undefined || value === null) return '""';
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+
+  let str = String(value);
+  const formulaTriggers = ['=', '+', '-', '@', '\t', '\r'];
+  if (str.length > 0 && formulaTriggers.includes(str.charAt(0))) {
+    str = `'${str}`;
+  }
+  return `"${str.replace(/"/g, '""')}"`;
+}
+
+/**
+ * Export tasks to CSV format with formula injection protection
  */
 export function exportToCSV(tasks: Task[]): string {
   const headers = [
@@ -112,16 +127,16 @@ export function exportToCSV(tasks: Task[]): string {
     'Created At'
   ];
   const rows = tasks.map((t) => [
-    `"${t.id}"`,
-    `"${t.title.replace(/"/g, '""')}"`,
-    `"${(t.description || '').replace(/"/g, '""')}"`,
-    `"${t.category}"`,
-    `"${t.priority}"`,
-    `"${t.dueDate || ''}"`,
-    `"${t.completed ? 'YES' : 'NO'}"`,
+    sanitizeCSVField(t.id),
+    sanitizeCSVField(t.title),
+    sanitizeCSVField(t.description),
+    sanitizeCSVField(t.category),
+    sanitizeCSVField(t.priority),
+    sanitizeCSVField(t.dueDate),
+    sanitizeCSVField(t.completed ? 'YES' : 'NO'),
     t.estimatedPomodoros || 1,
     t.completedPomodoros || 0,
-    `"${t.createdAt}"`
+    sanitizeCSVField(t.createdAt)
   ]);
 
   return [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');

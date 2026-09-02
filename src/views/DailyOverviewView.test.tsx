@@ -21,7 +21,7 @@ describe('DailyOverviewView Component', () => {
   it('renders daily greeting and intention card', () => {
     render(<DailyOverviewView />);
     expect(screen.getByText(/Alex/i)).toBeDefined();
-    expect(screen.getByText(/Today's Intention/i)).toBeDefined();
+    expect(screen.getByText(/Today's Main Focus/i)).toBeDefined();
     expect(screen.getAllByText(/Tasks Completed/i).length).toBeGreaterThan(0);
   });
 

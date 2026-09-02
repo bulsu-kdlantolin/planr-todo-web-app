@@ -28,11 +28,11 @@ export const IntentionModal: React.FC<IntentionModalProps> = ({ isOpen, onClose 
     e.preventDefault();
     if (!value.trim()) {
       triggerHapticFeedback();
-      setIntentionError('Please set a focus or grounding intention for today');
+      setIntentionError('Please enter your main focus for today');
       return;
     }
     await updateIntention(value.trim());
-    showToast('Daily grounding intention updated', 'success');
+    showToast('Daily focus updated', 'success');
     onClose();
   };
 
@@ -40,7 +40,7 @@ export const IntentionModal: React.FC<IntentionModalProps> = ({ isOpen, onClose 
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Daily Intention"
+      title="Daily Focus"
       titleId="intention-modal-title"
       maxWidthClass="max-w-md"
       icon={<Logo size="sm" showWordmark={false} />}
@@ -48,7 +48,7 @@ export const IntentionModal: React.FC<IntentionModalProps> = ({ isOpen, onClose 
       <form noValidate onSubmit={handleSubmit} className="space-y-4 my-2">
         <div>
           <label htmlFor="daily-intention-input" className="block text-xs font-semibold text-secondary uppercase tracking-wider mb-2">
-            Set your grounding thought or primary focus <span className="text-red-500">*</span>
+            What is your main priority today? <span className="text-red-500">*</span>
           </label>
           <textarea
             id="daily-intention-input"
@@ -58,7 +58,7 @@ export const IntentionModal: React.FC<IntentionModalProps> = ({ isOpen, onClose 
               setValue(e.target.value);
               if (intentionError) setIntentionError(null);
             }}
-            placeholder="e.g. Move through the day with stillness, clarity, and deep focus..."
+            placeholder="e.g. Complete the design draft and review team feedback"
             className={`w-full px-3.5 py-2.5 bg-surface-low border rounded-md text-sm text-on-surface font-serif italic resize-y transition-all focus:outline-none ${getFieldValidationClass(
               !!intentionError
             )}`}
@@ -83,7 +83,7 @@ export const IntentionModal: React.FC<IntentionModalProps> = ({ isOpen, onClose 
             type="submit"
             className="px-5 py-2 text-xs font-medium bg-primary-container text-on-primary-container hover:bg-primary rounded-md shadow-sm transition-all"
           >
-            Save Intention
+            Save Focus
           </button>
         </div>
       </form>

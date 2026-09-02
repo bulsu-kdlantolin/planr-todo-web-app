@@ -160,10 +160,10 @@ export const DailyOverviewView: React.FC = () => {
             <Sparkles className="w-4 h-4 text-tertiary flex-shrink-0 mt-0.5" aria-hidden="true" />
             <div className="min-w-0">
               <span className="text-[10px] font-semibold uppercase tracking-wider text-secondary block font-sans">
-                Today's Intention
+                Today's Main Focus
               </span>
               <p className="font-serif text-sm italic text-on-surface truncate">
-                "{intention || 'Stay present and focused.'}"
+                "{intention || 'Work on what matters most today.'}"
               </p>
             </div>
           </div>
@@ -172,7 +172,7 @@ export const DailyOverviewView: React.FC = () => {
             <button
               type="button"
               onClick={handleShareIntention}
-              aria-label="Share or download focus goal quote card"
+              aria-label="Download focus quote card"
               className="p-1.5 text-secondary hover:text-on-surface rounded hover:bg-surface-container transition-colors"
               title="Download Quote Card"
             >
@@ -181,9 +181,9 @@ export const DailyOverviewView: React.FC = () => {
             <button
               type="button"
               onClick={openIntentionModal}
-              aria-label="Edit daily focus intention"
+              aria-label="Edit daily focus"
               className="p-1.5 text-secondary hover:text-on-surface rounded hover:bg-surface-container transition-colors"
-              title="Edit Intention"
+              title="Edit Focus"
             >
               <Edit2 className="w-3.5 h-3.5" aria-hidden="true" />
             </button>
@@ -197,7 +197,7 @@ export const DailyOverviewView: React.FC = () => {
           <div className="flex items-center gap-2.5 text-xs font-semibold">
             <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0" aria-hidden="true" />
             <span>
-              You have {overdueTasks.length} overdue {overdueTasks.length === 1 ? 'task' : 'tasks'} carried forward to today's focus queue.
+              You have {overdueTasks.length} overdue {overdueTasks.length === 1 ? 'task' : 'tasks'} from previous days.
             </span>
           </div>
           <button

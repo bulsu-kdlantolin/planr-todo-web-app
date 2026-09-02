@@ -54,18 +54,18 @@ export const OnboardingView: React.FC = () => {
     if (seedSampleData) {
       const todayStr = getTodayDateString();
       await addTask({
-        title: 'Review quarterly goals & key priorities',
+        title: 'Plan priorities for the day',
         category: 'Work',
         priority: 'urgent',
         estimatedPomodoros: 2,
         dueDate: todayStr,
         subtasks: [
-          { id: 'sub-1', title: 'Review completed initiatives', completed: true },
-          { id: 'sub-2', title: 'Highlight 3 primary targets for the week', completed: false }
+          { id: 'sub-1', title: 'Review completed items', completed: true },
+          { id: 'sub-2', title: 'Write down 3 primary targets for the day', completed: false }
         ]
       });
       await addTask({
-        title: 'Calibrate design tokens & accessibility checks',
+        title: 'Review project layout and design',
         category: 'Design',
         priority: 'high',
         estimatedPomodoros: 1,
@@ -73,7 +73,7 @@ export const OnboardingView: React.FC = () => {
         subtasks: []
       });
       await addTask({
-        title: 'Take a 15-minute mindful outdoor break',
+        title: 'Take a 15-minute walk outside',
         category: 'Mindful',
         priority: 'medium',
         estimatedPomodoros: 1,
@@ -81,7 +81,7 @@ export const OnboardingView: React.FC = () => {
         subtasks: []
       });
       await addReminder({
-        title: 'Daily Afternoon Hydration & Posture Reset',
+        title: 'Afternoon break & stretch',
         time: '14:30',
         period: 'Afternoon',
         repeat: 'Daily',
@@ -120,10 +120,10 @@ export const OnboardingView: React.FC = () => {
       <div className="w-full max-w-lg sm:max-w-xl bg-surface-lowest border border-outline-variant rounded-2xl p-8 sm:p-12 shadow-card space-y-7">
         <div className="text-center space-y-2">
           <h1 className="font-serif text-2xl sm:text-3xl font-semibold text-on-surface tracking-tight">
-            Set up your focus space
+            Set up your workspace
           </h1>
           <p className="text-sm text-secondary font-sans max-w-sm mx-auto">
-            A 30-second setup to calibrate your daily rhythm.
+            A quick 30-second setup to get your workspace ready.
           </p>
         </div>
 
@@ -150,7 +150,7 @@ export const OnboardingView: React.FC = () => {
           {/* Title or Role */}
           <div>
             <label htmlFor="onboarding-title" className="block text-xs font-semibold uppercase tracking-wider text-secondary mb-2 font-sans">
-              Your Craft / Focus Area (e.g. Software Engineer, Designer, Writer)
+              Your Role (e.g. Designer, Engineer, Student, Writer)
             </label>
             <div className="relative">
               <Briefcase className="w-4 h-4 text-secondary absolute left-4 top-1/2 -translate-y-1/2" aria-hidden="true" />
@@ -159,7 +159,7 @@ export const OnboardingView: React.FC = () => {
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="e.g. Architect, Designer, Writer"
+                placeholder="e.g. Designer, Engineer, Writer"
                 className="w-full pl-11 pr-4 py-3 bg-surface-low border border-outline-variant rounded-xl text-sm text-on-surface placeholder:text-secondary/60 focus:border-primary-container focus:ring-2 focus:ring-primary-container/20 focus:outline-none transition-all"
               />
             </div>
@@ -168,7 +168,7 @@ export const OnboardingView: React.FC = () => {
           {/* Core Daily Intention */}
           <div>
             <label htmlFor="onboarding-goal" className="block text-xs font-semibold uppercase tracking-wider text-secondary mb-2 font-sans">
-              Today's Core Intention
+              Today's Main Focus
             </label>
             <div className="relative">
               <Quote className="w-4 h-4 text-secondary absolute left-4 top-3.5" aria-hidden="true" />
@@ -177,16 +177,16 @@ export const OnboardingView: React.FC = () => {
                 rows={2}
                 value={goal}
                 onChange={(e) => setGoal(e.target.value)}
-                placeholder="e.g. Ship the new landing page with zero distractions"
+                placeholder="e.g. Ship the new feature with zero distractions"
                 className="w-full pl-11 pr-4 py-2.5 bg-surface-low border border-outline-variant rounded-xl text-sm text-on-surface placeholder:text-secondary/60 focus:border-primary-container focus:ring-2 focus:ring-primary-container/20 focus:outline-none transition-all resize-none"
               />
             </div>
           </div>
 
-          {/* Preferred Focus Rhythm Duration */}
+          {/* Preferred Focus Duration */}
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider text-secondary mb-2 font-sans">
-              Preferred Focus Session Duration
+              Default Focus Duration
             </label>
             <div className="grid grid-cols-2 gap-3">
               <button
@@ -202,7 +202,7 @@ export const OnboardingView: React.FC = () => {
                   <Clock className="w-4 h-4 text-tertiary" />
                   <span>25 Minutes</span>
                 </div>
-                <p className="text-xs text-secondary mt-0.5 font-sans">Standard Pomodoro interval</p>
+                <p className="text-xs text-secondary mt-0.5 font-sans">Standard 25-minute block</p>
               </button>
 
               <button
@@ -218,7 +218,7 @@ export const OnboardingView: React.FC = () => {
                   <Clock className="w-4 h-4 text-tertiary" />
                   <span>50 Minutes</span>
                 </div>
-                <p className="text-xs text-secondary mt-0.5 font-sans">Deep immersive blocks</p>
+                <p className="text-xs text-secondary mt-0.5 font-sans">50-minute deep work block</p>
               </button>
             </div>
           </div>
@@ -228,8 +228,8 @@ export const OnboardingView: React.FC = () => {
             <div className="flex items-center gap-2.5">
               <Layers className="w-4 h-4 text-tertiary" />
               <div>
-                <p className="text-xs font-semibold text-on-surface">Explore with sample tasks</p>
-                <p className="text-[11px] text-secondary">Populate 3 starter tasks & a daily reminder</p>
+                <p className="text-xs font-semibold text-on-surface">Include starter tasks</p>
+                <p className="text-[11px] text-secondary">Add 3 sample tasks and a reminder to get started</p>
               </div>
             </div>
             <input

@@ -188,7 +188,7 @@ export const LandingView: React.FC = () => {
             onClick={() => setActiveView('signup')}
             className="flex items-center gap-2 px-8 py-3.5 bg-primary-container text-on-primary-container hover:bg-primary rounded-xl text-base font-semibold shadow-md transition-all active:scale-[0.98]"
           >
-            <span>Start Focusing — Free</span>
+            <span>Start Free</span>
             <ArrowRight className="w-4 h-4" aria-hidden="true" />
           </button>
           <button
@@ -494,7 +494,7 @@ export const LandingView: React.FC = () => {
           )}
 
           <p className="text-xs text-secondary mt-5 text-center italic font-serif">
-            Try clicking the controls above to experience Planr's calm rhythm live.
+            Click the buttons above to test the timer and task list live.
           </p>
         </div>
       </section>
@@ -504,10 +504,10 @@ export const LandingView: React.FC = () => {
         <div className="max-w-5xl mx-auto">
           <div className="text-center max-w-2xl mx-auto mb-16">
             <span className="text-xs font-semibold text-secondary uppercase tracking-widest block mb-2 font-sans">
-              Essential Focus Tools
+              How It Works
             </span>
             <h2 className="font-serif text-3xl sm:text-4xl font-semibold text-on-surface">
-              Essential tools for deep work. Zero clutter.
+              A simpler way to run your day.
             </h2>
           </div>
 
@@ -517,10 +517,10 @@ export const LandingView: React.FC = () => {
                 <SunMedium className="w-5 h-5 text-tertiary" aria-hidden="true" />
               </div>
               <h3 className="font-serif text-xl font-semibold text-on-surface">
-                🌅 One Intention, Three Priorities
+                One Goal, Three Priorities
               </h3>
               <p className="text-sm text-secondary leading-relaxed font-sans">
-                Eliminate the endless backlog trap. Set a single focus intention each morning, queue your top 3 needle-moving tasks, and celebrate true completion.
+                Avoid the endless backlog trap. Set a single daily focus, pick your top 3 tasks, and finish the day with peace of mind.
               </p>
             </div>
 
@@ -529,10 +529,10 @@ export const LandingView: React.FC = () => {
                 <Headphones className="w-5 h-5 text-tertiary" aria-hidden="true" />
               </div>
               <h3 className="font-serif text-xl font-semibold text-on-surface">
-                🧘 Calming Ambient Soundscapes
+                Built-in Background Sounds
               </h3>
               <p className="text-sm text-secondary leading-relaxed font-sans">
-                Tune your focus with relaxing tones and nature sounds. Choose from deep calm, mental clarity, balanced focus, soft rain, forest breeze, and pink noise.
+                Block out distractions with gentle sounds. Choose from soft rain, forest breeze, ocean waves, pink noise, or calming focus tones.
               </p>
             </div>
 
@@ -541,10 +541,10 @@ export const LandingView: React.FC = () => {
                 <Smartphone className="w-5 h-5 text-tertiary" aria-hidden="true" />
               </div>
               <h3 className="font-serif text-xl font-semibold text-on-surface">
-                ☁️ Automatic Sync & Clean Exports
+                Device Sync & Clean Exports
               </h3>
               <p className="text-sm text-secondary leading-relaxed font-sans">
-                Your schedule and focus history stay synced across your phone, tablet, and computer. Download clean Markdown notes or spreadsheets anytime.
+                Your tasks and focus history stay synced across your phone, tablet, and computer. Export your notes to Markdown or spreadsheets anytime.
               </p>
             </div>
 
@@ -553,10 +553,10 @@ export const LandingView: React.FC = () => {
                 <Clock className="w-5 h-5 text-tertiary" aria-hidden="true" />
               </div>
               <h3 className="font-serif text-xl font-semibold text-on-surface">
-                ⚡ Precise & Distraction-Free Timer
+                Reliable Focus Timer
               </h3>
               <p className="text-sm text-secondary leading-relaxed font-sans">
-                Stay in flow with customizable intervals, gentle sound cues, and a distraction-free countdown that keeps ticking accurately even when minimized.
+                Stay in flow with customizable intervals, gentle chimes, and a countdown that keeps running accurately even when you switch tabs.
               </p>
             </div>
           </div>
@@ -665,10 +665,10 @@ export const LandingView: React.FC = () => {
       <section className="py-20 px-6 max-w-4xl mx-auto text-center space-y-6">
         <Feather className="w-8 h-8 text-tertiary mx-auto" aria-hidden="true" />
         <h2 className="font-serif text-3xl sm:text-4xl font-semibold text-on-surface">
-          Plan with intention. Focus without noise.
+          Clear your head. Focus on what matters.
         </h2>
         <p className="text-base text-secondary max-w-2xl mx-auto leading-relaxed font-sans">
-          Most task managers overwhelm you with complicated boards and notifications. Planr gives you a clean, simple space to organize your day and focus on what matters.
+          Most task managers slow you down with bloated menus and endless settings. Planr gives you a straightforward workspace to plan your day, stay focused, and get things done.
         </p>
 
         <div className="pt-6">
@@ -688,7 +688,7 @@ export const LandingView: React.FC = () => {
           <div className="flex items-center">
             <Logo size="sm" />
           </div>
-          <p>© {new Date().getFullYear()} Planr. Intentional, distraction-free productivity.</p>
+          <p>© {new Date().getFullYear()} Planr. Simple, distraction-free productivity.</p>
         </div>
       </footer>
     </div>
