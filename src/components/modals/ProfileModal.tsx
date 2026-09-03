@@ -57,9 +57,9 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
     reader.onload = (event) => {
       const img = new Image();
       img.onload = () => {
-        // Optimize & resize image on canvas (256x256 square)
+        // Optimize & resize image on canvas (128x128 square for compact ~5KB storage)
         const canvas = document.createElement('canvas');
-        const maxSize = 256;
+        const maxSize = 128;
         let width = img.width;
         let height = img.height;
 
@@ -72,7 +72,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
         const ctx = canvas.getContext('2d');
         if (ctx) {
           ctx.drawImage(img, startX, startY, size, size, 0, 0, maxSize, maxSize);
-          const optimizedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+          const optimizedDataUrl = canvas.toDataURL('image/jpeg', 0.8);
           setAvatar(optimizedDataUrl);
           showToast('Photo selected! Click Save to apply 📷', 'info');
         }

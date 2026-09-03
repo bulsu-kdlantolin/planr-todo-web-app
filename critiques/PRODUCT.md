@@ -320,6 +320,11 @@ To maintain zero defect leakage across future development cycles, the following 
 | **P1** | `qa-expert` | **Security** | Add strict Content-Security-Policy header in production. | `vercel.json` | **Completed ✅** |
 | **P1** | `qa-expert` | **IAM** | Implement Global Session Revocation (`signOut('global')`) for all active devices. | `src/context/AuthContext.tsx`, `src/views/SettingsView.tsx` | **Completed ✅** |
 | **P2** | `ui-ux-tester` | **UX Polish** | Add hover tooltips & clear active badges for Solfeggio frequencies (`432Hz`, `528Hz`, `639Hz`). | `src/views/FocusView.tsx` | **Completed ✅** |
+| **P1** | `ui-ux-tester` | **UX & Forms** | Add show/hide password toggle icons, place forgot password link below input, normalize form width to `max-w-md` & standardize component spacing gaps. | Auth Views & Modals | **Completed ✅** |
+| **P0** | `ui-ux-tester` | **UX & Auth** | Remove focus ring container from password eye toggle, fix stacking context to keep input left icons visible during errors, disallow password reset for Google accounts, and ensure profile picture persistence across sign-out and sign-in. | Auth Views, SettingsView, ProfileModal, AuthContext | **Completed ✅** |
+| **P1** | `ui-ux-tester` | **UX & Security** | Implement 4-stage dynamic password strength indicator with criteria checklist and smooth color transitions when creating an account. | `SignUpView.tsx`, `AuthModal.tsx`, `PasswordStrengthIndicator.tsx` | **Completed ✅** |
+| **P0** | `qa-expert` | **Supabase & OAuth** | Fix schema column mismatch in `profiles` upsert (`title`/`tagline` stored in JSONB `settings`), and prevent Google OAuth sign-in from wiping custom user avatars. | `src/lib/supabase/profiles.ts`, `src/context/AuthContext.tsx`, `src/store/useMetaStore.ts` | **Completed ✅** |
+| **P1** | `ui-ux-tester` | **Dual Auth & IAM** | Enable Google OAuth accounts to set an account password in Settings for hybrid email/password + OAuth login. | `SettingsView.tsx`, `AuthContext.tsx` | **Completed ✅** |
 
 ---
 

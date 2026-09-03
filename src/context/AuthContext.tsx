@@ -73,6 +73,26 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const hydrateUserData = async (userId: string, currentSessionUser: User) => {
     try {
+      // Record Google provider to prevent unauthorized password resets
+      const isGoogle =
+        currentSessionUser.app_metadata?.provider === 'google' ||
+        currentSessionUser.app_metadata?.providers?.includes('google') ||
+        currentSessionUser.identities?.some((id: any) => id.provider === 'google');
+      if (isGoogle && currentSessionUser.email) {
+        try {
+          localStorage.setItem(`planr_oauth_provider_${currentSessionUser.email.toLowerCase()}`, 'google');
+        } catch {}
+      }
+
+      // Check localStorage fallback for profile avatar
+      let localAvatar: string | undefined = undefined;
+      try {
+        localAvatar =
+          localStorage.getItem(`planr_avatar_${userId}`) ||
+          (currentSessionUser.email ? localStorage.getItem(`planr_avatar_${currentSessionUser.email.toLowerCase()}`) : null) ||
+          undefined;
+      } catch {}
+
       const [profileData, tasks, reminders, focusSessions] = await Promise.all([
         fetchUserProfile(userId),
         fetchUserTasks(userId),
@@ -80,16 +100,46 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         fetchUserFocusSessions(userId)
       ]);
 
+      const meta = currentSessionUser.user_metadata;
+      // Custom avatar explicitly set by user MUST take precedence over Google's OAuth avatar!
+      const customAvatar =
+        profileData?.profile?.avatar ||
+        (profileData?.settings as any)?.custom_avatar ||
+        localStorage.getItem(`planr_custom_avatar_${userId}`) ||
+        (currentSessionUser.email ? localStorage.getItem(`planr_custom_avatar_${currentSessionUser.email.toLowerCase()}`) : null);
+
+      const resolvedAvatar =
+        customAvatar ||
+        meta?.avatar_url ||
+        meta?.picture ||
+        meta?.avatar ||
+        localAvatar;
+
+      if (resolvedAvatar) {
+        try {
+          if (customAvatar) {
+            localStorage.setItem(`planr_custom_avatar_${userId}`, resolvedAvatar);
+            if (currentSessionUser.email) {
+              localStorage.setItem(`planr_custom_avatar_${currentSessionUser.email.toLowerCase()}`, resolvedAvatar);
+            }
+          }
+          localStorage.setItem(`planr_avatar_${userId}`, resolvedAvatar);
+          if (currentSessionUser.email) {
+            localStorage.setItem(`planr_avatar_${currentSessionUser.email.toLowerCase()}`, resolvedAvatar);
+          }
+        } catch {}
+      }
+
       if (profileData) {
         setMetaUser({
           ...profileData.profile,
+          avatar: resolvedAvatar,
           email: currentSessionUser.email || profileData.profile.email,
           isLoggedIn: true
         });
         setSettings(profileData.settings);
         setIntention(profileData.intention);
       } else {
-        const meta = currentSessionUser.user_metadata;
         setMetaUser({
           name:
             meta?.name ||
@@ -99,7 +149,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           title: meta?.title || 'Productivity User',
           tagline: meta?.tagline || 'Simple Focus',
           email: currentSessionUser.email || '',
-          avatar: meta?.avatar_url || meta?.picture || meta?.avatar || undefined,
+          avatar: resolvedAvatar,
           isLoggedIn: true
         });
       }
@@ -350,6 +400,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const sendPasswordResetEmail = async (email: string) => {
     const trimmedEmail = email.trim();
+
+    // Check if account was created using Google OAuth
+    const knownProvider = localStorage.getItem(`planr_oauth_provider_${trimmedEmail.toLowerCase()}`);
+    if (knownProvider === 'google') {
+      return {
+        error: new Error('This account was registered using Google. Password reset is not permitted for Google accounts — please sign in with Google.')
+      };
+    }
+
     if (!isConfigured) {
       return { error: null };
     }
@@ -374,10 +433,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     try {
       const { error } = await supabase.auth.updateUser({
-        password: newPassword
+        password: newPassword,
+        data: {
+          has_password: true
+        }
       });
       if (error) {
         return { error: new Error(formatFriendlyAuthError(error)) };
+      }
+      if (session?.user?.id) {
+        try {
+          localStorage.setItem(`planr_has_password_${session.user.id}`, 'true');
+        } catch {}
       }
       return { error: null };
     } catch (err: any) {

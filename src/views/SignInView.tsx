@@ -11,7 +11,9 @@ import {
   Clock,
   Loader2,
   CheckCircle2,
-  RefreshCw
+  RefreshCw,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { triggerHapticFeedback, getFieldValidationClass } from '../utils/validation';
 
@@ -32,6 +34,7 @@ export const SignInView: React.FC = () => {
   const [mode, setMode] = useState<SignInMode>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({});
   const [resetSent, setResetSent] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
@@ -136,6 +139,14 @@ export const SignInView: React.FC = () => {
       return;
     }
 
+    // Check if this email is a known Google OAuth account
+    const knownProvider = localStorage.getItem(`planr_oauth_provider_${cleanEmail.toLowerCase()}`);
+    if (knownProvider === 'google') {
+      triggerHapticFeedback();
+      setErrorMessage('This account was registered using Google. Password reset is not available for Google accounts — please sign in with Google.');
+      return;
+    }
+
     setIsSubmitting(true);
     setErrorMessage(null);
     setFieldErrors({});
@@ -184,13 +195,13 @@ export const SignInView: React.FC = () => {
         </button>
       </div>
 
-      {/* Main Authentication Card */}
-      <div className="w-full max-w-lg sm:max-w-xl bg-surface-lowest border border-outline-variant rounded-2xl p-8 sm:p-12 shadow-card space-y-6">
-        <div className="text-center space-y-2">
+      {/* Main Authentication Card with standard balanced width and spacing */}
+      <div className="w-full max-w-md bg-surface-lowest border border-outline-variant rounded-2xl p-6 sm:p-8 shadow-card space-y-5">
+        <div className="text-center space-y-1.5">
           <h1 className="font-serif text-2xl sm:text-3xl font-semibold text-on-surface tracking-tight">
             {mode === 'forgot_password' ? 'Reset your password' : 'Welcome back'}
           </h1>
-          <p className="text-sm text-secondary font-sans max-w-sm mx-auto">
+          <p className="text-xs sm:text-sm text-secondary font-sans max-w-xs mx-auto">
             {mode === 'forgot_password'
               ? 'We will send a password reset link to your email address.'
               : 'Sign in to access your focused workspace and daily schedule.'}
@@ -201,9 +212,9 @@ export const SignInView: React.FC = () => {
           <div
             role="alert"
             aria-live="polite"
-            className="p-4 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded-xl space-y-2.5 text-red-800 dark:text-red-300 animate-fade-in"
+            className="p-3.5 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded-xl space-y-2 text-red-800 dark:text-red-300 animate-fade-in"
           >
-            <div className="flex items-center gap-2.5 text-xs font-semibold">
+            <div className="flex items-center gap-2 text-xs font-semibold">
               <AlertCircle className="w-4 h-4 flex-shrink-0 text-red-600 dark:text-red-400" aria-hidden="true" />
               <span>{errorMessage}</span>
             </div>
@@ -243,13 +254,13 @@ export const SignInView: React.FC = () => {
             <div>
               <label
                 htmlFor="signin-email"
-                className="block text-xs font-semibold uppercase tracking-wider text-secondary mb-2 font-sans"
+                className="block text-xs font-semibold uppercase tracking-wider text-secondary mb-1.5 font-sans"
               >
                 Email Address <span className="text-red-500">*</span>
               </label>
               <div className="relative">
                 <Mail
-                  className="w-4 h-4 text-secondary absolute left-4 top-1/2 -translate-y-1/2"
+                  className="z-10 w-4 h-4 text-secondary absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
                   aria-hidden="true"
                 />
                 <input
@@ -264,7 +275,7 @@ export const SignInView: React.FC = () => {
                     if (errorMessage) setErrorMessage(null);
                   }}
                   placeholder="name@example.com"
-                  className={`w-full pl-11 pr-4 py-3 bg-surface-low border rounded-xl text-sm text-on-surface placeholder:text-secondary/60 focus:outline-none transition-all disabled:opacity-50 ${getFieldValidationClass(
+                  className={`w-full pl-10 pr-4 py-2.5 sm:py-3 bg-surface-low border rounded-xl text-sm text-on-surface placeholder:text-secondary/60 focus:outline-none transition-all disabled:opacity-50 ${getFieldValidationClass(
                     !!fieldErrors.email
                   )}`}
                 />
@@ -278,33 +289,20 @@ export const SignInView: React.FC = () => {
             </div>
 
             <div>
-              <div className="flex items-center justify-between mb-2">
-                <label
-                  htmlFor="signin-password"
-                  className="block text-xs font-semibold uppercase tracking-wider text-secondary font-sans"
-                >
-                  Password <span className="text-red-500">*</span>
-                </label>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMode('forgot_password');
-                    setErrorMessage(null);
-                    setFieldErrors({});
-                  }}
-                  className="text-xs text-primary hover:text-primary-container hover:underline transition-colors cursor-pointer"
-                >
-                  Forgot password?
-                </button>
-              </div>
+              <label
+                htmlFor="signin-password"
+                className="block text-xs font-semibold uppercase tracking-wider text-secondary mb-1.5 font-sans"
+              >
+                Password <span className="text-red-500">*</span>
+              </label>
               <div className="relative">
                 <Lock
-                  className="w-4 h-4 text-secondary absolute left-4 top-1/2 -translate-y-1/2"
+                  className="z-10 w-4 h-4 text-secondary absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
                   aria-hidden="true"
                 />
                 <input
                   id="signin-password"
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   disabled={isSubmitting || isLockedOut}
                   value={password}
                   onChange={(e) => {
@@ -313,10 +311,23 @@ export const SignInView: React.FC = () => {
                     if (errorMessage) setErrorMessage(null);
                   }}
                   placeholder="••••••••"
-                  className={`w-full pl-11 pr-4 py-3 bg-surface-low border rounded-xl text-sm text-on-surface placeholder:text-secondary/60 focus:outline-none transition-all disabled:opacity-50 ${getFieldValidationClass(
+                  className={`w-full pl-10 pr-11 py-2.5 sm:py-3 bg-surface-low border rounded-xl text-sm text-on-surface placeholder:text-secondary/60 focus:outline-none transition-all disabled:opacity-50 ${getFieldValidationClass(
                     !!fieldErrors.password
                   )}`}
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  disabled={isSubmitting || isLockedOut}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  className="z-10 absolute right-3.5 top-1/2 -translate-y-1/2 text-secondary hover:text-on-surface transition-colors cursor-pointer border-none bg-transparent p-0 outline-none focus:outline-none focus:ring-0 select-none"
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-4 h-4" aria-hidden="true" />
+                  ) : (
+                    <Eye className="w-4 h-4" aria-hidden="true" />
+                  )}
+                </button>
               </div>
               {fieldErrors.password && (
                 <p className="text-[11px] text-red-500 mt-1.5 flex items-center gap-1 animate-fade-in font-medium" role="alert">
@@ -324,13 +335,28 @@ export const SignInView: React.FC = () => {
                   <span>{fieldErrors.password}</span>
                 </p>
               )}
+
+              {/* Forgot password anchor link placed directly below password input */}
+              <div className="flex justify-end mt-1.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMode('forgot_password');
+                    setErrorMessage(null);
+                    setFieldErrors({});
+                  }}
+                  className="text-xs text-primary hover:text-primary-container hover:underline transition-colors cursor-pointer font-medium"
+                >
+                  Forgot password?
+                </button>
+              </div>
             </div>
 
-            <div className="pt-2">
+            <div className="pt-1">
               <button
                 type="submit"
                 disabled={isSubmitting || authLoading || isLockedOut}
-                className="w-full py-3.5 px-5 bg-primary-container hover:bg-primary text-on-primary-container text-sm font-semibold uppercase tracking-wider rounded-xl shadow-sm transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed"
+                className="w-full py-3 px-5 bg-primary-container hover:bg-primary text-on-primary-container text-sm font-semibold uppercase tracking-wider rounded-xl shadow-sm transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed"
               >
                 {isSubmitting ? (
                   <span className="flex items-center gap-2">
@@ -381,13 +407,13 @@ export const SignInView: React.FC = () => {
                 <div>
                   <label
                     htmlFor="reset-email"
-                    className="block text-xs font-semibold uppercase tracking-wider text-secondary mb-2 font-sans"
+                    className="block text-xs font-semibold uppercase tracking-wider text-secondary mb-1.5 font-sans"
                   >
                     Account Email Address <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
                     <Mail
-                      className="w-4 h-4 text-secondary absolute left-4 top-1/2 -translate-y-1/2"
+                      className="z-10 w-4 h-4 text-secondary absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
                       aria-hidden="true"
                     />
                     <input
@@ -402,7 +428,7 @@ export const SignInView: React.FC = () => {
                         if (errorMessage) setErrorMessage(null);
                       }}
                       placeholder="name@example.com"
-                      className={`w-full pl-11 pr-4 py-3 bg-surface-low border rounded-xl text-sm text-on-surface placeholder:text-secondary/60 focus:outline-none transition-all ${getFieldValidationClass(
+                      className={`w-full pl-10 pr-4 py-2.5 sm:py-3 bg-surface-low border rounded-xl text-sm text-on-surface placeholder:text-secondary/60 focus:outline-none transition-all ${getFieldValidationClass(
                         !!fieldErrors.email
                       )}`}
                     />
@@ -415,11 +441,11 @@ export const SignInView: React.FC = () => {
                   )}
                 </div>
 
-                <div className="space-y-2 pt-2">
+                <div className="space-y-2 pt-1">
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="w-full py-3.5 px-5 bg-primary-container hover:bg-primary text-on-primary-container text-sm font-semibold uppercase tracking-wider rounded-xl shadow-sm transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
+                    className="w-full py-3 px-5 bg-primary-container hover:bg-primary text-on-primary-container text-sm font-semibold uppercase tracking-wider rounded-xl shadow-sm transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
                   >
                     {isSubmitting ? (
                       <span className="flex items-center gap-2">
@@ -441,7 +467,7 @@ export const SignInView: React.FC = () => {
                       setErrorMessage(null);
                       setFieldErrors({});
                     }}
-                    className="w-full py-2.5 text-center text-xs font-semibold text-secondary hover:text-on-surface transition-colors cursor-pointer"
+                    className="w-full py-2 text-center text-xs font-semibold text-secondary hover:text-on-surface transition-colors cursor-pointer"
                   >
                     Cancel and Return to Sign In
                   </button>
@@ -453,7 +479,7 @@ export const SignInView: React.FC = () => {
 
         {/* Google OAuth Button */}
         {mode !== 'forgot_password' && (
-          <div className="space-y-4 pt-2">
+          <div className="space-y-3.5 pt-1">
             <div className="relative text-center">
               <hr className="border-outline-subtle" />
               <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-surface-lowest px-3 text-xs text-secondary font-sans">

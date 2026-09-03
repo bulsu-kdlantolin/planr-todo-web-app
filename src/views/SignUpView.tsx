@@ -11,8 +11,11 @@ import {
   Clock,
   Loader2,
   MailCheck,
-  RefreshCw
+  RefreshCw,
+  Eye,
+  EyeOff
 } from 'lucide-react';
+import { PasswordStrengthIndicator } from '../components/auth/PasswordStrengthIndicator';
 import { triggerHapticFeedback, getFieldValidationClass } from '../utils/validation';
 
 export const SignUpView: React.FC = () => {
@@ -28,6 +31,7 @@ export const SignUpView: React.FC = () => {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({});
   const [needsConfirmation, setNeedsConfirmation] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
@@ -160,20 +164,20 @@ export const SignUpView: React.FC = () => {
         </button>
       </div>
 
-      {/* Main Sign Up Card */}
-      <div className="w-full max-w-lg sm:max-w-xl bg-surface-lowest border border-outline-variant rounded-2xl p-8 sm:p-12 shadow-card space-y-6">
+      {/* Main Sign Up Card with balanced width and spacing */}
+      <div className="w-full max-w-md bg-surface-lowest border border-outline-variant rounded-2xl p-6 sm:p-8 shadow-card space-y-5">
         {/* Email Verification Required Screen */}
         {needsConfirmation ? (
-          <div className="text-center space-y-6 py-2 animate-fade-in">
-            <div className="w-16 h-16 rounded-2xl bg-primary-container/20 border border-primary-container/40 flex items-center justify-center text-primary mx-auto">
-              <MailCheck className="w-8 h-8 text-primary" aria-hidden="true" />
+          <div className="text-center space-y-5 py-2 animate-fade-in">
+            <div className="w-14 h-14 rounded-2xl bg-primary-container/20 border border-primary-container/40 flex items-center justify-center text-primary mx-auto">
+              <MailCheck className="w-7 h-7 text-primary" aria-hidden="true" />
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <h1 className="font-serif text-2xl sm:text-3xl font-semibold text-on-surface tracking-tight">
                 Verify your email
               </h1>
-              <p className="text-sm text-secondary font-sans max-w-md mx-auto leading-relaxed">
+              <p className="text-xs sm:text-sm text-secondary font-sans max-w-xs mx-auto leading-relaxed">
                 We've sent a verification link to <span className="font-semibold text-on-surface">{email}</span>. Click the link in the email to activate your account.
               </p>
             </div>
@@ -182,18 +186,18 @@ export const SignUpView: React.FC = () => {
               <div
                 role="alert"
                 aria-live="polite"
-                className="p-4 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded-xl flex items-center gap-2.5 text-xs font-semibold text-red-800 dark:text-red-300 animate-fade-in text-left"
+                className="p-3.5 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded-xl flex items-center gap-2 text-xs font-semibold text-red-800 dark:text-red-300 animate-fade-in text-left"
               >
                 <AlertCircle className="w-4 h-4 flex-shrink-0 text-red-600 dark:text-red-400" aria-hidden="true" />
                 <span>{errorMessage}</span>
               </div>
             )}
 
-            <div className="space-y-3 pt-2">
+            <div className="space-y-2.5 pt-1">
               <button
                 type="button"
                 onClick={() => setActiveView('signin')}
-                className="w-full py-3.5 px-5 bg-primary-container hover:bg-primary text-on-primary-container text-sm font-semibold uppercase tracking-wider rounded-xl shadow-sm transition-all active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full py-3 px-5 bg-primary-container hover:bg-primary text-on-primary-container text-sm font-semibold uppercase tracking-wider rounded-xl shadow-sm transition-all active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer"
               >
                 <span>Proceed to Sign In</span>
                 <ArrowRight className="w-4 h-4" aria-hidden="true" />
@@ -203,7 +207,7 @@ export const SignUpView: React.FC = () => {
                 type="button"
                 onClick={handleResendConfirmation}
                 disabled={isSubmitting || resendCooldown > 0}
-                className="w-full py-3 px-4 bg-surface-low hover:bg-surface-container border border-outline-variant text-secondary hover:text-on-surface text-xs font-semibold uppercase tracking-wider rounded-xl transition-all disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full py-2.5 px-4 bg-surface-low hover:bg-surface-container border border-outline-variant text-secondary hover:text-on-surface text-xs font-semibold uppercase tracking-wider rounded-xl transition-all disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
               >
                 {isSubmitting ? (
                   <span className="flex items-center gap-2">
@@ -225,11 +229,11 @@ export const SignUpView: React.FC = () => {
           </div>
         ) : (
           <>
-            <div className="text-center space-y-2">
+            <div className="text-center space-y-1.5">
               <h1 className="font-serif text-2xl sm:text-3xl font-semibold text-on-surface tracking-tight">
                 Create your account
               </h1>
-              <p className="text-sm text-secondary font-sans max-w-sm mx-auto">
+              <p className="text-xs sm:text-sm text-secondary font-sans max-w-xs mx-auto">
                 Start organizing your days with intentional focus and clarity.
               </p>
             </div>
@@ -238,7 +242,7 @@ export const SignUpView: React.FC = () => {
               <div
                 role="alert"
                 aria-live="polite"
-                className="p-4 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded-xl flex items-center gap-2.5 text-xs font-semibold text-red-800 dark:text-red-300 animate-fade-in"
+                className="p-3.5 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded-xl flex items-center gap-2 text-xs font-semibold text-red-800 dark:text-red-300 animate-fade-in"
               >
                 <AlertCircle className="w-4 h-4 flex-shrink-0 text-red-600 dark:text-red-400" aria-hidden="true" />
                 <span>{errorMessage}</span>
@@ -250,13 +254,13 @@ export const SignUpView: React.FC = () => {
               <div>
                 <label
                   htmlFor="signup-email"
-                  className="block text-xs font-semibold uppercase tracking-wider text-secondary mb-2 font-sans"
+                  className="block text-xs font-semibold uppercase tracking-wider text-secondary mb-1.5 font-sans"
                 >
                   Email Address <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <Mail
-                    className="w-4 h-4 text-secondary absolute left-4 top-1/2 -translate-y-1/2"
+                    className="z-10 w-4 h-4 text-secondary absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
                     aria-hidden="true"
                   />
                   <input
@@ -271,7 +275,7 @@ export const SignUpView: React.FC = () => {
                       if (errorMessage) setErrorMessage(null);
                     }}
                     placeholder="name@example.com"
-                    className={`w-full pl-11 pr-4 py-3 bg-surface-low border rounded-xl text-sm text-on-surface placeholder:text-secondary/60 focus:outline-none transition-all disabled:opacity-50 ${getFieldValidationClass(
+                    className={`w-full pl-10 pr-4 py-2.5 sm:py-3 bg-surface-low border rounded-xl text-sm text-on-surface placeholder:text-secondary/60 focus:outline-none transition-all disabled:opacity-50 ${getFieldValidationClass(
                       !!fieldErrors.email
                     )}`}
                   />
@@ -287,18 +291,18 @@ export const SignUpView: React.FC = () => {
               <div>
                 <label
                   htmlFor="signup-password"
-                  className="block text-xs font-semibold uppercase tracking-wider text-secondary mb-2 font-sans"
+                  className="block text-xs font-semibold uppercase tracking-wider text-secondary mb-1.5 font-sans"
                 >
                   Create Password <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <Lock
-                    className="w-4 h-4 text-secondary absolute left-4 top-1/2 -translate-y-1/2"
+                    className="z-10 w-4 h-4 text-secondary absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
                     aria-hidden="true"
                   />
                   <input
                     id="signup-password"
-                    type="password"
+                    type={showPassword ? 'text' : 'password'}
                     disabled={isSubmitting || isLockedOut}
                     value={password}
                     onChange={(e) => {
@@ -307,10 +311,23 @@ export const SignUpView: React.FC = () => {
                       if (errorMessage) setErrorMessage(null);
                     }}
                     placeholder="At least 6 characters"
-                    className={`w-full pl-11 pr-4 py-3 bg-surface-low border rounded-xl text-sm text-on-surface placeholder:text-secondary/60 focus:outline-none transition-all disabled:opacity-50 ${getFieldValidationClass(
+                    className={`w-full pl-10 pr-11 py-2.5 sm:py-3 bg-surface-low border rounded-xl text-sm text-on-surface placeholder:text-secondary/60 focus:outline-none transition-all disabled:opacity-50 ${getFieldValidationClass(
                       !!fieldErrors.password
                     )}`}
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    disabled={isSubmitting || isLockedOut}
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    className="z-10 absolute right-3.5 top-1/2 -translate-y-1/2 text-secondary hover:text-on-surface transition-colors cursor-pointer border-none bg-transparent p-0 outline-none focus:outline-none focus:ring-0 select-none"
+                  >
+                    {showPassword ? (
+                      <EyeOff className="w-4 h-4" aria-hidden="true" />
+                    ) : (
+                      <Eye className="w-4 h-4" aria-hidden="true" />
+                    )}
+                  </button>
                 </div>
                 {fieldErrors.password && (
                   <p className="text-[11px] text-red-500 mt-1.5 flex items-center gap-1 animate-fade-in font-medium" role="alert">
@@ -318,13 +335,16 @@ export const SignUpView: React.FC = () => {
                     <span>{fieldErrors.password}</span>
                   </p>
                 )}
+
+                {/* Password Strength Indicator */}
+                <PasswordStrengthIndicator password={password} />
               </div>
 
-              <div className="pt-2">
+              <div className="pt-1">
                 <button
                   type="submit"
                   disabled={isSubmitting || authLoading || isLockedOut}
-                  className="w-full py-3.5 px-5 bg-primary-container hover:bg-primary text-on-primary-container text-sm font-semibold uppercase tracking-wider rounded-xl shadow-sm transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed"
+                  className="w-full py-3 px-5 bg-primary-container hover:bg-primary text-on-primary-container text-sm font-semibold uppercase tracking-wider rounded-xl shadow-sm transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed"
                 >
                   {isSubmitting ? (
                     <span className="flex items-center gap-2">
@@ -346,7 +366,7 @@ export const SignUpView: React.FC = () => {
             </form>
 
             {/* Google OAuth Button */}
-            <div className="space-y-4 pt-2">
+            <div className="space-y-3.5 pt-1">
               <div className="relative text-center">
                 <hr className="border-outline-subtle" />
                 <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-surface-lowest px-3 text-xs text-secondary font-sans">

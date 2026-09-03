@@ -53,8 +53,36 @@ export const useMetaStore = create<MetaState>((set, get) => ({
     const updated: UserProfile = { ...get().user, ...updates };
     set({ user: updated });
 
+    if (updates.avatar !== undefined) {
+      try {
+        const email = updated.email?.trim().toLowerCase();
+        if (updates.avatar) {
+          if (email) {
+            localStorage.setItem(`planr_custom_avatar_${email}`, updates.avatar);
+            localStorage.setItem(`planr_avatar_${email}`, updates.avatar);
+          }
+        } else {
+          if (email) {
+            localStorage.removeItem(`planr_custom_avatar_${email}`);
+            localStorage.removeItem(`planr_avatar_${email}`);
+          }
+        }
+      } catch {}
+    }
+
     const userId = await getUserId();
     if (userId) {
+      if (updates.avatar !== undefined) {
+        try {
+          if (updates.avatar) {
+            localStorage.setItem(`planr_custom_avatar_${userId}`, updates.avatar);
+            localStorage.setItem(`planr_avatar_${userId}`, updates.avatar);
+          } else {
+            localStorage.removeItem(`planr_custom_avatar_${userId}`);
+            localStorage.removeItem(`planr_avatar_${userId}`);
+          }
+        } catch {}
+      }
       try {
         await upsertUserProfileDb(userId, updates);
       } catch (err) {

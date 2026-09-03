@@ -74,7 +74,51 @@ export async function fetchUserProfile(
     console.warn('Error reading session user metadata:', e);
   }
 
-  const resolvedAvatar = data?.avatar_url ?? authAvatar ?? undefined;
+  // 1. Check for custom avatar in DB profiles table (both avatar_url and settings.custom_avatar)
+  const dbCustomAvatar =
+    (data?.avatar_url && data.avatar_url.trim()) ||
+    ((data?.settings as any)?.custom_avatar && (data?.settings as any)?.custom_avatar.trim()) ||
+    undefined;
+
+  // 2. Check local custom avatar cache (keyed by userId or authEmail)
+  let localCustomAvatar: string | undefined = undefined;
+  let localAvatar: string | undefined = undefined;
+  try {
+    localCustomAvatar =
+      localStorage.getItem(`planr_custom_avatar_${userId}`) ||
+      (authEmail ? localStorage.getItem(`planr_custom_avatar_${authEmail.toLowerCase()}`) : null) ||
+      undefined;
+    localAvatar =
+      localStorage.getItem(`planr_avatar_${userId}`) ||
+      (authEmail ? localStorage.getItem(`planr_avatar_${authEmail.toLowerCase()}`) : null) ||
+      undefined;
+  } catch (e) {
+    console.warn('Error reading local custom avatar fallback:', e);
+  }
+
+  // A custom avatar (from DB or local custom cache) ALWAYS beats the generic Google OAuth picture!
+  // Only fall back to Google OAuth avatar (authAvatar) if the user has never set a custom avatar.
+  const resolvedAvatar =
+    dbCustomAvatar ||
+    localCustomAvatar ||
+    authAvatar ||
+    localAvatar;
+
+  // Keep local storage cache fresh
+  if (resolvedAvatar) {
+    try {
+      if (dbCustomAvatar || localCustomAvatar) {
+        localStorage.setItem(`planr_custom_avatar_${userId}`, resolvedAvatar);
+        if (authEmail) {
+          localStorage.setItem(`planr_custom_avatar_${authEmail.toLowerCase()}`, resolvedAvatar);
+        }
+      }
+      localStorage.setItem(`planr_avatar_${userId}`, resolvedAvatar);
+      if (authEmail) {
+        localStorage.setItem(`planr_avatar_${authEmail.toLowerCase()}`, resolvedAvatar);
+      }
+    } catch {}
+  }
 
   if (!data) {
     if (authEmail) {
@@ -97,8 +141,8 @@ export async function fetchUserProfile(
   return {
     profile: {
       name: data.name || authName || '',
-      title: data.title || authTitle || 'Productivity User',
-      tagline: data.tagline || authTagline || 'Simple Focus',
+      title: data.title || (data.settings as any)?.title || authTitle || 'Productivity User',
+      tagline: data.tagline || (data.settings as any)?.tagline || authTagline || 'Simple Focus',
       email: data.email || authEmail || '',
       avatar: resolvedAvatar,
       isLoggedIn: true
@@ -107,7 +151,7 @@ export async function fetchUserProfile(
       ...DEFAULT_SETTINGS,
       ...(data.settings || {})
     },
-    intention: data.intention || ''
+    intention: data.intention || (data.settings as any)?.intention || ''
   };
 }
 
@@ -119,46 +163,100 @@ export async function upsertUserProfileDb(
 ): Promise<boolean> {
   if (!isSupabaseConfigured() || !userId) return true;
 
-  const payload: Record<string, any> = {
-    id: userId,
-    updated_at: new Date().toISOString()
-  };
-
-  if (profileUpdates) {
-    if (profileUpdates.name !== undefined) payload.name = profileUpdates.name;
-    if (profileUpdates.title !== undefined) payload.title = profileUpdates.title;
-    if (profileUpdates.tagline !== undefined) payload.tagline = profileUpdates.tagline;
-    if (profileUpdates.email !== undefined) payload.email = profileUpdates.email;
-    if ('avatar' in profileUpdates) {
-      payload.avatar_url = profileUpdates.avatar || null;
+  // 1. Cache to localStorage immediately for instant durability across OAuth logins
+  if (profileUpdates && 'avatar' in profileUpdates) {
+    try {
+      if (profileUpdates.avatar) {
+        localStorage.setItem(`planr_custom_avatar_${userId}`, profileUpdates.avatar);
+        localStorage.setItem(`planr_avatar_${userId}`, profileUpdates.avatar);
+        if (profileUpdates.email) {
+          const lowerEmail = profileUpdates.email.toLowerCase();
+          localStorage.setItem(`planr_custom_avatar_${lowerEmail}`, profileUpdates.avatar);
+          localStorage.setItem(`planr_avatar_${lowerEmail}`, profileUpdates.avatar);
+        }
+      } else {
+        localStorage.removeItem(`planr_custom_avatar_${userId}`);
+        localStorage.removeItem(`planr_avatar_${userId}`);
+        if (profileUpdates.email) {
+          const lowerEmail = profileUpdates.email.toLowerCase();
+          localStorage.removeItem(`planr_custom_avatar_${lowerEmail}`);
+          localStorage.removeItem(`planr_avatar_${lowerEmail}`);
+        }
+      }
+    } catch (cacheErr) {
+      console.warn('Error caching avatar to localStorage:', cacheErr);
     }
   }
-  if (intentionUpdate !== undefined) payload.intention = intentionUpdate;
-  if (settingsUpdates !== undefined) payload.settings = settingsUpdates;
 
-  // 1. Persist to Supabase profiles table
+  // 2. Fetch current settings so we preserve existing JSONB settings & extended profile fields
+  let currentSettings: Record<string, any> = { ...DEFAULT_SETTINGS };
+  try {
+    const { data: existingProfile } = await supabase
+      .from('profiles')
+      .select('settings')
+      .eq('id', userId)
+      .maybeSingle();
+    if (existingProfile?.settings) {
+      currentSettings = { ...currentSettings, ...existingProfile.settings };
+    }
+  } catch {}
+
+  const mergedSettings = {
+    ...currentSettings,
+    ...(settingsUpdates || {}),
+    ...(profileUpdates?.title !== undefined ? { title: profileUpdates.title } : {}),
+    ...(profileUpdates?.tagline !== undefined ? { tagline: profileUpdates.tagline } : {}),
+    ...(intentionUpdate !== undefined ? { intention: intentionUpdate } : {}),
+    ...(profileUpdates && 'avatar' in profileUpdates
+      ? { custom_avatar: profileUpdates.avatar || null, has_custom_avatar: Boolean(profileUpdates.avatar) }
+      : {})
+  };
+
+  // 3. Build strictly valid payload matching columns that exist in public.profiles:
+  // (id, name, email, avatar_url, settings, updated_at)
+  const payload: Record<string, any> = {
+    id: userId,
+    updated_at: new Date().toISOString(),
+    settings: mergedSettings
+  };
+
+  if (profileUpdates?.name !== undefined) payload.name = profileUpdates.name;
+  if (profileUpdates?.email !== undefined) payload.email = profileUpdates.email;
+  if (profileUpdates && 'avatar' in profileUpdates) {
+    payload.avatar_url = profileUpdates.avatar || null;
+  }
+
+  // 4. Persist to Supabase profiles table
   const { error } = await supabase.from('profiles').upsert(payload);
 
   if (error) {
     console.error('Error upserting profile in Supabase profiles table:', error);
-    // If the error was due to missing avatar_url column in an older database migration:
-    if (payload.avatar_url && error.message?.toLowerCase().includes('avatar_url')) {
-      const fallbackPayload = { ...payload };
-      delete fallbackPayload.avatar_url;
-      await supabase.from('profiles').upsert(fallbackPayload);
+    // If error occurs, retry with minimal safe payload
+    const safePayload: Record<string, any> = {
+      id: userId,
+      updated_at: new Date().toISOString()
+    };
+    if (payload.avatar_url !== undefined) safePayload.avatar_url = payload.avatar_url;
+    if (payload.name) safePayload.name = payload.name;
+    if (payload.settings) safePayload.settings = payload.settings;
+    const { error: retryError } = await supabase.from('profiles').upsert(safePayload);
+    if (retryError) {
+      console.error('Retry upsert profile in Supabase failed:', retryError);
     }
   }
 
-  // 2. Also persist to Supabase Auth user_metadata so avatar is dual-stored & survives reloads
+  // 5. Also persist to Supabase Auth user_metadata so avatar is dual-stored & survives reloads
   try {
     const metaUpdates: Record<string, any> = {};
     if (profileUpdates?.name !== undefined) metaUpdates.name = profileUpdates.name;
     if (profileUpdates?.title !== undefined) metaUpdates.title = profileUpdates.title;
     if (profileUpdates?.tagline !== undefined) metaUpdates.tagline = profileUpdates.tagline;
-    if ('avatar' in (profileUpdates || {})) {
-      metaUpdates.avatar_url = profileUpdates?.avatar || null;
-      metaUpdates.picture = profileUpdates?.avatar || null;
-      metaUpdates.avatar = profileUpdates?.avatar || null;
+    if (profileUpdates && 'avatar' in profileUpdates) {
+      metaUpdates.avatar_url = profileUpdates.avatar || null;
+      metaUpdates.picture = profileUpdates.avatar || null;
+      metaUpdates.avatar = profileUpdates.avatar || null;
+      metaUpdates.custom_avatar = profileUpdates.avatar || null;
+      metaUpdates.has_custom_avatar = Boolean(profileUpdates.avatar);
     }
 
     if (Object.keys(metaUpdates).length > 0) {

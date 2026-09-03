@@ -4,7 +4,8 @@ import { useAuth } from '../../context/AuthContext';
 import { Modal } from '../common/Modal';
 import { Logo } from '../common/Logo';
 import { GoogleButton } from '../auth/GoogleButton';
-import { Mail, Lock, AlertCircle, Loader2 } from 'lucide-react';
+import { Mail, Lock, AlertCircle, Loader2, Eye, EyeOff } from 'lucide-react';
+import { PasswordStrengthIndicator } from '../auth/PasswordStrengthIndicator';
 import { triggerHapticFeedback, getFieldValidationClass } from '../../utils/validation';
 
 export const AuthModal: React.FC = () => {
@@ -13,6 +14,7 @@ export const AuthModal: React.FC = () => {
   const authMode = useUIStore((state) => state.authMode);
   const openAuthModal = useUIStore((state) => state.openAuthModal);
   const showToast = useUIStore((state) => state.showToast);
+  const setActiveView = useUIStore((state) => state.setActiveView);
 
   const {
     signInWithEmail,
@@ -23,6 +25,7 @@ export const AuthModal: React.FC = () => {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
@@ -195,7 +198,7 @@ export const AuthModal: React.FC = () => {
             Email Address <span className="text-red-500">*</span>
           </label>
           <div className="relative">
-            <Mail className="w-4 h-4 text-secondary absolute left-3 top-1/2 -translate-y-1/2" />
+            <Mail className="z-10 w-4 h-4 text-secondary absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               id="modal-email-input"
               type="email"
@@ -224,10 +227,10 @@ export const AuthModal: React.FC = () => {
             Password <span className="text-red-500">*</span>
           </label>
           <div className="relative">
-            <Lock className="w-4 h-4 text-secondary absolute left-3 top-1/2 -translate-y-1/2" />
+            <Lock className="z-10 w-4 h-4 text-secondary absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               id="modal-password-input"
-              type="password"
+              type={showPassword ? 'text' : 'password'}
               value={password}
               onChange={(e) => {
                 setPassword(e.target.value);
@@ -235,16 +238,45 @@ export const AuthModal: React.FC = () => {
                 if (errorMessage) setErrorMessage(null);
               }}
               placeholder="••••••••"
-              className={`w-full pl-9 pr-3 py-2 bg-surface-low border rounded-md text-xs text-on-surface focus:outline-none transition-all ${getFieldValidationClass(
+              className={`w-full pl-9 pr-9 py-2 bg-surface-low border rounded-md text-xs text-on-surface focus:outline-none transition-all ${getFieldValidationClass(
                 !!fieldErrors.password
               )}`}
             />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              aria-label={showPassword ? 'Hide password' : 'Show password'}
+              className="z-10 absolute right-2.5 top-1/2 -translate-y-1/2 text-secondary hover:text-on-surface transition-colors cursor-pointer border-none bg-transparent p-0 outline-none focus:outline-none focus:ring-0 select-none"
+            >
+              {showPassword ? (
+                <EyeOff className="w-3.5 h-3.5" aria-hidden="true" />
+              ) : (
+                <Eye className="w-3.5 h-3.5" aria-hidden="true" />
+              )}
+            </button>
           </div>
           {fieldErrors.password && (
             <p className="text-[11px] text-red-500 mt-1 flex items-center gap-1 animate-fade-in font-medium" role="alert">
               <AlertCircle className="w-3 h-3 flex-shrink-0" />
               <span>{fieldErrors.password}</span>
             </p>
+          )}
+
+          {!isSignIn && <PasswordStrengthIndicator password={password} />}
+
+          {isSignIn && (
+            <div className="flex justify-end mt-1.5">
+              <button
+                type="button"
+                onClick={() => {
+                  closeAuthModal();
+                  setActiveView('signin');
+                }}
+                className="text-[11px] text-primary hover:text-primary-container hover:underline transition-colors cursor-pointer font-medium"
+              >
+                Forgot password?
+              </button>
+            </div>
           )}
         </div>
 
