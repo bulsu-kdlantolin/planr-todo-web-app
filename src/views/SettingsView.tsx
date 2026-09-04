@@ -27,15 +27,11 @@ import {
   LogOut,
   LogIn,
   CheckCircle2,
-  Lock,
   KeyRound,
   AlertCircle,
   Loader2,
-  Eye,
-  EyeOff
+  Mail
 } from 'lucide-react';
-import { PasswordStrengthIndicator } from '../components/auth/PasswordStrengthIndicator';
-import { triggerHapticFeedback, getFieldValidationClass } from '../utils/validation';
 
 export const SettingsView: React.FC = () => {
   const user = useMetaStore((state) => state.user);
@@ -53,20 +49,31 @@ export const SettingsView: React.FC = () => {
   const openShortcutsModal = useUIStore((state) => state.openShortcutsModal);
   const setActiveView = useUIStore((state) => state.setActiveView);
 
-  const { signOut, updatePassword, session } = useAuth();
+  const { signOut, sendPasswordResetEmail, session } = useAuth();
 
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [importing, setImporting] = useState(false);
 
-  // Password change state
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [showNewPassword, setShowNewPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [fieldErrors, setFieldErrors] = useState<{ newPassword?: string; confirmPassword?: string }>({});
-  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
-  const [passwordError, setPasswordError] = useState<string | null>(null);
-  const [passwordSuccess, setPasswordSuccess] = useState(false);
+  // Password verification state
+  const [isSendingVerification, setIsSendingVerification] = useState(false);
+  const [verificationSent, setVerificationSent] = useState(false);
+  const [verificationError, setVerificationError] = useState<string | null>(null);
+
+  const handleSendPasswordVerification = async () => {
+    if (!user.email || isSendingVerification) return;
+    setIsSendingVerification(true);
+    setVerificationError(null);
+
+    const { error } = await sendPasswordResetEmail(user.email);
+    setIsSendingVerification(false);
+
+    if (error) {
+      setVerificationError(error.message);
+    } else {
+      setVerificationSent(true);
+      showToast('Verification link sent to your email 📬', 'success');
+    }
+  };
 
   const handleExportJSON = () => {
     exportWorkspaceAsJSON();
@@ -83,46 +90,6 @@ export const SettingsView: React.FC = () => {
     showToast('Exported tasks (CSV spreadsheet)');
   };
 
-  const handleChangePassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (isUpdatingPassword) return;
-
-    const errors: { newPassword?: string; confirmPassword?: string } = {};
-    if (!newPassword) {
-      errors.newPassword = 'Please enter a new password.';
-    } else if (newPassword.length < 6) {
-      errors.newPassword = 'Password must be at least 6 characters long.';
-    }
-
-    if (!confirmPassword) {
-      errors.confirmPassword = 'Please confirm your new password.';
-    } else if (newPassword && confirmPassword && newPassword !== confirmPassword) {
-      errors.confirmPassword = 'Passwords do not match.';
-    }
-
-    if (Object.keys(errors).length > 0) {
-      triggerHapticFeedback();
-      setFieldErrors(errors);
-      return;
-    }
-
-    setIsUpdatingPassword(true);
-    setPasswordError(null);
-    setFieldErrors({});
-
-    const { error } = await updatePassword(newPassword);
-    setIsUpdatingPassword(false);
-
-    if (error) {
-      setPasswordError(error.message);
-    } else {
-      setPasswordSuccess(true);
-      setNewPassword('');
-      setConfirmPassword('');
-      showToast('Password updated successfully! 🔒', 'success');
-      setTimeout(() => setPasswordSuccess(false), 4000);
-    }
-  };
 
   const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -139,7 +106,7 @@ export const SettingsView: React.FC = () => {
       } else {
         showToast('Failed to import database file.', 'error');
       }
-    } catch {
+    } catch (err) {
       showToast('Invalid backup file format.', 'error');
     } finally {
       setImporting(false);
@@ -156,7 +123,8 @@ export const SettingsView: React.FC = () => {
 
   const hasPassword = Boolean(
     session?.user?.user_metadata?.has_password ||
-    (session?.user?.id && localStorage.getItem(`planr_has_password_${session.user.id}`) === 'true')
+    (session?.user?.id && localStorage.getItem(`planr_has_password_${session.user.id}`) === 'true') ||
+    (user.email && localStorage.getItem(`planr_has_password_${user.email.toLowerCase()}`) === 'true')
   );
 
   return (
@@ -252,165 +220,63 @@ export const SettingsView: React.FC = () => {
             </div>
           )}
 
-          <form noValidate onSubmit={handleChangePassword} className="space-y-4 max-w-xl">
+          <div className="space-y-4 max-w-xl">
             <p className="text-xs text-secondary">
-              {isOAuthUser && !hasPassword
-                ? 'Create a password for your account so you can also log in using your email address.'
-                : 'Update your account password. Choose at least 6 characters.'}
+              To protect your account security, changing or setting your password requires email verification. We will send a secure verification link to your registered email address (<span className="font-semibold text-on-surface">{user.email}</span>).
             </p>
 
-            {passwordError && (
+            {verificationError && (
               <div
                 role="alert"
                 className="p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded-lg flex items-center gap-2 text-xs text-red-800 dark:text-red-300"
               >
                 <AlertCircle className="w-4 h-4 flex-shrink-0 text-red-600 dark:text-red-400" />
-                <span>{passwordError}</span>
+                <span>{verificationError}</span>
               </div>
             )}
 
-            {passwordSuccess && (
-              <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-lg flex items-center gap-2 text-xs text-emerald-800 dark:text-emerald-300">
-                <CheckCircle2 className="w-4 h-4 flex-shrink-0 text-emerald-600 dark:text-emerald-400" />
-                <span>
-                  {isOAuthUser && !hasPassword
-                    ? 'Password added successfully! You can now sign in with your email or Google.'
-                    : 'Password updated successfully!'}
-                </span>
+            {verificationSent ? (
+              <div className="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 space-y-2.5 animate-fade-in">
+                <div className="flex items-center gap-2 text-emerald-800 dark:text-emerald-300 font-semibold text-xs">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                  <span>Verification Link Sent</span>
+                </div>
+                <p className="text-xs text-emerald-700 dark:text-emerald-400">
+                  We sent a secure password reset link to <strong>{user.email}</strong>. Please check your inbox and click the link to securely set your password.
+                </p>
+                <div className="pt-1">
+                  <button
+                    type="button"
+                    onClick={handleSendPasswordVerification}
+                    disabled={isSendingVerification}
+                    className="text-xs font-semibold text-emerald-800 dark:text-emerald-200 underline hover:opacity-80 disabled:opacity-50 cursor-pointer"
+                  >
+                    Resend verification link
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div>
+                <button
+                  type="button"
+                  onClick={handleSendPasswordVerification}
+                  disabled={isSendingVerification || !user.email}
+                  className="px-5 py-2.5 bg-primary-container text-on-primary-container hover:bg-primary rounded-md text-xs font-semibold uppercase tracking-wider transition-colors shadow-sm disabled:opacity-50 flex items-center gap-2 cursor-pointer active:scale-[0.98]"
+                >
+                  {isSendingVerification ? (
+                    <>
+                      <span>Sending verification link...</span>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" />
+                    </>
+                  ) : (
+                    <>
+                      <Mail className="w-3.5 h-3.5" aria-hidden="true" />
+                      <span>{hasPassword ? 'Send Password Change Link' : 'Send Password Setup Link'}</span>
+                    </>
+                  )}
+                </button>
               </div>
             )}
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label
-                  htmlFor="settings-new-password"
-                  className="block text-xs font-semibold uppercase tracking-wider text-secondary mb-1.5 font-sans"
-                >
-                  New Password <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <Lock className="z-10 w-4 h-4 text-secondary absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-                  <input
-                    id="settings-new-password"
-                    type={showNewPassword ? 'text' : 'password'}
-                    value={newPassword}
-                    onChange={(e) => {
-                      setNewPassword(e.target.value);
-                      if (fieldErrors.newPassword) setFieldErrors((prev) => ({ ...prev, newPassword: undefined }));
-                      if (passwordError) setPasswordError(null);
-                    }}
-                    placeholder="••••••••"
-                    className={`w-full pl-10 pr-10 py-2.5 bg-surface-low border rounded-lg text-xs text-on-surface focus:outline-none transition-all ${getFieldValidationClass(
-                      !!fieldErrors.newPassword
-                    )}`}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowNewPassword(!showNewPassword)}
-                    aria-label={showNewPassword ? 'Hide password' : 'Show password'}
-                    className="z-10 absolute right-3.5 top-1/2 -translate-y-1/2 text-secondary hover:text-on-surface transition-colors cursor-pointer border-none bg-transparent p-0 outline-none focus:outline-none focus:ring-0 select-none"
-                  >
-                    {showNewPassword ? (
-                      <EyeOff className="w-4 h-4" aria-hidden="true" />
-                    ) : (
-                      <Eye className="w-4 h-4" aria-hidden="true" />
-                    )}
-                  </button>
-                </div>
-                {fieldErrors.newPassword && (
-                  <p className="text-[11px] text-red-500 mt-1.5 flex items-center gap-1 animate-fade-in font-medium" role="alert">
-                    <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
-                    <span>{fieldErrors.newPassword}</span>
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <label
-                  htmlFor="settings-confirm-password"
-                  className="block text-xs font-semibold uppercase tracking-wider text-secondary mb-1.5 font-sans"
-                >
-                  Confirm Password <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <Lock className="z-10 w-4 h-4 text-secondary absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-                  <input
-                    id="settings-confirm-password"
-                    type={showConfirmPassword ? 'text' : 'password'}
-                    value={confirmPassword}
-                    onChange={(e) => {
-                      setConfirmPassword(e.target.value);
-                      if (fieldErrors.confirmPassword) setFieldErrors((prev) => ({ ...prev, confirmPassword: undefined }));
-                      if (passwordError) setPasswordError(null);
-                    }}
-                    placeholder="••••••••"
-                    className={`w-full pl-10 pr-10 py-2.5 bg-surface-low border rounded-lg text-xs text-on-surface focus:outline-none transition-all ${getFieldValidationClass(
-                      !!fieldErrors.confirmPassword
-                    )}`}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
-                    className="z-10 absolute right-3.5 top-1/2 -translate-y-1/2 text-secondary hover:text-on-surface transition-colors cursor-pointer border-none bg-transparent p-0 outline-none focus:outline-none focus:ring-0 select-none"
-                  >
-                    {showConfirmPassword ? (
-                      <EyeOff className="w-4 h-4" aria-hidden="true" />
-                    ) : (
-                      <Eye className="w-4 h-4" aria-hidden="true" />
-                    )}
-                  </button>
-                </div>
-                {fieldErrors.confirmPassword && (
-                  <p className="text-[11px] text-red-500 mt-1.5 flex items-center gap-1 animate-fade-in font-medium" role="alert">
-                    <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
-                    <span>{fieldErrors.confirmPassword}</span>
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {/* Password strength indicator */}
-            <PasswordStrengthIndicator password={newPassword} />
-
-            <div className="pt-1">
-              <button
-                type="submit"
-                disabled={isUpdatingPassword}
-                className="px-5 py-2.5 bg-primary-container text-on-primary-container hover:bg-primary rounded-md text-xs font-semibold uppercase tracking-wider transition-colors shadow-sm disabled:opacity-50 flex items-center gap-2 cursor-pointer"
-              >
-                {isUpdatingPassword ? (
-                  <span className="flex items-center gap-2">
-                    <span>Updating password...</span>
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" />
-                  </span>
-                ) : (
-                  <span>{isOAuthUser && !hasPassword ? 'Set Account Password' : 'Save New Password'}</span>
-                )}
-              </button>
-            </div>
-          </form>
-
-          {/* Active Sessions & Security Controls */}
-          <div className="pt-4 border-t border-outline-subtle flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div>
-              <p className="text-xs font-semibold text-on-surface">Active Device Sessions</p>
-              <p className="text-[11px] text-secondary">
-                Revoke access tokens and sign out of Planr across all phones, tablets, and computers.
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={async () => {
-                await signOut('global');
-                showToast('Signed out of all devices', 'info');
-                setActiveView('landing');
-              }}
-              className="flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-md bg-surface-low hover:bg-surface-container text-red-600 dark:text-red-400 border border-outline-variant text-xs font-semibold uppercase tracking-wider transition-colors cursor-pointer"
-            >
-              <LogOut className="w-3.5 h-3.5" aria-hidden="true" />
-              <span>Sign Out All Devices</span>
-            </button>
           </div>
         </div>
       )}

@@ -23,6 +23,7 @@ import { triggerHapticFeedback, getFieldValidationClass } from '../../utils/vali
 export const TaskModal: React.FC = () => {
   const taskModalOpen = useUIStore((state) => state.taskModalOpen);
   const editingTask = useUIStore((state) => state.editingTask);
+  const initialTaskDueDate = useUIStore((state) => state.initialTaskDueDate);
   const closeTaskModal = useUIStore((state) => state.closeTaskModal);
   const showToast = useUIStore((state) => state.showToast);
 
@@ -54,11 +55,11 @@ export const TaskModal: React.FC = () => {
       setDescription('');
       setCategory('Work');
       setPriority('medium');
-      setDueDate(getTodayDateString());
+      setDueDate(initialTaskDueDate || getTodayDateString());
       setEstimatedPomodoros(1);
       setSubtasks([]);
     }
-  }, [editingTask, taskModalOpen]);
+  }, [editingTask, taskModalOpen, initialTaskDueDate]);
 
   const handleAddSubtask = () => {
     if (!newSubtaskTitle.trim()) return;
@@ -80,6 +81,13 @@ export const TaskModal: React.FC = () => {
     if (!title.trim()) {
       triggerHapticFeedback();
       setTitleError('Please enter a task title');
+      return;
+    }
+
+    const todayStr = getTodayDateString();
+    if (dueDate && dueDate < todayStr) {
+      triggerHapticFeedback();
+      showToast('Due date cannot be in the past', 'error');
       return;
     }
 
@@ -197,6 +205,7 @@ export const TaskModal: React.FC = () => {
             label="Due Date"
             value={dueDate}
             onChange={(val) => setDueDate(val)}
+            minDate={getTodayDateString()}
             placeholder="Pick due date..."
           />
 

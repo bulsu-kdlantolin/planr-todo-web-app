@@ -22,6 +22,31 @@ describe('DatePicker Component', () => {
     expect(screen.getByText('August 2026')).toBeInTheDocument();
     expect(screen.getByText('Today')).toBeInTheDocument();
   });
+
+  it('respects minDate and disables past dates from being clicked', () => {
+    const handleChange = vi.fn();
+    render(
+      <DatePicker
+        value="2026-08-30"
+        onChange={handleChange}
+        minDate="2026-08-30"
+        label="Due Date"
+      />
+    );
+
+    const trigger = screen.getByRole('button', { name: /Aug 30, 2026/i });
+    fireEvent.click(trigger);
+
+    // Day 29 buttons (previous month padding and/or current month) are before minDate (2026-08-30)
+    const day29Btns = screen.getAllByRole('button', { name: '29' });
+    expect(day29Btns.length).toBeGreaterThan(0);
+    day29Btns.forEach((btn) => {
+      expect(btn).toBeDisabled();
+      fireEvent.click(btn);
+    });
+
+    expect(handleChange).not.toHaveBeenCalled();
+  });
 });
 
 describe('NumberStepper Component', () => {

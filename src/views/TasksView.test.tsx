@@ -55,11 +55,39 @@ describe('TasksView Component', () => {
     });
   });
 
+  it('switches between list and calendar views', async () => {
+    render(<TasksView />);
+
+    const calendarBtn = screen.getByRole('button', { name: /^calendar$/i });
+    expect(calendarBtn).toHaveAttribute('aria-pressed', 'false');
+
+    fireEvent.click(calendarBtn);
+    expect(calendarBtn).toHaveAttribute('aria-pressed', 'true');
+
+    // Calendar month and today button should now be visible
+    expect(screen.getByRole('button', { name: /today/i })).toBeInTheDocument();
+    expect(screen.getByText('Mon')).toBeInTheDocument();
+
+    const listBtn = screen.getByRole('button', { name: /^list$/i });
+    fireEvent.click(listBtn);
+    expect(listBtn).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('tab', { name: /all tasks/i })).toBeInTheDocument();
+  });
+
   it('deletes a task and allows restoring it via undo', async () => {
     render(<TasksView />);
 
     const deleteBtn = screen.getByRole('button', { name: /delete task/i });
     fireEvent.click(deleteBtn);
+
+    // Confirm modal should appear
+    expect(screen.getByText('Delete Task')).toBeInTheDocument();
+    expect(
+      screen.getByText(/Are you sure you want to delete "Write design system documentation"\?/i)
+    ).toBeInTheDocument();
+
+    const confirmBtn = screen.getByRole('button', { name: /^delete$/i });
+    fireEvent.click(confirmBtn);
 
     // Wait for async deletion and toast registration
     await waitFor(() => {

@@ -34,8 +34,14 @@ export function useHashRouter() {
         return;
       }
 
+      // Detect Supabase OAuth / OTP error fragment
+      if (rawHash.includes('error_description=')) {
+        setActiveView('signin');
+        return;
+      }
+
       // Detect Supabase OAuth Token Callback fragment (e.g. #access_token=...&refresh_token=...)
-      if (rawHash.includes('access_token=') || rawHash.includes('error_description=')) {
+      if (rawHash.includes('access_token=')) {
         // Let Supabase Auth client ingest the tokens; default to daily workspace
         setActiveView('daily');
         return;

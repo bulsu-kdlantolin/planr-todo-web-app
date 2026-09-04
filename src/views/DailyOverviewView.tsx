@@ -8,6 +8,8 @@ import { TaskCard } from '../components/tasks/TaskCard';
 import { WeeklyAnalytics } from '../components/analytics/WeeklyAnalytics';
 import { DailyMetricsCards } from '../components/daily/DailyMetricsCards';
 import { DailyRemindersCard } from '../components/daily/DailyRemindersCard';
+import { ConfirmModal } from '../components/common/ConfirmModal';
+import { Task } from '../types';
 import { getPriorityWeight } from '../utils/priority';
 import { getTodayDateString, formatHeaderDate, getLocalGreeting } from '../utils/date';
 import { generateIntentionCardImage } from '../utils/intentionCard';
@@ -120,13 +122,25 @@ export const DailyOverviewView: React.FC = () => {
     setActiveView('focus');
   };
 
+  const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
+
   const handlePlanForToday = async (taskId: string) => {
     await updateTask(taskId, { dueDate: todayStr });
     showToast('Task scheduled for Today ☀️');
   };
 
-  const handleDeleteTaskWithToast = async (id: string) => {
-    const deleted = await deleteTask(id);
+  const handleRequestDeleteTask = (id: string) => {
+    const task = tasks.find((t) => t.id === id);
+    if (task) {
+      setTaskToDelete(task);
+    }
+  };
+
+  const handleConfirmDeleteTask = async () => {
+    if (!taskToDelete) return;
+    const target = taskToDelete;
+    setTaskToDelete(null);
+    const deleted = await deleteTask(target.id);
     if (deleted) {
       showToast(`Task "${deleted.title}" deleted`, 'info', 'Undo', () => {
         useTaskStore.getState().restoreTask(deleted);
@@ -135,14 +149,11 @@ export const DailyOverviewView: React.FC = () => {
   };
 
   const handleShareIntention = () => {
-    const success = generateIntentionCardImage(intention, user.name, dateFormatted, todayStr);
-    if (success) {
-      showToast('Focus goal quote card downloaded! 📸', 'success');
-    }
+    generateIntentionCardImage(intention, user.name, dateFormatted, todayStr);
   };
 
   return (
-    <div className="max-w-5xl mx-auto px-6 py-8 animate-fade-in space-y-8">
+    <div className="max-w-6xl mx-auto px-6 py-8 animate-fade-in space-y-8">
       {/* Header & Dynamic Greeting */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 border-b border-outline-subtle gap-4">
         <div>
@@ -280,7 +291,7 @@ export const DailyOverviewView: React.FC = () => {
                   onToggle={toggleTask}
                   onToggleSubtask={toggleSubtask}
                   onEdit={(t) => openTaskModal(t)}
-                  onDelete={handleDeleteTaskWithToast}
+                  onDelete={handleRequestDeleteTask}
                   onFocus={handleFocusOnTask}
                   onPlanToday={handlePlanForToday}
                 />
@@ -315,6 +326,17 @@ export const DailyOverviewView: React.FC = () => {
           onToggleReminder={toggleReminder}
         />
       </div>
+
+      <ConfirmModal
+        isOpen={!!taskToDelete}
+        onClose={() => setTaskToDelete(null)}
+        onConfirm={handleConfirmDeleteTask}
+        title="Delete Task"
+        description={`Are you sure you want to delete "${taskToDelete?.title}"? This action can still be undone from the notification banner.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        isDestructive
+      />
     </div>
   );
 };

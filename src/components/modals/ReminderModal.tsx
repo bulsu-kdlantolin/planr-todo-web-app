@@ -15,10 +15,12 @@ import { triggerHapticFeedback, getFieldValidationClass } from '../../utils/vali
 
 export const ReminderModal: React.FC = () => {
   const reminderModalOpen = useUIStore((state) => state.reminderModalOpen);
+  const editingReminder = useUIStore((state) => state.editingReminder);
   const closeReminderModal = useUIStore((state) => state.closeReminderModal);
   const showToast = useUIStore((state) => state.showToast);
 
   const addReminder = useReminderStore((state) => state.addReminder);
+  const updateReminder = useReminderStore((state) => state.updateReminder);
   const timeFormat = useMetaStore((state) => state.settings.timeFormat || '12h');
 
   const [title, setTitle] = useState('');
@@ -32,7 +34,24 @@ export const ReminderModal: React.FC = () => {
 
   useEffect(() => {
     setTitleError(null);
-  }, [reminderModalOpen]);
+    if (editingReminder) {
+      setTitle(editingReminder.title);
+      setTime(editingReminder.time);
+      setPeriod(editingReminder.period);
+      setRepeat(editingReminder.repeat);
+      setScheduledDate(editingReminder.scheduledDate || '');
+      setSound(editingReminder.sound !== false);
+      setDescription(editingReminder.description || '');
+    } else {
+      setTitle('');
+      setTime('14:00');
+      setPeriod('Afternoon');
+      setRepeat('Daily');
+      setScheduledDate('');
+      setSound(true);
+      setDescription('');
+    }
+  }, [reminderModalOpen, editingReminder]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,17 +61,30 @@ export const ReminderModal: React.FC = () => {
       return;
     }
 
-    addReminder({
-      title: title.trim(),
-      time,
-      period,
-      repeat,
-      scheduledDate: repeat === 'Once' ? scheduledDate : undefined,
-      sound,
-      description: description.trim() || undefined
-    });
+    if (editingReminder) {
+      updateReminder(editingReminder.id, {
+        title: title.trim(),
+        time,
+        period,
+        repeat,
+        scheduledDate: repeat === 'Once' ? scheduledDate : undefined,
+        sound,
+        description: description.trim() || undefined
+      });
+      showToast(`Reminder updated: "${title.trim()}"`, 'success');
+    } else {
+      addReminder({
+        title: title.trim(),
+        time,
+        period,
+        repeat,
+        scheduledDate: repeat === 'Once' ? scheduledDate : undefined,
+        sound,
+        description: description.trim() || undefined
+      });
+      showToast(`Reminder scheduled: "${title.trim()}"`, 'success');
+    }
 
-    showToast(`Reminder scheduled: "${title.trim()}"`, 'success');
     setTitle('');
     setDescription('');
     setScheduledDate('');
@@ -75,7 +107,7 @@ export const ReminderModal: React.FC = () => {
     <Modal
       isOpen={reminderModalOpen}
       onClose={closeReminderModal}
-      title="Schedule Reminder"
+      title={editingReminder ? 'Edit Reminder' : 'Schedule Reminder'}
       titleId="reminder-modal-title"
       maxWidthClass="max-w-md"
       icon={<Logo size="sm" showWordmark={false} />}
@@ -169,7 +201,7 @@ export const ReminderModal: React.FC = () => {
 
         <ModalFooter
           onCancel={closeReminderModal}
-          submitText="Save Reminder"
+          submitText={editingReminder ? 'Save Changes' : 'Save Reminder'}
         />
       </form>
     </Modal>

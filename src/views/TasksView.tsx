@@ -1,11 +1,13 @@
-import React, { useDeferredValue, useMemo } from 'react';
+import React, { useState, useDeferredValue, useMemo } from 'react';
 import { useTaskStore } from '../store/useTaskStore';
 import { useTimerStore } from '../store/useTimerStore';
 import { useUIStore } from '../store/useUIStore';
 import { TaskCard } from '../components/tasks/TaskCard';
 import { QuickAddBar } from '../components/tasks/QuickAddBar';
+import { TaskCalendarView } from '../components/tasks/TaskCalendarView';
 import { Select, SelectOption } from '../components/common/Select';
-import { TaskFilterType, TaskSortType, TaskCategory } from '../types';
+import { ConfirmModal } from '../components/common/ConfirmModal';
+import { TaskFilterType, TaskSortType, TaskCategory, Task } from '../types';
 import { filterTasks, sortTasks, getTaskMetrics } from '../utils/tasks';
 import { getTodayDateString } from '../utils/date';
 import {
@@ -18,7 +20,9 @@ import {
   Flame,
   Sparkles,
   Command,
-  CheckCircle2
+  CheckCircle2,
+  List,
+  Calendar
 } from 'lucide-react';
 
 export const TasksView: React.FC = () => {
@@ -77,6 +81,9 @@ export const TasksView: React.FC = () => {
     };
   }, [tasks]);
 
+  const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
+  const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
+
   const handleFocusTask = (taskId: string) => {
     setSelectedTaskId(taskId);
     setActiveView('focus');
@@ -88,8 +95,27 @@ export const TasksView: React.FC = () => {
     showToast('Task scheduled for Today ☀️', 'success');
   };
 
-  const handleDeleteTaskWithToast = async (id: string) => {
-    const deleted = await deleteTask(id);
+  const handleAddTaskForDate = (dateStr: string) => {
+    const todayStr = getTodayDateString();
+    if (dateStr < todayStr) {
+      showToast('Cannot schedule tasks in the past', 'error');
+      return;
+    }
+    openTaskModal(null, dateStr);
+  };
+
+  const handleRequestDeleteTask = (id: string) => {
+    const task = tasks.find((t) => t.id === id);
+    if (task) {
+      setTaskToDelete(task);
+    }
+  };
+
+  const handleConfirmDeleteTask = async () => {
+    if (!taskToDelete) return;
+    const target = taskToDelete;
+    setTaskToDelete(null);
+    const deleted = await deleteTask(target.id);
     if (deleted) {
       showToast(`Task "${deleted.title}" deleted`, 'info', 'Undo', () => {
         useTaskStore.getState().restoreTask(deleted);
@@ -116,7 +142,11 @@ export const TasksView: React.FC = () => {
   ];
 
   return (
-    <div className="max-w-5xl mx-auto px-6 py-8 animate-fade-in space-y-7">
+    <div
+      className={`mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-in space-y-7 transition-all duration-200 ${
+        viewMode === 'calendar' ? 'max-w-[1500px] w-full' : 'max-w-6xl'
+      }`}
+    >
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-5 border-b border-outline-subtle gap-4">
         <div>
@@ -133,234 +163,290 @@ export const TasksView: React.FC = () => {
           </h1>
         </div>
 
-        <button
-          type="button"
-          onClick={() => openTaskModal()}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-md bg-primary-container hover:bg-primary text-on-primary-container text-xs font-semibold uppercase tracking-wider transition-colors shadow-sm self-start sm:self-auto active:scale-[0.98] cursor-pointer"
-        >
-          <Plus className="w-4 h-4" aria-hidden="true" />
-          <span>New Task</span>
-        </button>
+        <div className="flex items-center gap-3 self-start sm:self-auto flex-wrap">
+          {/* List vs Calendar View Toggle */}
+          <div className="flex items-center p-1 bg-surface-low border border-outline-subtle rounded-lg" role="group" aria-label="View mode">
+            <button
+              type="button"
+              onClick={() => setViewMode('list')}
+              aria-pressed={viewMode === 'list'}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer ${
+                viewMode === 'list'
+                  ? 'bg-surface-lowest text-on-surface font-semibold shadow-xs'
+                  : 'text-secondary hover:text-on-surface'
+              }`}
+            >
+              <List className="w-3.5 h-3.5" aria-hidden="true" />
+              <span>List</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('calendar')}
+              aria-pressed={viewMode === 'calendar'}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer ${
+                viewMode === 'calendar'
+                  ? 'bg-surface-lowest text-on-surface font-semibold shadow-xs'
+                  : 'text-secondary hover:text-on-surface'
+              }`}
+            >
+              <Calendar className="w-3.5 h-3.5" aria-hidden="true" />
+              <span>Calendar</span>
+            </button>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => openTaskModal()}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-md bg-primary-container hover:bg-primary text-on-primary-container text-xs font-semibold uppercase tracking-wider transition-colors shadow-sm active:scale-[0.98] cursor-pointer"
+          >
+            <Plus className="w-4 h-4" aria-hidden="true" />
+            <span>New Task</span>
+          </button>
+        </div>
       </div>
 
-      {/* Inline Quick-Add Input Bar */}
-      <QuickAddBar />
+      {/* Inline Quick-Add Input Bar (shown in list mode) */}
+      {viewMode === 'list' && <QuickAddBar />}
 
-      {/* 2-Column Responsive Dashboard Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-7 items-start">
-        {/* Main Task Column (8 cols) */}
-        <div className="lg:col-span-8 space-y-5">
-          {/* Search & Sort Controls Bar */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-            {/* Search Input */}
-            <div className="relative flex-1">
-              <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-secondary pointer-events-none" aria-hidden="true" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search tasks, tags, notes..."
-                aria-label="Search tasks"
-                className="w-full pl-10 pr-4 py-2.5 bg-surface-low border border-outline-variant rounded-md text-xs text-on-surface focus:border-primary-container focus:outline-none placeholder:text-secondary shadow-card"
-              />
-            </div>
-
-            {/* Custom Animated Sort Select */}
-            <div className="flex items-center gap-2 min-w-[160px]">
-              <span className="text-xs text-secondary font-medium whitespace-nowrap">
-                Sort:
-              </span>
-              <div className="flex-1">
-                <Select<TaskSortType>
-                  value={sort}
-                  onChange={(val) => setSort(val)}
-                  options={sortOptions}
-                  ariaLabel="Sort tasks by"
+      {viewMode === 'calendar' ? (
+        <div className="w-full">
+          <TaskCalendarView
+            tasks={tasks}
+            onToggleTask={toggleTask}
+            onEditTask={(t) => openTaskModal(t)}
+            onDeleteTask={handleRequestDeleteTask}
+            onFocusTask={handleFocusTask}
+            onAddTaskForDate={handleAddTaskForDate}
+          />
+        </div>
+      ) : (
+        /* 2-Column Responsive Dashboard Layout (List Mode) */
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-7 items-start">
+          {/* Main Task Column (8 cols) */}
+          <div className="lg:col-span-8 space-y-5">
+            {/* Search & Sort Controls Bar */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+              {/* Search Input */}
+              <div className="relative flex-1">
+                <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-secondary pointer-events-none" aria-hidden="true" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search tasks, tags, notes..."
+                  aria-label="Search tasks"
+                  className="w-full pl-10 pr-4 py-2.5 bg-surface-low border border-outline-variant rounded-md text-xs text-on-surface focus:border-primary-container focus:outline-none placeholder:text-secondary shadow-card"
                 />
               </div>
+
+              {/* Custom Animated Sort Select */}
+              <div className="flex items-center gap-2 min-w-[160px]">
+                <span className="text-xs text-secondary font-medium whitespace-nowrap">
+                  Sort:
+                </span>
+                <div className="flex-1">
+                  <Select<TaskSortType>
+                    value={sort}
+                    onChange={(val) => setSort(val)}
+                    options={sortOptions}
+                    ariaLabel="Sort tasks by"
+                  />
+                </div>
+              </div>
             </div>
-          </div>
 
-          {/* Filter Navigation Tabs */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 border-b border-outline-subtle scrollbar-none" role="tablist" aria-label="Task filters">
-            {filterTabs.map((tab) => (
-              <button
-                key={tab.id}
-                type="button"
-                role="tab"
-                aria-selected={filter === tab.id}
-                onClick={() => setFilter(tab.id)}
-                className={`px-3 py-1.5 rounded-md text-xs font-medium whitespace-nowrap transition-colors cursor-pointer ${
-                  filter === tab.id
-                    ? 'bg-surface-low text-on-surface font-semibold shadow-card border border-outline-variant'
-                    : 'text-secondary hover:text-on-surface hover:bg-surface-low/50'
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-
-          {/* Task List Items */}
-          {sortedTasks.length === 0 ? (
-            <div className="bg-surface-low border border-dashed border-outline-variant rounded-xl p-12 text-center space-y-3 shadow-xs">
-              <CheckSquare className="w-8 h-8 text-secondary mx-auto opacity-50" aria-hidden="true" />
-              <h3 className="font-serif text-lg font-medium text-on-surface">No tasks found</h3>
-              <p className="text-xs text-secondary max-w-sm mx-auto font-sans leading-relaxed">
-                {searchQuery
-                  ? `No tasks matching "${searchQuery}". Clear your search to see all tasks.`
-                  : 'You have no pending tasks in this view. Add a new task above to get started.'}
-              </p>
-              <div className="flex items-center justify-center gap-2 pt-2">
-                {searchQuery && (
-                  <button
-                    type="button"
-                    onClick={() => setSearchQuery('')}
-                    className="px-3.5 py-2 bg-surface-lowest border border-outline-variant text-secondary hover:text-on-surface text-xs font-semibold rounded-md transition-colors shadow-sm cursor-pointer"
-                  >
-                    Clear Search
-                  </button>
-                )}
+            {/* Filter Navigation Tabs */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 border-b border-outline-subtle scrollbar-none" role="tablist" aria-label="Task filters">
+              {filterTabs.map((tab) => (
                 <button
+                  key={tab.id}
                   type="button"
-                  onClick={() => openTaskModal()}
-                  className="px-4 py-2 bg-primary-container text-on-primary-container hover:bg-primary text-xs font-semibold uppercase tracking-wider rounded-md transition-colors shadow-sm cursor-pointer"
+                  role="tab"
+                  aria-selected={filter === tab.id}
+                  onClick={() => setFilter(tab.id)}
+                  className={`px-3 py-1.5 rounded-md text-xs font-medium whitespace-nowrap transition-colors cursor-pointer ${
+                    filter === tab.id
+                      ? 'bg-surface-low text-on-surface font-semibold shadow-card border border-outline-variant'
+                      : 'text-secondary hover:text-on-surface hover:bg-surface-low/50'
+                  }`}
                 >
-                  Create Task
+                  {tab.label}
                 </button>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {sortedTasks.map((task) => (
-                <TaskCard
-                  key={task.id}
-                  task={task}
-                  onToggle={toggleTask}
-                  onToggleSubtask={toggleSubtask}
-                  onEdit={(t) => openTaskModal(t)}
-                  onDelete={handleDeleteTaskWithToast}
-                  onFocus={handleFocusTask}
-                  onPlanToday={handlePlanForToday}
-                />
               ))}
             </div>
-          )}
-        </div>
 
-        {/* Companion Sidebar Column (4 cols) */}
-        <div className="lg:col-span-4 space-y-5">
-          {/* Workload & Completion Gauge Card */}
-          <div className="bg-surface-lowest border border-outline-variant rounded-xl p-5 shadow-card space-y-4">
-            <div className="flex items-center justify-between border-b border-outline-subtle pb-3">
-              <div className="flex items-center gap-2">
-                <PieChart className="w-4 h-4 text-tertiary" aria-hidden="true" />
-                <h3 className="font-serif text-sm font-semibold text-on-surface">Progress Summary</h3>
+            {/* Task List Items */}
+            {sortedTasks.length === 0 ? (
+              <div className="bg-surface-low border border-dashed border-outline-variant rounded-xl p-12 text-center space-y-3 shadow-xs">
+                <CheckSquare className="w-8 h-8 text-secondary mx-auto opacity-50" aria-hidden="true" />
+                <h3 className="font-serif text-lg font-medium text-on-surface">No tasks found</h3>
+                <p className="text-xs text-secondary max-w-sm mx-auto font-sans leading-relaxed">
+                  {searchQuery
+                    ? `No tasks matching "${searchQuery}". Clear your search to see all tasks.`
+                    : 'You have no pending tasks in this view. Add a new task above to get started.'}
+                </p>
+                <div className="flex items-center justify-center gap-2 pt-2">
+                  {searchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setSearchQuery('')}
+                      className="px-3.5 py-2 bg-surface-lowest border border-outline-variant text-secondary hover:text-on-surface text-xs font-semibold rounded-md transition-colors shadow-sm cursor-pointer"
+                    >
+                      Clear Search
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => openTaskModal()}
+                    className="px-4 py-2 bg-primary-container text-on-primary-container hover:bg-primary text-xs font-semibold uppercase tracking-wider rounded-md transition-colors shadow-sm cursor-pointer"
+                  >
+                    Create Task
+                  </button>
+                </div>
               </div>
-              <span className="text-xs font-bold text-primary font-sans">{completionRate}% Done</span>
-            </div>
-
-            {/* Progress bar */}
-            <div className="space-y-1.5">
-              <div className="h-2 w-full bg-surface-container rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-primary-container rounded-full transition-all duration-500"
-                  style={{ width: `${completionRate}%` }}
-                />
+            ) : (
+              <div className="space-y-3">
+                {sortedTasks.map((task) => (
+                  <TaskCard
+                    key={task.id}
+                    task={task}
+                    onToggle={toggleTask}
+                    onToggleSubtask={toggleSubtask}
+                    onEdit={(t) => openTaskModal(t)}
+                    onDelete={handleRequestDeleteTask}
+                    onFocus={handleFocusTask}
+                    onPlanToday={handlePlanForToday}
+                  />
+                ))}
               </div>
-              <div className="flex justify-between text-[11px] text-secondary font-sans">
-                <span>{completed} Completed</span>
-                <span>{pending} Active</span>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3 pt-2 border-t border-outline-subtle">
-              <div className="p-3 bg-surface-low rounded-lg">
-                <span className="text-[10px] uppercase font-bold tracking-wider text-secondary block font-sans">
-                  Est. Focus
-                </span>
-                <span className="font-serif text-lg font-bold text-on-surface">
-                  {totalEstimatedMins >= 60
-                    ? `${Math.floor(totalEstimatedMins / 60)}h ${totalEstimatedMins % 60}m`
-                    : `${totalEstimatedMins}m`}
-                </span>
-              </div>
-              <div className="p-3 bg-surface-low rounded-lg">
-                <span className="text-[10px] uppercase font-bold tracking-wider text-secondary block font-sans">
-                  Urgent & High
-                </span>
-                <span className="font-serif text-lg font-bold text-red-600 dark:text-red-400">
-                  {priorityCounts.urgent + priorityCounts.high}
-                </span>
-              </div>
-            </div>
+            )}
           </div>
 
-          {/* Categories Filter Pills Card */}
-          <div className="bg-surface-lowest border border-outline-variant rounded-xl p-5 shadow-card space-y-3.5">
-            <div className="flex items-center gap-2 border-b border-outline-subtle pb-2.5">
-              <Tag className="w-4 h-4 text-tertiary" aria-hidden="true" />
-              <h3 className="font-serif text-sm font-semibold text-on-surface">Categories</h3>
+          {/* Companion Sidebar Column (4 cols) */}
+          <div className="lg:col-span-4 space-y-5">
+            {/* Workload & Completion Gauge Card */}
+            <div className="bg-surface-lowest border border-outline-variant rounded-xl p-5 shadow-card space-y-4">
+              <div className="flex items-center justify-between border-b border-outline-subtle pb-3">
+                <div className="flex items-center gap-2">
+                  <PieChart className="w-4 h-4 text-tertiary" aria-hidden="true" />
+                  <h3 className="font-serif text-sm font-semibold text-on-surface">Progress Summary</h3>
+                </div>
+                <span className="text-xs font-bold text-primary font-sans">{completionRate}% Done</span>
+              </div>
+
+              {/* Progress bar */}
+              <div className="space-y-1.5">
+                <div className="h-2 w-full bg-surface-container rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-primary-container rounded-full transition-all duration-500"
+                    style={{ width: `${completionRate}%` }}
+                  />
+                </div>
+                <div className="flex justify-between text-[11px] text-secondary font-sans">
+                  <span>{completed} Completed</span>
+                  <span>{pending} Active</span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 pt-2 border-t border-outline-subtle">
+                <div className="p-3 bg-surface-low rounded-lg">
+                  <span className="text-[10px] uppercase font-bold tracking-wider text-secondary block font-sans">
+                    Est. Focus
+                  </span>
+                  <span className="font-serif text-lg font-bold text-on-surface">
+                    {totalEstimatedMins >= 60
+                      ? `${Math.floor(totalEstimatedMins / 60)}h ${totalEstimatedMins % 60}m`
+                      : `${totalEstimatedMins}m`}
+                  </span>
+                </div>
+                <div className="p-3 bg-surface-low rounded-lg">
+                  <span className="text-[10px] uppercase font-bold tracking-wider text-secondary block font-sans">
+                    Urgent & High
+                  </span>
+                  <span className="font-serif text-lg font-bold text-red-600 dark:text-red-400">
+                    {priorityCounts.urgent + priorityCounts.high}
+                  </span>
+                </div>
+              </div>
             </div>
 
-            <div className="space-y-1.5">
-              {categoryCounts.map(({ category, pending: catPending, total: catTotal }) => {
-                const isActive = filter === category.toLowerCase();
-                return (
-                  <button
-                    key={category}
-                    type="button"
-                    onClick={() => setFilter(isActive ? 'all' : (category.toLowerCase() as TaskFilterType))}
-                    className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs transition-all cursor-pointer ${
-                      isActive
-                        ? 'bg-primary-container text-on-primary-container font-semibold shadow-xs'
-                        : 'bg-surface-low hover:bg-surface-container text-on-surface'
-                    }`}
-                  >
-                    <span className="font-medium">{category}</span>
-                    <span
-                      className={`text-[10px] px-2 py-0.5 rounded-full font-sans ${
+            {/* Categories Filter Pills Card */}
+            <div className="bg-surface-lowest border border-outline-variant rounded-xl p-5 shadow-card space-y-3.5">
+              <div className="flex items-center gap-2 border-b border-outline-subtle pb-2.5">
+                <Tag className="w-4 h-4 text-tertiary" aria-hidden="true" />
+                <h3 className="font-serif text-sm font-semibold text-on-surface">Categories</h3>
+              </div>
+
+              <div className="space-y-1.5">
+                {categoryCounts.map(({ category, pending: catPending, total: catTotal }) => {
+                  const isActive = filter === category.toLowerCase();
+                  return (
+                    <button
+                      key={category}
+                      type="button"
+                      onClick={() => setFilter(isActive ? 'all' : (category.toLowerCase() as TaskFilterType))}
+                      className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs transition-all cursor-pointer ${
                         isActive
-                          ? 'bg-primary/20 text-on-primary-container'
-                          : 'bg-surface-container text-secondary'
+                          ? 'bg-primary-container text-on-primary-container font-semibold shadow-xs'
+                          : 'bg-surface-low hover:bg-surface-container text-on-surface'
                       }`}
                     >
-                      {catPending} active
-                    </span>
-                  </button>
-                );
-              })}
+                      <span className="font-medium">{category}</span>
+                      <span
+                        className={`text-[10px] px-2 py-0.5 rounded-full font-sans ${
+                          isActive
+                            ? 'bg-primary/20 text-on-primary-container'
+                            : 'bg-surface-container text-secondary'
+                        }`}
+                      >
+                        {catPending} active
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-          </div>
 
-          {/* Priority Highlights Card */}
-          <div className="bg-surface-lowest border border-outline-variant rounded-xl p-5 shadow-card space-y-3">
-            <div className="flex items-center gap-2 border-b border-outline-subtle pb-2.5">
-              <Flame className="w-4 h-4 text-orange-500" aria-hidden="true" />
-              <h3 className="font-serif text-sm font-semibold text-on-surface">Priority Breakdown</h3>
-            </div>
+            {/* Priority Highlights Card */}
+            <div className="bg-surface-lowest border border-outline-variant rounded-xl p-5 shadow-card space-y-3">
+              <div className="flex items-center gap-2 border-b border-outline-subtle pb-2.5">
+                <Flame className="w-4 h-4 text-orange-500" aria-hidden="true" />
+                <h3 className="font-serif text-sm font-semibold text-on-surface">Priority Breakdown</h3>
+              </div>
 
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              <div className="p-2.5 rounded-lg bg-red-50 dark:bg-red-950/30 border border-red-200/50 dark:border-red-900/30 flex items-center justify-between">
-                <span className="text-red-700 dark:text-red-300 font-medium">Urgent</span>
-                <span className="font-bold text-red-800 dark:text-red-200">{priorityCounts.urgent}</span>
-              </div>
-              <div className="p-2.5 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200/50 dark:border-amber-900/30 flex items-center justify-between">
-                <span className="text-amber-700 dark:text-amber-300 font-medium">High</span>
-                <span className="font-bold text-amber-800 dark:text-amber-200">{priorityCounts.high}</span>
-              </div>
-              <div className="p-2.5 rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200/50 dark:border-blue-900/30 flex items-center justify-between">
-                <span className="text-blue-700 dark:text-blue-300 font-medium">Medium</span>
-                <span className="font-bold text-blue-800 dark:text-blue-200">{priorityCounts.medium}</span>
-              </div>
-              <div className="p-2.5 rounded-lg bg-stone-100 dark:bg-stone-900/40 border border-outline-subtle flex items-center justify-between">
-                <span className="text-secondary font-medium">Low</span>
-                <span className="font-bold text-on-surface">{priorityCounts.low}</span>
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className="p-2.5 rounded-lg bg-red-50 dark:bg-red-950/30 border border-red-200/50 dark:border-red-900/30 flex items-center justify-between">
+                  <span className="text-red-700 dark:text-red-300 font-medium">Urgent</span>
+                  <span className="font-bold text-red-800 dark:text-red-200">{priorityCounts.urgent}</span>
+                </div>
+                <div className="p-2.5 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200/50 dark:border-amber-900/30 flex items-center justify-between">
+                  <span className="text-amber-700 dark:text-amber-300 font-medium">High</span>
+                  <span className="font-bold text-amber-800 dark:text-amber-200">{priorityCounts.high}</span>
+                </div>
+                <div className="p-2.5 rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200/50 dark:border-blue-900/30 flex items-center justify-between">
+                  <span className="text-blue-700 dark:text-blue-300 font-medium">Medium</span>
+                  <span className="font-bold text-blue-800 dark:text-blue-200">{priorityCounts.medium}</span>
+                </div>
+                <div className="p-2.5 rounded-lg bg-stone-100 dark:bg-stone-900/40 border border-outline-subtle flex items-center justify-between">
+                  <span className="text-secondary font-medium">Low</span>
+                  <span className="font-bold text-on-surface">{priorityCounts.low}</span>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
+
+      <ConfirmModal
+        isOpen={!!taskToDelete}
+        onClose={() => setTaskToDelete(null)}
+        onConfirm={handleConfirmDeleteTask}
+        title="Delete Task"
+        description={`Are you sure you want to delete "${taskToDelete?.title}"? This action can still be undone from the notification banner.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        isDestructive
+      />
     </div>
   );
 };

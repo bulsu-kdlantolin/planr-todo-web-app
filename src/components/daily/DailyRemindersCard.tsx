@@ -18,17 +18,17 @@ export const DailyRemindersCard: React.FC<DailyRemindersCardProps> = ({
 }) => {
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Bell className="w-4 h-4 text-tertiary" aria-hidden="true" />
-          <h2 className="font-serif text-xl font-semibold text-on-surface">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2 min-w-0">
+          <Bell className="w-4 h-4 text-tertiary flex-shrink-0" aria-hidden="true" />
+          <h2 className="font-serif text-lg sm:text-xl font-semibold text-on-surface truncate">
             Today's Reminders
           </h2>
         </div>
         <button
           type="button"
           onClick={onNavigateReminders}
-          className="text-xs font-semibold text-primary hover:text-primary-container flex items-center gap-1 transition-colors uppercase tracking-wider"
+          className="text-xs font-semibold text-primary hover:text-primary-container flex items-center gap-1 transition-colors uppercase tracking-wider flex-shrink-0"
         >
           <span>Manage</span>
           <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />

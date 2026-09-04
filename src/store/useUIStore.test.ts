@@ -28,6 +28,39 @@ describe('useUIStore', () => {
     expect(useUIStore.getState().taskModalOpen).toBe(false);
   });
 
+  it('manages reminder modal open and editing states', () => {
+    expect(useUIStore.getState().reminderModalOpen).toBe(false);
+    expect(useUIStore.getState().editingReminder).toBeNull();
+
+    useUIStore.getState().openReminderModal();
+    expect(useUIStore.getState().reminderModalOpen).toBe(true);
+    expect(useUIStore.getState().editingReminder).toBeNull();
+
+    useUIStore.getState().closeReminderModal();
+    expect(useUIStore.getState().reminderModalOpen).toBe(false);
+
+    const mockReminder = {
+      id: 'rem-1',
+      title: 'Deep breath',
+      time: '12:00',
+      period: 'Afternoon' as const,
+      repeat: 'Daily' as const,
+      sound: true,
+      active: true,
+      completed: false,
+      createdAt: '2026-08-30T00:00:00.000Z',
+      updatedAt: '2026-08-30T00:00:00.000Z'
+    };
+
+    useUIStore.getState().openReminderModal(mockReminder);
+    expect(useUIStore.getState().reminderModalOpen).toBe(true);
+    expect(useUIStore.getState().editingReminder?.id).toBe('rem-1');
+
+    useUIStore.getState().closeReminderModal();
+    expect(useUIStore.getState().reminderModalOpen).toBe(false);
+    expect(useUIStore.getState().editingReminder).toBeNull();
+  });
+
   it('toggles full screen zen mode', () => {
     expect(useUIStore.getState().fullScreenMode).toBe(false);
     useUIStore.getState().toggleFullScreenMode();

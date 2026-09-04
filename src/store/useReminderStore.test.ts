@@ -73,4 +73,28 @@ describe('useReminderStore', () => {
       expect(useReminderStore.getState().reminders.length).toBe(1);
     }
   });
+
+  it('updates a reminder and increments revision', async () => {
+    const reminder = await useReminderStore.getState().addReminder({
+      title: 'Water plants',
+      time: '10:00',
+      period: 'Morning',
+      repeat: 'Daily',
+      sound: true
+    });
+
+    const updated = await useReminderStore.getState().updateReminder(reminder.id, {
+      title: 'Water indoor plants',
+      time: '11:00',
+      period: 'Morning',
+      repeat: 'Weekly'
+    });
+
+    expect(updated).not.toBeNull();
+    expect(updated?.title).toBe('Water indoor plants');
+    expect(updated?.time).toBe('11:00');
+    expect(updated?.repeat).toBe('Weekly');
+    expect(updated?.revision).toBe(2);
+    expect(useReminderStore.getState().reminders[0].title).toBe('Water indoor plants');
+  });
 });

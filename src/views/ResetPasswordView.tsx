@@ -27,12 +27,20 @@ export const ResetPasswordView: React.FC = () => {
     (session?.user?.email && localStorage.getItem(`planr_oauth_provider_${session.user.email.toLowerCase()}`) === 'google')
   );
 
+  const hasPassword = Boolean(
+    session?.user?.user_metadata?.has_password ||
+    (session?.user?.id && localStorage.getItem(`planr_has_password_${session.user.id}`) === 'true') ||
+    (session?.user?.email && localStorage.getItem(`planr_has_password_${session.user.email.toLowerCase()}`) === 'true')
+  );
+
+  const isPureGoogleUser = isGoogleUser && !hasPassword;
+
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isSubmitting) return;
 
-    if (isGoogleUser) {
-      setErrorMessage('Password reset is not permitted for accounts registered with Google. Please sign in with Google.');
+    if (isPureGoogleUser) {
+      setErrorMessage('This account was registered using Google and does not have a password. Please sign in with Google.');
       triggerHapticFeedback();
       return;
     }
@@ -67,6 +75,16 @@ export const ResetPasswordView: React.FC = () => {
       setErrorMessage(error.message);
     } else {
       setIsSuccess(true);
+      if (session?.user?.id) {
+        try {
+          localStorage.setItem(`planr_has_password_${session.user.id}`, 'true');
+        } catch {}
+      }
+      if (session?.user?.email) {
+        try {
+          localStorage.setItem(`planr_has_password_${session.user.email.toLowerCase()}`, 'true');
+        } catch {}
+      }
       showToast('Password updated successfully! 🔒', 'success');
       setTimeout(() => {
         setActiveView('daily');
@@ -74,7 +92,6 @@ export const ResetPasswordView: React.FC = () => {
     }
   };
 
-  const isInvalidSession = !session;
 
   return (
     <div className="min-h-screen bg-surface flex flex-col justify-center items-center px-4 sm:px-6 py-12 animate-fade-in">
@@ -125,7 +142,7 @@ export const ResetPasswordView: React.FC = () => {
               Redirecting you to your workspace...
             </p>
           </div>
-        ) : isGoogleUser ? (
+        ) : isPureGoogleUser ? (
           <div className="p-6 bg-surface-low rounded-xl border border-outline-subtle text-center space-y-4 animate-fade-in">
             <div className="w-12 h-12 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-600 dark:text-amber-400 mx-auto">
               <ShieldCheck className="w-6 h-6" aria-hidden="true" />
@@ -135,7 +152,7 @@ export const ResetPasswordView: React.FC = () => {
                 Google Account Detected
               </h3>
               <p className="text-xs text-secondary max-w-xs mx-auto">
-                This account was registered using Google. Password reset is not permitted for accounts authenticated via Google. Please sign in directly with Google.
+                This account was registered using Google and does not have a password set. Password reset is not available — please sign in directly with Google.
               </p>
             </div>
             <button

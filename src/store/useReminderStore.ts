@@ -11,6 +11,7 @@ interface ReminderState {
   setReminders: (reminders: Reminder[]) => void;
   setFilter: (filter: 'active' | 'completed' | 'all') => void;
   addReminder: (remData: Omit<Reminder, 'id' | 'active' | 'completed'>) => Promise<Reminder>;
+  updateReminder: (id: string, updates: Partial<Omit<Reminder, 'id' | 'createdAt'>>) => Promise<Reminder | null>;
   toggleReminder: (id: string) => Promise<Reminder | null>;
   snoozeReminder: (id: string, minutes?: number) => Promise<Reminder | null>;
   deleteReminder: (id: string) => Promise<Reminder | null>;
@@ -53,6 +54,30 @@ export const useReminderStore = create<ReminderState>((set, get) => ({
       );
     }
     return newRem;
+  },
+
+  updateReminder: async (id, updates) => {
+    const rem = get().reminders.find((r) => r.id === id);
+    if (!rem) return null;
+
+    const updated: Reminder = {
+      ...rem,
+      ...updates,
+      revision: (rem.revision ?? 0) + 1,
+      updatedAt: new Date().toISOString()
+    };
+
+    set((state) => ({
+      reminders: state.reminders.map((r) => (r.id === id ? updated : r))
+    }));
+
+    const userId = await getUserId();
+    if (userId) {
+      updateReminderDb(updated, userId).catch((err) =>
+        console.error('Failed to sync reminder update to Supabase:', err)
+      );
+    }
+    return updated;
   },
 
   toggleReminder: async (id) => {

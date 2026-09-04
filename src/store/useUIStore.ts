@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { ViewType, ToastMessage, Task } from '../types';
+import { ViewType, ToastMessage, Task, Reminder } from '../types';
 import { generateUUID } from '../utils/id';
 
 interface UIState {
@@ -9,7 +9,9 @@ interface UIState {
   zenMode: boolean; // Alias
   taskModalOpen: boolean;
   editingTask: Task | null;
+  initialTaskDueDate: string | null;
   reminderModalOpen: boolean;
+  editingReminder: Reminder | null;
   authModalOpen: boolean;
   authMode: 'signin' | 'signup';
   intentionModalOpen: boolean;
@@ -23,9 +25,9 @@ interface UIState {
   toggleFullScreenMode: () => void;
   setZenMode: (zen: boolean) => void;
   toggleZenMode: () => void;
-  openTaskModal: (task?: Task | null) => void;
+  openTaskModal: (task?: Task | null, initialDueDate?: string | null) => void;
   closeTaskModal: () => void;
-  openReminderModal: () => void;
+  openReminderModal: (reminder?: Reminder | null) => void;
   closeReminderModal: () => void;
   openAuthModal: (mode?: 'signin' | 'signup') => void;
   closeAuthModal: () => void;
@@ -47,7 +49,9 @@ export const useUIStore = create<UIState>((set, get) => ({
   zenMode: false,
   taskModalOpen: false,
   editingTask: null,
+  initialTaskDueDate: null,
   reminderModalOpen: false,
+  editingReminder: null,
   authModalOpen: false,
   authMode: 'signin',
   intentionModalOpen: false,
@@ -57,7 +61,16 @@ export const useUIStore = create<UIState>((set, get) => ({
 
   setActiveView: (activeView) => {
     set({ activeView });
-    window.location.hash = activeView;
+    // Do not overwrite window.location.hash if it contains active Supabase auth tokens
+    const currentHash = window.location.hash;
+    const hasAuthTokens =
+      currentHash.includes('access_token=') ||
+      currentHash.includes('type=recovery') ||
+      currentHash.includes('error_description=');
+
+    if (!hasAuthTokens) {
+      window.location.hash = activeView;
+    }
     window.scrollTo({ top: 0, behavior: 'instant' });
   },
 
@@ -71,11 +84,13 @@ export const useUIStore = create<UIState>((set, get) => ({
   setZenMode: (zen) => get().setFullScreenMode(zen),
   toggleZenMode: () => get().toggleFullScreenMode(),
 
-  openTaskModal: (editingTask = null) => set({ taskModalOpen: true, editingTask }),
-  closeTaskModal: () => set({ taskModalOpen: false, editingTask: null }),
+  openTaskModal: (editingTask = null, initialTaskDueDate = null) =>
+    set({ taskModalOpen: true, editingTask, initialTaskDueDate }),
+  closeTaskModal: () =>
+    set({ taskModalOpen: false, editingTask: null, initialTaskDueDate: null }),
 
-  openReminderModal: () => set({ reminderModalOpen: true }),
-  closeReminderModal: () => set({ reminderModalOpen: false }),
+  openReminderModal: (editingReminder = null) => set({ reminderModalOpen: true, editingReminder }),
+  closeReminderModal: () => set({ reminderModalOpen: false, editingReminder: null }),
 
   openAuthModal: (authMode = 'signin') => set({ authModalOpen: true, authMode }),
   closeAuthModal: () => set({ authModalOpen: false }),

@@ -139,11 +139,12 @@ export const SignInView: React.FC = () => {
       return;
     }
 
-    // Check if this email is a known Google OAuth account
+    // Check if this email is a known Google OAuth account that does not have an added password
     const knownProvider = localStorage.getItem(`planr_oauth_provider_${cleanEmail.toLowerCase()}`);
-    if (knownProvider === 'google') {
+    const hasPassword = localStorage.getItem(`planr_has_password_${cleanEmail.toLowerCase()}`) === 'true';
+    if (knownProvider === 'google' && !hasPassword) {
       triggerHapticFeedback();
-      setErrorMessage('This account was registered using Google. Password reset is not available for Google accounts — please sign in with Google.');
+      setErrorMessage('This account was registered using Google and does not have a password set. Password reset is not available — please sign in with Google, or add a password in Settings once signed in.');
       return;
     }
 

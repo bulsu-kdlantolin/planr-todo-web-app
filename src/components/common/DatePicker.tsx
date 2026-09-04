@@ -8,6 +8,7 @@ interface DatePickerProps {
   label?: string;
   placeholder?: string;
   className?: string;
+  minDate?: string;
 }
 
 export const DatePicker: React.FC<DatePickerProps> = ({
@@ -15,7 +16,8 @@ export const DatePicker: React.FC<DatePickerProps> = ({
   onChange,
   label,
   placeholder = 'Select date...',
-  className = ''
+  className = '',
+  minDate
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -101,6 +103,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
   }
 
   const handleSelectDate = (dateStr: string) => {
+    if (minDate && dateStr < minDate) return;
     onChange(dateStr);
     setIsOpen(false);
   };
@@ -115,6 +118,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
     const target = new Date();
     target.setDate(target.getDate() + offsetDays);
     const dateStr = target.toISOString().split('T')[0];
+    if (minDate && dateStr < minDate) return;
     onChange(dateStr);
     setViewYear(target.getFullYear());
     setViewMonth(target.getMonth());
@@ -202,20 +206,24 @@ export const DatePicker: React.FC<DatePickerProps> = ({
               const isSelected = value === item.dateString;
               const isToday = todayStr === item.dateString;
               const isCurrentMonth = item.monthOffset === 0;
+              const isPast = minDate ? item.dateString < minDate : false;
 
               return (
                 <button
                   key={idx}
                   type="button"
-                  onClick={() => handleSelectDate(item.dateString)}
+                  disabled={isPast}
+                  onClick={() => !isPast && handleSelectDate(item.dateString)}
                   className={`h-8 w-8 mx-auto rounded-lg flex items-center justify-center text-xs transition-all ${
-                    isSelected
+                    isPast
+                      ? 'opacity-25 cursor-not-allowed text-secondary/30'
+                      : isSelected
                       ? 'bg-primary-container text-on-primary-container font-bold shadow-xs'
                       : isToday
                       ? 'bg-surface-container text-primary font-semibold border border-primary-container/40'
                       : isCurrentMonth
-                      ? 'text-on-surface hover:bg-surface-low font-normal'
-                      : 'text-secondary/40 hover:bg-surface-low/50'
+                      ? 'text-on-surface hover:bg-surface-low font-normal cursor-pointer'
+                      : 'text-secondary/40 hover:bg-surface-low/50 cursor-pointer'
                   }`}
                 >
                   {item.day}

@@ -44,7 +44,8 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const isConfigured = isSupabaseConfigured();
+  const [isLoading, setIsLoading] = useState(isConfigured);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
 
   const updateUserMeta = useMetaStore((state) => state.updateUser);
@@ -54,8 +55,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const setTasks = useTaskStore((state) => state.setTasks);
   const setReminders = useReminderStore((state) => state.setReminders);
   const setFocusSessions = useTimerStore((state) => state.setFocusSessions);
-
-  const isConfigured = isSupabaseConfigured();
 
   // Track online/offline status
   useEffect(() => {
@@ -73,7 +72,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const hydrateUserData = async (userId: string, currentSessionUser: User) => {
     try {
-      // Record Google provider to prevent unauthorized password resets
+      // Record Google provider to prevent unauthorized password resets on passwordless accounts
       const isGoogle =
         currentSessionUser.app_metadata?.provider === 'google' ||
         currentSessionUser.app_metadata?.providers?.includes('google') ||
@@ -81,6 +80,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       if (isGoogle && currentSessionUser.email) {
         try {
           localStorage.setItem(`planr_oauth_provider_${currentSessionUser.email.toLowerCase()}`, 'google');
+        } catch {}
+      }
+
+      // Record if this user has established a password
+      if (currentSessionUser.user_metadata?.has_password) {
+        try {
+          localStorage.setItem(`planr_has_password_${userId}`, 'true');
+          if (currentSessionUser.email) {
+            localStorage.setItem(`planr_has_password_${currentSessionUser.email.toLowerCase()}`, 'true');
+          }
         } catch {}
       }
 
@@ -185,10 +194,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       data: { subscription }
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       setSession(session);
-      setUser(session?.user ?? null);
-
       if (event === 'PASSWORD_RECOVERY') {
-        window.location.hash = '#reset-password';
+        window.location.hash = 'reset-password';
+      } else if (event === 'SIGNED_IN') {
+        if (window.location.hash.includes('access_token=')) {
+          window.location.hash = 'daily';
+        }
       }
 
       if (session?.user) {
@@ -236,6 +247,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
       
       if (data.user) {
+        if (data.user.email) {
+          try {
+            localStorage.setItem(`planr_has_password_${data.user.email.toLowerCase()}`, 'true');
+          } catch {}
+        }
         await hydrateUserData(data.user.id, data.user);
       }
       
@@ -261,13 +277,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         email: trimmedEmail,
         password,
         options: {
-          data: { name: name || trimmedEmail.split('@')[0] },
+          data: { name: name || trimmedEmail.split('@')[0], has_password: true },
           emailRedirectTo: window.location.origin
         }
       });
 
       if (error) {
         return { error: new Error(formatFriendlyAuthError(error)) };
+      }
+
+      if (trimmedEmail) {
+        try {
+          localStorage.setItem(`planr_has_password_${trimmedEmail.toLowerCase()}`, 'true');
+        } catch {}
       }
 
       if (data.user && data.user.identities && data.user.identities.length === 0) {
@@ -288,8 +310,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const signInWithGoogle = async () => {
     if (!isConfigured) {
       updateUserMeta({
-        email: 'google.user@planr.app',
         name: 'Google User',
+        email: 'user@gmail.com',
         isLoggedIn: true
       });
       return { error: null };
@@ -401,11 +423,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const sendPasswordResetEmail = async (email: string) => {
     const trimmedEmail = email.trim();
 
-    // Check if account was created using Google OAuth
+    // Check if account was created using Google OAuth and does not have a password set
     const knownProvider = localStorage.getItem(`planr_oauth_provider_${trimmedEmail.toLowerCase()}`);
-    if (knownProvider === 'google') {
+    const hasPassword = localStorage.getItem(`planr_has_password_${trimmedEmail.toLowerCase()}`) === 'true';
+    if (knownProvider === 'google' && !hasPassword) {
       return {
-        error: new Error('This account was registered using Google. Password reset is not permitted for Google accounts — please sign in with Google.')
+        error: new Error('This account was registered using Google and does not have a password set. Password reset is not permitted — please sign in with Google, or set a password in Settings once signed in.')
       };
     }
 
@@ -415,7 +438,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(trimmedEmail, {
-        redirectTo: `${window.location.origin}/#reset-password`
+        redirectTo: window.location.origin
       });
       if (error) {
         return { error: new Error(formatFriendlyAuthError(error)) };
@@ -444,6 +467,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       if (session?.user?.id) {
         try {
           localStorage.setItem(`planr_has_password_${session.user.id}`, 'true');
+        } catch {}
+      }
+      if (session?.user?.email) {
+        try {
+          localStorage.setItem(`planr_has_password_${session.user.email.toLowerCase()}`, 'true');
         } catch {}
       }
       return { error: null };

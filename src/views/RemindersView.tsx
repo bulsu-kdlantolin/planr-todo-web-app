@@ -1,15 +1,17 @@
-import React, { useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useReminderStore } from '../store/useReminderStore';
 import { useMetaStore } from '../store/useMetaStore';
 import { useUIStore } from '../store/useUIStore';
 import { formatTimeDisplay } from '../utils/date';
-import { DaySegment, Recurrence } from '../types';
+import { DaySegment, Recurrence, Reminder } from '../types';
+import { ConfirmModal } from '../components/common/ConfirmModal';
 import {
   Plus,
   Clock,
   Check,
   Undo2,
   Trash2,
+  Edit2,
   BellOff,
   Sun,
   Sunset,
@@ -69,6 +71,7 @@ export const RemindersView: React.FC = () => {
 
   const activeCount = reminders.filter((r) => !r.completed).length;
   const completedCount = reminders.filter((r) => r.completed).length;
+  const [reminderToDelete, setReminderToDelete] = useState<Reminder | null>(null);
 
   const handleDeleteWithUndo = async (id: string) => {
     const deleted = await deleteReminder(id);
@@ -77,6 +80,13 @@ export const RemindersView: React.FC = () => {
         restoreReminder(deleted);
       });
     }
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!reminderToDelete) return;
+    const target = reminderToDelete;
+    setReminderToDelete(null);
+    await handleDeleteWithUndo(target.id);
   };
 
   const getPeriodIcon = (period: DaySegment) => {
@@ -93,7 +103,7 @@ export const RemindersView: React.FC = () => {
   };
 
   return (
-    <div className="max-w-5xl mx-auto px-6 py-8 animate-fade-in space-y-7">
+    <div className="max-w-6xl mx-auto px-6 py-8 animate-fade-in space-y-7">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-5 border-b border-outline-subtle gap-4">
         <div>
@@ -112,7 +122,7 @@ export const RemindersView: React.FC = () => {
 
         <button
           type="button"
-          onClick={openReminderModal}
+          onClick={() => openReminderModal()}
           className="flex items-center gap-2 px-5 py-2.5 bg-primary-container text-on-primary-container hover:bg-primary rounded-md text-xs font-semibold uppercase tracking-wider shadow-sm transition-all focus:ring-2 focus:ring-primary-container focus:outline-none active:scale-[0.98] cursor-pointer self-start sm:self-auto"
         >
           <Plus className="w-4 h-4" aria-hidden="true" />
@@ -179,7 +189,7 @@ export const RemindersView: React.FC = () => {
               </p>
               <button
                 type="button"
-                onClick={openReminderModal}
+                onClick={() => openReminderModal()}
                 className="px-4 py-2 bg-primary-container text-on-primary-container hover:bg-primary text-xs font-semibold uppercase tracking-wider rounded-md transition-colors shadow-sm cursor-pointer"
               >
                 Create Reminder
@@ -260,14 +270,24 @@ export const RemindersView: React.FC = () => {
                         )}
                       </div>
 
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteWithUndo(reminder.id)}
-                        aria-label={`Delete reminder ${reminder.title}`}
-                        className="p-1.5 text-secondary hover:text-red-500 rounded-md hover:bg-surface-low transition-colors cursor-pointer"
-                      >
-                        <Trash2 className="w-4 h-4" aria-hidden="true" />
-                      </button>
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => openReminderModal(reminder)}
+                          aria-label={`Edit reminder ${reminder.title}`}
+                          className="p-1.5 text-secondary hover:text-on-surface rounded-md hover:bg-surface-low transition-colors cursor-pointer"
+                        >
+                          <Edit2 className="w-4 h-4" aria-hidden="true" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setReminderToDelete(reminder)}
+                          aria-label={`Delete reminder ${reminder.title}`}
+                          className="p-1.5 text-secondary hover:text-red-500 rounded-md hover:bg-surface-low transition-colors cursor-pointer"
+                        >
+                          <Trash2 className="w-4 h-4" aria-hidden="true" />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 );
@@ -281,18 +301,18 @@ export const RemindersView: React.FC = () => {
           {/* Next Reminder Highlight Card */}
           {nextReminder && (
             <div className="bg-surface-lowest border border-primary-container/30 rounded-xl p-5 shadow-card space-y-3 relative overflow-hidden">
-              <div className="flex items-center justify-between border-b border-outline-subtle pb-2.5">
-                <div className="flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-primary" aria-hidden="true" />
-                  <h3 className="font-serif text-sm font-semibold text-on-surface">Next Reminder</h3>
+              <div className="flex items-center justify-between border-b border-outline-subtle pb-2.5 gap-3">
+                <div className="flex items-center gap-2 min-w-0 flex-1">
+                  <Clock className="w-4 h-4 text-primary flex-shrink-0" aria-hidden="true" />
+                  <h3 className="font-serif text-sm font-semibold text-on-surface truncate">Next Reminder</h3>
                 </div>
-                <span className="text-xs font-bold text-primary-container font-sans">
+                <span className="text-xs font-bold text-primary-container font-sans flex-shrink-0">
                   {formatTimeDisplay(nextReminder.time, timeFormat)}
                 </span>
               </div>
 
               <div>
-                <h4 className="font-serif text-base font-semibold text-on-surface">{nextReminder.title}</h4>
+                <h4 className="font-serif text-base font-semibold text-on-surface break-words">{nextReminder.title}</h4>
                 {nextReminder.description && (
                   <p className="text-xs text-secondary mt-1 line-clamp-2">{nextReminder.description}</p>
                 )}
@@ -350,6 +370,17 @@ export const RemindersView: React.FC = () => {
           </div>
         </div>
       </div>
+
+      <ConfirmModal
+        isOpen={!!reminderToDelete}
+        onClose={() => setReminderToDelete(null)}
+        onConfirm={handleConfirmDelete}
+        title="Delete Reminder"
+        description={`Are you sure you want to delete "${reminderToDelete?.title}"? This action can still be undone from the notification banner.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        isDestructive
+      />
     </div>
   );
 };
