@@ -5,7 +5,6 @@ import { TaskCategory, PriorityLevel, Subtask } from '../../types';
 import { Modal } from '../common/Modal';
 import { Select, SelectOption } from '../common/Select';
 import { DatePicker } from '../common/DatePicker';
-import { NumberStepper } from '../common/NumberStepper';
 import { ModalFooter } from '../common/ModalFooter';
 import { getPriorityLabel } from '../../utils/priority';
 import { generateUUID } from '../../utils/id';
@@ -199,23 +198,14 @@ export const TaskModal: React.FC = () => {
           />
         </div>
 
-        {/* Due Date & Pomodoros with Custom Crafted Components */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* Due Date */}
+        <div>
           <DatePicker
             label="Due Date"
             value={dueDate}
             onChange={(val) => setDueDate(val)}
             minDate={getTodayDateString()}
             placeholder="Pick due date..."
-          />
-
-          <NumberStepper
-            label="Focus Blocks"
-            value={estimatedPomodoros}
-            onChange={(val) => setEstimatedPomodoros(val)}
-            min={1}
-            max={12}
-            unitLabel="blocks (25m)"
           />
         </div>
 

@@ -59,9 +59,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, setMobileOpen }) =
     setMobileOpen(false);
   };
 
-  const mins = Math.floor(remainingSec / 60);
+  const hours = Math.floor(remainingSec / 3600);
+  const mins = Math.floor((remainingSec % 3600) / 60);
   const secs = remainingSec % 60;
-  const timeFormatted = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  const timeFormatted =
+    hours > 0
+      ? `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
+      : `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
   const isTimerActive = remainingSec < durationSec || isTimerRunning;
 
   return (

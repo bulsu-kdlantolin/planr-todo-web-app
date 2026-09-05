@@ -21,6 +21,7 @@ interface TimerState {
   setFocusSessions: (sessions: FocusSession[]) => void;
   setSelectedTaskId: (id: string | null) => void;
   setPreset: (preset: PresetType, mins: number) => void;
+  setCustomDuration: (totalSeconds: number) => void;
   setAmbientType: (type: AmbientType) => void;
   startTimer: () => void;
   pauseTimer: () => void;
@@ -85,6 +86,18 @@ export const useTimerStore = create<TimerState>((set, get) => {
       const secs = mins * 60;
       set({
         currentPreset,
+        durationSec: secs,
+        remainingSec: secs,
+        isRunning: false
+      });
+    },
+
+    setCustomDuration: (totalSeconds) => {
+      const workerInstance = getWorker();
+      if (workerInstance) workerInstance.postMessage({ type: 'RESET' });
+      const secs = Math.max(1, totalSeconds);
+      set({
+        currentPreset: 'custom',
         durationSec: secs,
         remainingSec: secs,
         isRunning: false

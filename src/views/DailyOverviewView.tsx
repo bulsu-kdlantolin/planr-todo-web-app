@@ -153,7 +153,7 @@ export const DailyOverviewView: React.FC = () => {
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-6 py-8 animate-fade-in space-y-8">
+    <div className="max-w-[1500px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-in space-y-8">
       {/* Header & Dynamic Greeting */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 border-b border-outline-subtle gap-4">
         <div>

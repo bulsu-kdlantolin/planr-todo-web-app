@@ -128,7 +128,7 @@ export const SettingsView: React.FC = () => {
   );
 
   return (
-    <div className="max-w-5xl mx-auto px-6 py-8 animate-fade-in space-y-8">
+    <div className="max-w-[1500px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-in space-y-8">
       {/* Header */}
       <div className="pb-5 border-b border-outline-subtle">
         <h1 className="font-serif text-3xl sm:text-4xl font-semibold text-on-surface">Settings</h1>

@@ -113,15 +113,6 @@ const TaskCardComponent: React.FC<TaskCardProps> = ({
                 <span>{isToday ? 'Today' : task.dueDate}</span>
               </span>
             )}
-
-            {task.estimatedPomodoros > 0 && !compact && (
-              <span className="inline-flex items-center gap-1 text-xs text-secondary">
-                <Timer className="w-3.5 h-3.5" aria-hidden="true" />
-                <span>
-                  {task.completedPomodoros || 0}/{task.estimatedPomodoros} focus blocks
-                </span>
-              </span>
-            )}
           </div>
 
           <h3

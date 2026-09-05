@@ -103,7 +103,7 @@ export const RemindersView: React.FC = () => {
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-6 py-8 animate-fade-in space-y-7">
+    <div className="max-w-[1500px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-in space-y-7">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-5 border-b border-outline-subtle gap-4">
         <div>
