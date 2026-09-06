@@ -205,7 +205,7 @@ export const SignInView: React.FC = () => {
           <p className="text-xs sm:text-sm text-secondary font-sans max-w-xs mx-auto">
             {mode === 'forgot_password'
               ? 'We will send a password reset link to your email address.'
-              : 'Sign in to access your focused workspace and daily schedule.'}
+              : 'Sign in to sync your tasks and daily schedule.'}
           </p>
         </div>
 

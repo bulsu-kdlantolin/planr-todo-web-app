@@ -39,8 +39,8 @@ export const OnboardingView: React.FC = () => {
 
     await updateUser({
       name: resolvedName,
-      title: title.trim() || 'Productivity User',
-      tagline: tagline.trim() || 'Simple Focus',
+      title: title.trim() || 'Writer & Builder',
+      tagline: tagline.trim() || 'One day at a time',
       isLoggedIn: true
     });
 
@@ -125,7 +125,7 @@ export const OnboardingView: React.FC = () => {
             Set up your workspace
           </h1>
           <p className="text-sm text-secondary font-sans max-w-sm mx-auto">
-            A quick 30-second setup to get your workspace ready.
+            Set your name and default timer duration to get started.
           </p>
         </div>
 
@@ -179,7 +179,7 @@ export const OnboardingView: React.FC = () => {
                 rows={2}
                 value={goal}
                 onChange={(e) => setGoal(e.target.value)}
-                placeholder="e.g. Ship the new feature with zero distractions"
+                placeholder="e.g. Finish the design review and send feedback"
                 className="w-full pl-11 pr-4 py-2.5 bg-surface-low border border-outline-variant rounded-xl text-sm text-on-surface placeholder:text-secondary/60 focus:border-primary-container focus:ring-2 focus:ring-primary-container/20 focus:outline-none transition-all resize-none"
               />
             </div>

@@ -47,15 +47,15 @@ export const WeeklyAnalytics: React.FC<WeeklyAnalyticsProps> = ({
         <div className="flex items-center gap-2">
           <TrendingUp className="w-5 h-5 text-tertiary" aria-hidden="true" />
           <div>
-            <h3 className="font-serif text-lg font-semibold text-on-surface">Weekly Flow & Reflection</h3>
-            <p className="text-xs text-secondary">7-day focus distribution and intentional habit velocity</p>
+            <h3 className="font-serif text-lg font-semibold text-on-surface">Weekly Summary</h3>
+            <p className="text-xs text-secondary">Focus time and completed tasks over the last 7 days</p>
           </div>
         </div>
 
         <div className="flex items-center gap-4 text-xs">
           <div className="flex items-center gap-1.5 font-semibold text-on-surface">
             <span className="w-2.5 h-2.5 rounded-full bg-tertiary" aria-hidden="true" />
-            <span>{totalWeeklyFocus} mins deep focus</span>
+            <span>{totalWeeklyFocus} mins focus</span>
           </div>
           <div className="flex items-center gap-1.5 font-semibold text-secondary">
             <span className="w-2.5 h-2.5 rounded-full bg-primary-container" aria-hidden="true" />

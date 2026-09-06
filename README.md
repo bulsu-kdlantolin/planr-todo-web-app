@@ -1,8 +1,8 @@
-# Planr — Productivity, simplified.
+# Planr — Daily Planner & Focus Timer
 
 > *"Simplicity is the ultimate sophistication."*
 
-**Planr** is a clean, focused todo app and timer designed to help you organize your day with clarity, calm, and 100% private on-device storage. Built with **React 18**, **TypeScript**, **Tailwind CSS**, and **IndexedDB**.
+**Planr** is a distraction-free daily planner with built-in ambient sounds and private local storage. No subscriptions, no ads, and no sign-up required. Built with **React 18**, **TypeScript**, **Tailwind CSS**, and **IndexedDB**.
 
 ---
 

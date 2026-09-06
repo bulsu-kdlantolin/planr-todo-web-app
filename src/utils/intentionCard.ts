@@ -72,7 +72,7 @@ export function renderIntentionCanvas(
   // Footer & Viral Backlink
   ctx.fillStyle = '#a8a29e';
   ctx.font = '16px -apple-system, BlinkMacSystemFont, sans-serif';
-  ctx.fillText('Crafted with Planr • Intentional Focus & Clarity • planr.lifestyle', 90, 540);
+  ctx.fillText('Planr • Quiet Daily Planning • planr.lifestyle', 90, 540);
 
   return canvas;
 }

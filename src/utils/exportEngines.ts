@@ -48,7 +48,7 @@ completed_tasks: ${tasks.filter((t) => t.completed).length}
 
 # 🌿 Planr Workspace Export
 
-> *"Daily Focus Goal: ${intention || 'Focus on what truly moves the needle today.'}"*
+> *"Daily Focus Goal: ${intention || "Focus on today's main task."}"*
 
 ## 📋 Tasks & Milestones
 

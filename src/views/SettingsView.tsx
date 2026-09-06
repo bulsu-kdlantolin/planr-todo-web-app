@@ -137,7 +137,7 @@ export const SettingsView: React.FC = () => {
       <div className="pb-5 border-b border-outline-subtle">
         <h1 className="font-serif text-3xl sm:text-4xl font-semibold text-on-surface">Settings</h1>
         <p className="text-sm text-secondary">
-          Customize your workspace, time preferences, security, cloud sync, and workspace backups.
+          Manage your display preferences, account security, data backups, and sync settings.
         </p>
       </div>
 
@@ -218,7 +218,7 @@ export const SettingsView: React.FC = () => {
               </span>
             </div>
             <p className="text-xs text-secondary mt-0.5">
-              100% private on-device local storage. Upgrade to Pro for multi-device encrypted cloud sync.
+              Private local storage on this device. Upgrade to Pro for encrypted multi-device sync.
             </p>
           </div>
         </div>
@@ -459,7 +459,7 @@ export const SettingsView: React.FC = () => {
             </h2>
           </div>
           <p className="text-xs text-secondary">
-            Your tasks and focus sessions sync automatically across your devices. You own 100% of your data. Export your notes to Markdown or download a full backup snapshot anytime.
+            You own all your data. Export your notes to clean Markdown checklists or download a complete JSON backup whenever you want.
           </p>
         </div>
 

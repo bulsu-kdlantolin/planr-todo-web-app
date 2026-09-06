@@ -234,7 +234,7 @@ export const SignUpView: React.FC = () => {
                 Create your account
               </h1>
               <p className="text-xs sm:text-sm text-secondary font-sans max-w-xs mx-auto">
-                Start organizing your days with intentional focus and clarity.
+                Plan your days with clarity and zero clutter.
               </p>
             </div>
 

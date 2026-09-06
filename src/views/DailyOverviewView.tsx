@@ -184,7 +184,7 @@ export const DailyOverviewView: React.FC = () => {
                 Today's Main Focus
               </span>
               <p className="font-serif text-sm italic text-on-surface truncate">
-                "{intention || 'Work on what matters most today.'}"
+                "{intention || "Focus on today's main task."}"
               </p>
             </div>
           </div>
@@ -241,7 +241,7 @@ export const DailyOverviewView: React.FC = () => {
         <div className="p-4 bg-primary-container/10 border border-primary-container/25 rounded-lg flex items-center gap-3 text-xs text-on-surface animate-fade-in shadow-xs">
           <Sparkles className="w-4 h-4 text-primary flex-shrink-0" aria-hidden="true" />
           <span>
-            <strong className="font-semibold text-primary">Zen Focus Tip:</strong> You have {todayActiveTasks.length} active tasks scheduled for today. Focusing on 3–5 core priorities protects your mental stamina and prevents task avoidance.
+            <strong className="font-semibold text-primary">Focus Tip:</strong> You have {todayActiveTasks.length} tasks scheduled for today. Focusing on 3–5 items makes it much easier to finish your day strong without burnout.
           </span>
         </div>
       )}
@@ -293,9 +293,9 @@ export const DailyOverviewView: React.FC = () => {
               <div className="w-12 h-12 rounded-full bg-surface-container mx-auto flex items-center justify-center text-secondary">
                 <Inbox className="w-6 h-6 text-tertiary" aria-hidden="true" />
               </div>
-              <p className="font-serif text-base text-on-surface">Your workspace is clear and ready.</p>
+              <p className="font-serif text-base text-on-surface">Nothing on your plate for today.</p>
               <p className="text-xs text-secondary max-w-sm mx-auto">
-                What is your main focus today? Add your first task or schedule an item to get started.
+                Add your top tasks above, or pick items from your backlog to plan your day.
               </p>
               <div className="pt-2">
                 <button

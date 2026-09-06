@@ -91,20 +91,20 @@ export const LandingView: React.FC = () => {
 
   const faqs = [
     {
-      q: 'How does device sync work?',
-      a: 'When you sign in with Google or your email, all your tasks, focus sessions, and daily intentions sync automatically across your phone, tablet, and computer in real time.'
+      q: 'How does sync work?',
+      a: 'Planr saves everything to your browser by default, so it works completely offline. When you create an account, your tasks, timers, and notes sync across your phone, tablet, and computer.'
     },
     {
-      q: 'How do the ambient sounds help me focus?',
-      a: 'Planr includes soothing focus tones and natural soundscapes (rain, forest breeze, gentle ocean waves, pink noise) designed to mask distracting background noise and help you enter a deep flow state.'
+      q: 'Do I need a separate audio app for background sounds?',
+      a: 'No. Planr includes built-in sound generators for rain, forest wind, ocean surf, and pink noise. They run directly in your browser with zero audio streaming bandwidth and zero ads.'
     },
     {
-      q: 'Can I export my notes and tasks?',
-      a: 'Yes! You can export your completed daily schedule to clean Markdown checklists for your notes, or download full backups and spreadsheets anytime with a single click.'
+      q: 'Can I export my tasks to Obsidian, Notion, or spreadsheets?',
+      a: 'Yes. You can export clean Markdown checklists directly into your personal notes vault, or download your entire workspace as CSV or JSON with one click.'
     },
     {
-      q: 'Does the timer work when I switch browser tabs?',
-      a: 'Yes! The timer continues counting down accurately in the background, so you can work across different apps and tabs without losing track of your focus block.'
+      q: 'Does the focus timer freeze if I switch tabs?',
+      a: 'No. The timer runs in a dedicated background worker thread. Your countdown stays accurate down to the second even if your browser throttles inactive tabs.'
     }
   ];
 
@@ -174,11 +174,11 @@ export const LandingView: React.FC = () => {
         </div>
 
         <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl font-semibold text-on-surface leading-[1.15] mb-5 tracking-tight">
-          The Zen Productivity Cockpit.
+          Plan your day with quiet focus.
         </h1>
 
         <p className="text-lg md:text-xl text-on-secondary-container max-w-2xl mx-auto mb-8 leading-relaxed font-sans">
-          100% Private. Built-in Focus Soundscapes. Zero Cloud Lock-in. Plan your day with clarity, calm, and zero distraction.
+          A distraction-free daily planner with built-in ambient sounds and private local storage. No subscriptions, no ads, and no sign-up required.
         </p>
 
         {/* Hero CTAs */}
@@ -188,7 +188,7 @@ export const LandingView: React.FC = () => {
             onClick={() => setActiveView('daily')}
             className="flex items-center gap-2 px-8 py-3.5 bg-primary-container text-on-primary-container hover:bg-primary rounded-xl text-base font-semibold shadow-md transition-all active:scale-[0.98]"
           >
-            <span>Try Planr in Browser — No Sign-up Required</span>
+            <span>Open Planr in Browser — No Sign-Up Needed</span>
             <ArrowRight className="w-4 h-4" aria-hidden="true" />
           </button>
           <button
@@ -196,7 +196,7 @@ export const LandingView: React.FC = () => {
             onClick={() => setActiveView('signin')}
             className="px-6 py-3.5 bg-surface-low hover:bg-surface-container border border-outline-variant text-on-surface rounded-xl text-base font-semibold transition-all active:scale-[0.98]"
           >
-            Sign In / Cloud Sync
+            Sign In to Sync
           </button>
         </div>
 
@@ -358,7 +358,7 @@ export const LandingView: React.FC = () => {
                       {formatTime(timerSeconds)}
                     </span>
                     <p className="text-[10px] uppercase font-bold tracking-wider text-secondary">
-                      {isTimerRunning ? 'Deep Focus Session' : 'Ready to Focus'}
+                      {isTimerRunning ? 'Focusing' : 'Ready'}
                     </p>
                   </div>
                 </div>
@@ -504,10 +504,10 @@ export const LandingView: React.FC = () => {
         <div className="max-w-5xl mx-auto">
           <div className="text-center max-w-2xl mx-auto mb-16">
             <span className="text-xs font-semibold text-secondary uppercase tracking-widest block mb-2 font-sans">
-              How It Works
+              How Planr Works
             </span>
             <h2 className="font-serif text-3xl sm:text-4xl font-semibold text-on-surface">
-              A simpler way to run your day.
+              Built for focus, not busywork.
             </h2>
           </div>
 
@@ -520,7 +520,7 @@ export const LandingView: React.FC = () => {
                 One Goal, Three Priorities
               </h3>
               <p className="text-sm text-secondary leading-relaxed font-sans">
-                Avoid the endless backlog trap. Set a single daily focus, pick your top 3 tasks, and finish the day with peace of mind.
+                Stop drowning in infinite to-do lists. Choose one clear objective for today, schedule your top three tasks, and stop when you're done.
               </p>
             </div>
 
@@ -529,10 +529,10 @@ export const LandingView: React.FC = () => {
                 <Headphones className="w-5 h-5 text-tertiary" aria-hidden="true" />
               </div>
               <h3 className="font-serif text-xl font-semibold text-on-surface">
-                Built-in Background Sounds
+                Built-in Ambient Sound
               </h3>
               <p className="text-sm text-secondary leading-relaxed font-sans">
-                Block out distractions with gentle sounds. Choose from soft rain, forest breeze, ocean waves, pink noise, or calming focus tones.
+                Mask room noise and stay in your zone. Listen to rain, forest wind, ocean waves, or pink noise without opening Spotify or YouTube.
               </p>
             </div>
 
@@ -541,10 +541,10 @@ export const LandingView: React.FC = () => {
                 <Smartphone className="w-5 h-5 text-tertiary" aria-hidden="true" />
               </div>
               <h3 className="font-serif text-xl font-semibold text-on-surface">
-                Device Sync & Clean Exports
+                Works Offline, Syncs Everywhere
               </h3>
               <p className="text-sm text-secondary leading-relaxed font-sans">
-                Your tasks and focus history stay synced across your phone, tablet, and computer. Export your notes to Markdown or spreadsheets anytime.
+                Your notes and tasks save directly to your device first. Sign in when you want multi-device sync, or export anytime to Markdown and CSV.
               </p>
             </div>
 
@@ -553,10 +553,10 @@ export const LandingView: React.FC = () => {
                 <Clock className="w-5 h-5 text-tertiary" aria-hidden="true" />
               </div>
               <h3 className="font-serif text-xl font-semibold text-on-surface">
-                Reliable Focus Timer
+                Tab-Proof Focus Timer
               </h3>
               <p className="text-sm text-secondary leading-relaxed font-sans">
-                Stay in flow with customizable intervals, gentle chimes, and a countdown that keeps running accurately even when you switch tabs.
+                A Pomodoro countdown that never freezes or drifts when you change browser tabs. Soft acoustic chimes tell you when it's time to rest.
               </p>
             </div>
           </div>
@@ -570,7 +570,7 @@ export const LandingView: React.FC = () => {
             Why Choose Planr
           </span>
           <h2 className="font-serif text-3xl sm:text-4xl font-semibold text-on-surface">
-            Cut the backlog noise. Keep what matters.
+            Spend less time organizing, more time doing.
           </h2>
         </div>
 
@@ -578,7 +578,7 @@ export const LandingView: React.FC = () => {
           <table className="w-full text-left border-collapse text-sm">
             <thead>
               <tr className="border-b border-outline-subtle bg-surface-low/50">
-                <th className="p-4 sm:p-5 font-semibold text-on-surface">Core Feature</th>
+                <th className="p-4 sm:p-5 font-semibold text-on-surface">Capability</th>
                 <th className="p-4 sm:p-5 font-bold text-primary bg-primary-container/10">Planr</th>
                 <th className="p-4 sm:p-5 font-medium text-secondary">Traditional Todo Apps</th>
                 <th className="p-4 sm:p-5 font-medium text-secondary">Heavy Workspace Apps</th>
@@ -586,34 +586,34 @@ export const LandingView: React.FC = () => {
             </thead>
             <tbody className="divide-y divide-outline-subtle">
               <tr>
-                <td className="p-4 sm:p-5 font-medium text-on-surface">Time to Plan Your Day</td>
+                <td className="p-4 sm:p-5 font-medium text-on-surface">Daily setup time</td>
                 <td className="p-4 sm:p-5 font-bold text-primary bg-primary-container/10">Under 60 seconds</td>
                 <td className="p-4 sm:p-5 text-secondary">5–10 mins organizing tags</td>
                 <td className="p-4 sm:p-5 text-secondary">15+ mins managing databases</td>
               </tr>
               <tr>
-                <td className="p-4 sm:p-5 font-medium text-on-surface">Device Sync</td>
-                <td className="p-4 sm:p-5 font-bold text-primary bg-primary-container/10">Automatic & Instant</td>
+                <td className="p-4 sm:p-5 font-medium text-on-surface">Device sync</td>
+                <td className="p-4 sm:p-5 font-bold text-primary bg-primary-container/10">Instant & automatic</td>
                 <td className="p-4 sm:p-5 text-secondary">Manual setups</td>
-                <td className="p-4 sm:p-5 text-secondary">Slow & bloated sync</td>
+                <td className="p-4 sm:p-5 text-secondary">Heavy, slow sync</td>
               </tr>
               <tr>
-                <td className="p-4 sm:p-5 font-medium text-on-surface">Built-in Focus Audio</td>
-                <td className="p-4 sm:p-5 font-bold text-primary bg-primary-container/10">Calming Tones & Nature Sounds</td>
-                <td className="p-4 sm:p-5 text-secondary">Paid third-party add-ons</td>
+                <td className="p-4 sm:p-5 font-medium text-on-surface">Ambient audio</td>
+                <td className="p-4 sm:p-5 font-bold text-primary bg-primary-container/10">Built-in (Rain, Forest, Waves, Pink Noise)</td>
+                <td className="p-4 sm:p-5 text-secondary">Requires separate app</td>
                 <td className="p-4 sm:p-5 text-secondary">None</td>
               </tr>
               <tr>
-                <td className="p-4 sm:p-5 font-medium text-on-surface">Note & File Export</td>
-                <td className="p-4 sm:p-5 font-bold text-primary bg-primary-container/10">1-Click Clean Markdown & CSV</td>
-                <td className="p-4 sm:p-5 text-secondary">Complex export formats</td>
-                <td className="p-4 sm:p-5 text-secondary">Manual copy-pasting</td>
+                <td className="p-4 sm:p-5 font-medium text-on-surface">Data export</td>
+                <td className="p-4 sm:p-5 font-bold text-primary bg-primary-container/10">1-click Markdown, CSV & JSON</td>
+                <td className="p-4 sm:p-5 text-secondary">Proprietary lock-in</td>
+                <td className="p-4 sm:p-5 text-secondary">Messy export scripts</td>
               </tr>
               <tr>
-                <td className="p-4 sm:p-5 font-medium text-on-surface">Background Timer</td>
-                <td className="p-4 sm:p-5 font-bold text-primary bg-primary-container/10">Accurate & Uninterrupted</td>
-                <td className="p-4 sm:p-5 text-secondary">Throttled when switching tabs</td>
-                <td className="p-4 sm:p-5 text-secondary">None / Widget only</td>
+                <td className="p-4 sm:p-5 font-medium text-on-surface">Focus timer</td>
+                <td className="p-4 sm:p-5 font-bold text-primary bg-primary-container/10">Runs reliably in background tabs</td>
+                <td className="p-4 sm:p-5 text-secondary">Throttled in background</td>
+                <td className="p-4 sm:p-5 text-secondary">None / widget only</td>
               </tr>
             </tbody>
           </table>
@@ -628,7 +628,7 @@ export const LandingView: React.FC = () => {
               Frequently Asked Questions
             </span>
             <h2 className="font-serif text-3xl sm:text-4xl font-semibold text-on-surface">
-              Everything you need to know.
+              Common questions.
             </h2>
           </div>
 
@@ -665,10 +665,10 @@ export const LandingView: React.FC = () => {
       <section className="py-20 px-6 max-w-4xl mx-auto text-center space-y-6">
         <Feather className="w-8 h-8 text-tertiary mx-auto" aria-hidden="true" />
         <h2 className="font-serif text-3xl sm:text-4xl font-semibold text-on-surface">
-          Clear your head. Focus on what matters.
+          Less setup. More finish lines.
         </h2>
         <p className="text-base text-secondary max-w-2xl mx-auto leading-relaxed font-sans">
-          Most task managers slow you down with bloated menus and endless settings. Planr gives you a straightforward workspace to plan your day, stay focused, and get things done.
+          Most productivity tools demand hours of organizing tags, views, and workflows. Planr gets you in, lets you plan your day in 60 seconds, and gets out of your way so you can do the work.
         </p>
 
         <div className="pt-6">
@@ -677,7 +677,7 @@ export const LandingView: React.FC = () => {
             onClick={() => setActiveView('signup')}
             className="px-8 py-3.5 bg-primary-container hover:bg-primary text-on-primary-container rounded-xl font-semibold text-base shadow-sm transition-all active:scale-[0.98]"
           >
-            Get Started with Planr Free
+            Start Planning Today — It's Free
           </button>
         </div>
       </section>

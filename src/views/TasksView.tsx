@@ -211,7 +211,7 @@ export const TasksView: React.FC = () => {
         <div className="p-3.5 rounded-lg bg-primary-container/10 border border-primary-container/25 flex items-center gap-3 text-xs text-on-surface animate-fade-in shadow-xs">
           <Sparkles className="w-4 h-4 text-primary flex-shrink-0 animate-pulse" aria-hidden="true" />
           <span>
-            <strong className="font-semibold text-primary">WIP Limit Advice:</strong> You have {todayActiveCount} tasks scheduled for today. Prioritizing 3–5 items prevents task hoarding and cognitive fatigue.
+            <strong className="font-semibold text-primary">Planning Tip:</strong> You have {todayActiveCount} tasks scheduled for today. Limiting yourself to 3–5 key items helps you make real progress instead of feeling overwhelmed.
           </span>
         </div>
       )}
@@ -294,7 +294,7 @@ export const TasksView: React.FC = () => {
                 <p className="text-xs text-secondary max-w-sm mx-auto font-sans leading-relaxed">
                   {searchQuery
                     ? `No tasks matching "${searchQuery}". Clear your search to see all tasks.`
-                    : 'You have no pending tasks in this view. Add a new task above to get started.'}
+                    : 'No tasks here yet. Use the quick add bar above or click New Task to get started.'}
                 </p>
                 <div className="flex items-center justify-center gap-2 pt-2">
                   {searchQuery && (

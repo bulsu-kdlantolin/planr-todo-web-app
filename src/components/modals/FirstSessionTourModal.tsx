@@ -23,7 +23,7 @@ export const FirstSessionTourModal: React.FC = () => {
   const setSelectedTaskId = useTimerStore((state) => state.setSelectedTaskId);
 
   const [step, setStep] = useState<1 | 2 | 3>(1);
-  const [goalText, setGoalText] = useState(intention || 'Focus on what truly moves the needle today.');
+  const [goalText, setGoalText] = useState(intention || 'Complete today\'s key milestone without interruptions.');
   const [taskTitle, setTaskTitle] = useState('');
   const [selectedAmbient, setSelectedAmbient] = useState<AmbientType>('rain');
 
@@ -57,7 +57,7 @@ export const FirstSessionTourModal: React.FC = () => {
     toggleTimer(); // Start
     closeTour();
     setActiveView('focus');
-    showToast('Kickoff focus block started! Enjoy your flow state 🎧', 'success');
+    showToast('Timer started. Have a productive session! 🎧', 'success');
   };
 
   return (
@@ -93,7 +93,7 @@ export const FirstSessionTourModal: React.FC = () => {
                   Set Your Intention
                 </strong>
                 <p className="text-secondary leading-relaxed">
-                  Mindful productivity starts with one anchoring thought. What is your primary objective today?
+                  Pick the single most important outcome for your day. Writing it down keeps you grounded when distractions pop up.
                 </p>
               </div>
             </div>
@@ -107,7 +107,7 @@ export const FirstSessionTourModal: React.FC = () => {
                 rows={3}
                 value={goalText}
                 onChange={(e) => setGoalText(e.target.value)}
-                placeholder="e.g. Ship the product update with zero distractions..."
+                placeholder="e.g. Finish the design review and send feedback..."
                 className="w-full px-3.5 py-2.5 bg-surface-low border border-outline-variant rounded-md text-xs text-on-surface focus:border-primary-container focus:outline-none transition-colors shadow-card"
               />
             </div>
@@ -135,7 +135,7 @@ export const FirstSessionTourModal: React.FC = () => {
                   Identify Your 1 Big Task
                 </strong>
                 <p className="text-secondary leading-relaxed">
-                  Avoid hoarding a 30-item backlog. Choose the single most important action item you will execute first.
+                  Instead of looking at an overwhelming backlog, pick the first concrete task you want to work on.
                 </p>
               </div>
             </div>
@@ -191,7 +191,7 @@ export const FirstSessionTourModal: React.FC = () => {
                   Launch 5-Minute Flow Block
                 </strong>
                 <p className="text-secondary leading-relaxed">
-                  Start with a 5-minute micro-focus block to conquer initial procrastination. Pick an ambient soundscape:
+                  The hardest part is getting started. Set a short 5-minute timer with background sound to get into rhythm:
                 </p>
               </div>
             </div>

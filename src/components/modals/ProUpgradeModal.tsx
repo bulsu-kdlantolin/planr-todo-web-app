@@ -37,13 +37,13 @@ export const ProUpgradeModal: React.FC = () => {
         <div className="text-center space-y-2">
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-tertiary/15 text-tertiary border border-tertiary/30">
             <Sparkles className="w-3.5 h-3.5" />
-            <span>Elevate Your Daily Focus</span>
+            <span>Multi-Device Sync</span>
           </span>
           <h3 className="font-serif text-2xl font-bold text-on-surface">
-            Keep your private local vault. Add seamless cloud superpowers.
+            Your local vault stays free forever. Add cloud sync when you need it.
           </h3>
           <p className="text-xs text-secondary max-w-md mx-auto leading-relaxed">
-            Planr remains 100% free and private offline forever. Pro unlocks encrypted multi-device sync, revision history, and custom audio uploads.
+            Planr is completely free for offline use on your device. Upgrading to Pro gives you end-to-end encrypted sync across all your devices, revision history, and custom audio uploads.
           </p>
         </div>
 
@@ -126,19 +126,19 @@ export const ProUpgradeModal: React.FC = () => {
             <ul className="space-y-2 text-xs text-on-surface pt-2 border-t border-primary/20">
               <li className="flex items-center gap-2 font-medium">
                 <Cloud className="w-3.5 h-3.5 text-primary flex-shrink-0" />
-                <span>Realtime encrypted cloud sync</span>
+                <span>Encrypted multi-device sync</span>
               </li>
               <li className="flex items-center gap-2 font-medium">
                 <RefreshCw className="w-3.5 h-3.5 text-primary flex-shrink-0" />
-                <span>Cloud revision history & restore</span>
+                <span>Version history and accidental delete recovery</span>
               </li>
               <li className="flex items-center gap-2 font-medium">
                 <Music className="w-3.5 h-3.5 text-primary flex-shrink-0" />
-                <span>Custom audio soundscape uploads</span>
+                <span>Upload your own focus audio files (MP3/FLAC)</span>
               </li>
               <li className="flex items-center gap-2 font-medium">
                 <Calendar className="w-3.5 h-3.5 text-primary flex-shrink-0" />
-                <span>Google & Outlook 2-way sync</span>
+                <span>Calendar sync (Google & Outlook)</span>
               </li>
             </ul>
           </div>
