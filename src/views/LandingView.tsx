@@ -174,21 +174,21 @@ export const LandingView: React.FC = () => {
         </div>
 
         <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl font-semibold text-on-surface leading-[1.15] mb-5 tracking-tight">
-          Stop managing your task manager.
+          The Zen Productivity Cockpit.
         </h1>
 
         <p className="text-lg md:text-xl text-on-secondary-container max-w-2xl mx-auto mb-8 leading-relaxed font-sans">
-          Plan your day in 60 seconds, enter deep focus with calming soundscapes, and keep your tasks organized and synced everywhere.
+          100% Private. Built-in Focus Soundscapes. Zero Cloud Lock-in. Plan your day with clarity, calm, and zero distraction.
         </p>
 
         {/* Hero CTAs */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-10">
           <button
             type="button"
-            onClick={() => setActiveView('signup')}
+            onClick={() => setActiveView('daily')}
             className="flex items-center gap-2 px-8 py-3.5 bg-primary-container text-on-primary-container hover:bg-primary rounded-xl text-base font-semibold shadow-md transition-all active:scale-[0.98]"
           >
-            <span>Start Free</span>
+            <span>Try Planr in Browser — No Sign-up Required</span>
             <ArrowRight className="w-4 h-4" aria-hidden="true" />
           </button>
           <button
@@ -196,7 +196,7 @@ export const LandingView: React.FC = () => {
             onClick={() => setActiveView('signin')}
             className="px-6 py-3.5 bg-surface-low hover:bg-surface-container border border-outline-variant text-on-surface rounded-xl text-base font-semibold transition-all active:scale-[0.98]"
           >
-            Sign In
+            Sign In / Cloud Sync
           </button>
         </div>
 

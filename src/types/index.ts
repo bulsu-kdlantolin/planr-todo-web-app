@@ -30,6 +30,7 @@ export interface Task {
   updatedAt?: string;
   deletedAt?: string | null;
   revision?: number;
+  repeat?: Recurrence;
 }
 
 export type DaySegment = 'Morning' | 'Afternoon' | 'Evening' | 'Night';

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTaskStore } from '../../store/useTaskStore';
 import { useUIStore } from '../../store/useUIStore';
-import { TaskCategory, PriorityLevel, Subtask } from '../../types';
+import { TaskCategory, PriorityLevel, Subtask, Recurrence } from '../../types';
 import { Modal } from '../common/Modal';
 import { Select, SelectOption } from '../common/Select';
 import { DatePicker } from '../common/DatePicker';
@@ -15,7 +15,8 @@ import {
   Trash2,
   Plus,
   Clock,
-  AlertCircle
+  AlertCircle,
+  Repeat
 } from 'lucide-react';
 import { triggerHapticFeedback, getFieldValidationClass } from '../../utils/validation';
 
@@ -35,18 +36,22 @@ export const TaskModal: React.FC = () => {
   const [category, setCategory] = useState<TaskCategory>('Work');
   const [priority, setPriority] = useState<PriorityLevel>('medium');
   const [dueDate, setDueDate] = useState<string>('');
+  const [repeat, setRepeat] = useState<Recurrence>('Once');
   const [estimatedPomodoros, setEstimatedPomodoros] = useState(1);
   const [subtasks, setSubtasks] = useState<Subtask[]>([]);
   const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
+  const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
 
   useEffect(() => {
     setTitleError(null);
+    setShowDiscardConfirm(false);
     if (editingTask) {
       setTitle(editingTask.title);
       setDescription(editingTask.description || '');
       setCategory(editingTask.category);
       setPriority(editingTask.priority);
       setDueDate(editingTask.dueDate || '');
+      setRepeat(editingTask.repeat || 'Once');
       setEstimatedPomodoros(editingTask.estimatedPomodoros || 1);
       setSubtasks(editingTask.subtasks ? [...editingTask.subtasks] : []);
     } else {
@@ -55,10 +60,29 @@ export const TaskModal: React.FC = () => {
       setCategory('Work');
       setPriority('medium');
       setDueDate(initialTaskDueDate || getTodayDateString());
+      setRepeat('Once');
       setEstimatedPomodoros(1);
       setSubtasks([]);
     }
   }, [editingTask, taskModalOpen, initialTaskDueDate]);
+
+  const isDirty = editingTask
+    ? title !== editingTask.title ||
+      description !== (editingTask.description || '') ||
+      category !== editingTask.category ||
+      priority !== editingTask.priority ||
+      dueDate !== (editingTask.dueDate || '') ||
+      repeat !== (editingTask.repeat || 'Once') ||
+      subtasks.length !== (editingTask.subtasks?.length || 0)
+    : title.trim() !== '' || description.trim() !== '' || subtasks.length > 0;
+
+  const handleRequestClose = () => {
+    if (isDirty) {
+      setShowDiscardConfirm(true);
+    } else {
+      closeTaskModal();
+    }
+  };
 
   const handleAddSubtask = () => {
     if (!newSubtaskTitle.trim()) return;
@@ -98,7 +122,8 @@ export const TaskModal: React.FC = () => {
         priority,
         dueDate: dueDate || undefined,
         estimatedPomodoros,
-        subtasks
+        subtasks,
+        repeat
       });
       showToast('Task updated', 'success');
     } else {
@@ -109,7 +134,8 @@ export const TaskModal: React.FC = () => {
         priority,
         dueDate: dueDate || undefined,
         estimatedPomodoros,
-        subtasks
+        subtasks,
+        repeat
       });
       showToast('Task added', 'success');
     }
@@ -131,12 +157,38 @@ export const TaskModal: React.FC = () => {
   return (
     <Modal
       isOpen={taskModalOpen}
-      onClose={closeTaskModal}
+      onClose={handleRequestClose}
       title={editingTask ? 'Edit Task' : 'New Task'}
       titleId="task-modal-title"
       maxWidthClass="max-w-lg"
       icon={<Logo size="sm" showWordmark={false} />}
     >
+      {/* Accidental Dismissal Protection Confirmation */}
+      {showDiscardConfirm && (
+        <div className="p-3 mb-3 bg-amber-500/10 border border-amber-500/30 rounded-md flex items-center justify-between text-xs text-on-surface animate-fade-in">
+          <span className="font-medium text-amber-700 dark:text-amber-300">Discard unsaved changes?</span>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setShowDiscardConfirm(false)}
+              className="px-2.5 py-1 bg-surface-low hover:bg-surface-container rounded text-secondary hover:text-on-surface text-[11px] font-semibold transition-colors"
+            >
+              Keep Editing
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setShowDiscardConfirm(false);
+                closeTaskModal();
+              }}
+              className="px-2.5 py-1 bg-red-500/15 hover:bg-red-500/25 text-red-600 dark:text-red-400 rounded text-[11px] font-semibold transition-colors"
+            >
+              Discard
+            </button>
+          </div>
+        </div>
+      )}
+
       <form noValidate onSubmit={handleSubmit} className="space-y-4 my-2">
         {/* Title Input */}
         <div>
@@ -198,15 +250,39 @@ export const TaskModal: React.FC = () => {
           />
         </div>
 
-        {/* Due Date */}
-        <div>
-          <DatePicker
-            label="Due Date"
-            value={dueDate}
-            onChange={(val) => setDueDate(val)}
-            minDate={getTodayDateString()}
-            placeholder="Pick due date..."
-          />
+        {/* Due Date & Recurrence Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <DatePicker
+              label="Due Date"
+              value={dueDate}
+              onChange={(val) => setDueDate(val)}
+              minDate={getTodayDateString()}
+              placeholder="Pick due date..."
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-secondary mb-1 font-sans">
+              Repeat
+            </label>
+            <div className="grid grid-cols-4 gap-1 p-1 bg-surface-low border border-outline-variant rounded-md">
+              {(['Once', 'Daily', 'Weekdays', 'Weekly'] as Recurrence[]).map((r) => (
+                <button
+                  key={r}
+                  type="button"
+                  onClick={() => setRepeat(r)}
+                  className={`py-1.5 text-[11px] font-medium rounded transition-all text-center ${
+                    repeat === r
+                      ? 'bg-primary-container text-on-primary-container font-semibold shadow-xs'
+                      : 'text-secondary hover:text-on-surface hover:bg-surface-lowest'
+                  }`}
+                >
+                  {r}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
 
         {/* Subtasks Checklist Section */}
@@ -287,7 +363,7 @@ export const TaskModal: React.FC = () => {
 
         {/* Modal Footer */}
         <ModalFooter
-          onCancel={closeTaskModal}
+          onCancel={handleRequestClose}
           submitText={editingTask ? 'Save Changes' : 'Create Task'}
         />
       </form>

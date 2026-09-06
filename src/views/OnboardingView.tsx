@@ -20,6 +20,7 @@ export const OnboardingView: React.FC = () => {
 
   const setActiveView = useUIStore((state) => state.setActiveView);
   const showToast = useUIStore((state) => state.showToast);
+  const openFirstSessionTour = useUIStore((state) => state.openFirstSessionTour);
   const { user: authUser } = useAuth();
 
   const [name, setName] = useState(user.name || '');
@@ -92,6 +93,7 @@ export const OnboardingView: React.FC = () => {
     setIsSaving(false);
     showToast(`Welcome to Planr, ${resolvedName.split(' ')[0]}! 🌿`, 'success');
     setActiveView('daily');
+    openFirstSessionTour();
   };
 
   const handleSkip = async () => {

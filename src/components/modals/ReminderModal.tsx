@@ -31,9 +31,11 @@ export const ReminderModal: React.FC = () => {
   const [scheduledDate, setScheduledDate] = useState('');
   const [sound, setSound] = useState(true);
   const [description, setDescription] = useState('');
+  const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
 
   useEffect(() => {
     setTitleError(null);
+    setShowDiscardConfirm(false);
     if (editingReminder) {
       setTitle(editingReminder.title);
       setTime(editingReminder.time);
@@ -52,6 +54,23 @@ export const ReminderModal: React.FC = () => {
       setDescription('');
     }
   }, [reminderModalOpen, editingReminder]);
+
+  const isDirty = editingReminder
+    ? title !== editingReminder.title ||
+      description !== (editingReminder.description || '') ||
+      time !== editingReminder.time ||
+      repeat !== editingReminder.repeat ||
+      scheduledDate !== (editingReminder.scheduledDate || '') ||
+      sound !== (editingReminder.sound !== false)
+    : title.trim() !== '' || description.trim() !== '';
+
+  const handleRequestClose = () => {
+    if (isDirty) {
+      setShowDiscardConfirm(true);
+    } else {
+      closeReminderModal();
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -106,12 +125,38 @@ export const ReminderModal: React.FC = () => {
   return (
     <Modal
       isOpen={reminderModalOpen}
-      onClose={closeReminderModal}
+      onClose={handleRequestClose}
       title={editingReminder ? 'Edit Reminder' : 'Schedule Reminder'}
       titleId="reminder-modal-title"
       maxWidthClass="max-w-md"
       icon={<Logo size="sm" showWordmark={false} />}
     >
+      {/* Accidental Dismissal Protection Confirmation */}
+      {showDiscardConfirm && (
+        <div className="p-3 mb-3 bg-amber-500/10 border border-amber-500/30 rounded-md flex items-center justify-between text-xs text-on-surface animate-fade-in">
+          <span className="font-medium text-amber-700 dark:text-amber-300">Discard unsaved changes?</span>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setShowDiscardConfirm(false)}
+              className="px-2.5 py-1 bg-surface-low hover:bg-surface-container rounded text-secondary hover:text-on-surface text-[11px] font-semibold transition-colors"
+            >
+              Keep Editing
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setShowDiscardConfirm(false);
+                closeReminderModal();
+              }}
+              className="px-2.5 py-1 bg-red-500/15 hover:bg-red-500/25 text-red-600 dark:text-red-400 rounded text-[11px] font-semibold transition-colors"
+            >
+              Discard
+            </button>
+          </div>
+        </div>
+      )}
+
       <form noValidate onSubmit={handleSubmit} className="space-y-4 my-2">
         <div>
           <label htmlFor="reminder-title-input" className="block text-xs font-semibold text-secondary uppercase tracking-wider mb-1.5 font-sans">
@@ -200,7 +245,7 @@ export const ReminderModal: React.FC = () => {
         </div>
 
         <ModalFooter
-          onCancel={closeReminderModal}
+          onCancel={handleRequestClose}
           submitText={editingReminder ? 'Save Changes' : 'Save Reminder'}
         />
       </form>

@@ -12,7 +12,7 @@ import { ConfirmModal } from '../components/common/ConfirmModal';
 import { Task } from '../types';
 import { getPriorityWeight } from '../utils/priority';
 import { getTodayDateString, formatHeaderDate, getLocalGreeting } from '../utils/date';
-import { generateIntentionCardImage } from '../utils/intentionCard';
+import { shareOrDownloadIntentionCard } from '../utils/intentionCard';
 import {
   Sparkles,
   CheckCircle2,
@@ -23,12 +23,14 @@ import {
   AlertCircle,
   ChevronDown,
   ChevronUp,
-  Inbox
+  Inbox,
+  Loader2
 } from 'lucide-react';
 
 export const DailyOverviewView: React.FC = () => {
   const [currentDateStr, setCurrentDateStr] = useState(getTodayDateString());
   const [showAllTasks, setShowAllTasks] = useState(false);
+  const [isSharing, setIsSharing] = useState(false);
 
   // Auto-refresh date at midnight or on tab focus
   useEffect(() => {
@@ -148,8 +150,16 @@ export const DailyOverviewView: React.FC = () => {
     }
   };
 
-  const handleShareIntention = () => {
-    generateIntentionCardImage(intention, user.name, dateFormatted, todayStr);
+  const handleShareIntention = async () => {
+    if (isSharing) return;
+    setIsSharing(true);
+    const result = await shareOrDownloadIntentionCard(intention, user.name, dateFormatted, todayStr);
+    setIsSharing(false);
+    if (result === 'shared') {
+      showToast('Focus goal shared successfully 🌿', 'success');
+    } else if (result === 'downloaded') {
+      showToast('Focus goal card saved to downloads 🎨', 'success');
+    }
   };
 
   return (
@@ -183,11 +193,16 @@ export const DailyOverviewView: React.FC = () => {
             <button
               type="button"
               onClick={handleShareIntention}
-              aria-label="Download focus quote card"
-              className="p-1.5 text-secondary hover:text-on-surface rounded hover:bg-surface-container transition-colors"
-              title="Download Quote Card"
+              disabled={isSharing}
+              aria-label="Share or download focus quote card"
+              className="p-1.5 text-secondary hover:text-on-surface rounded hover:bg-surface-container transition-colors disabled:opacity-50"
+              title="Share Quote Card"
             >
-              <Share2 className="w-3.5 h-3.5" aria-hidden="true" />
+              {isSharing ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" aria-hidden="true" />
+              ) : (
+                <Share2 className="w-3.5 h-3.5" aria-hidden="true" />
+              )}
             </button>
             <button
               type="button"
@@ -218,6 +233,16 @@ export const DailyOverviewView: React.FC = () => {
           >
             Manage Overdue
           </button>
+        </div>
+      )}
+
+      {/* WIP Limit Guard Notice */}
+      {todayActiveTasks.length > 5 && (
+        <div className="p-4 bg-primary-container/10 border border-primary-container/25 rounded-lg flex items-center gap-3 text-xs text-on-surface animate-fade-in shadow-xs">
+          <Sparkles className="w-4 h-4 text-primary flex-shrink-0" aria-hidden="true" />
+          <span>
+            <strong className="font-semibold text-primary">Zen Focus Tip:</strong> You have {todayActiveTasks.length} active tasks scheduled for today. Focusing on 3–5 core priorities protects your mental stamina and prevents task avoidance.
+          </span>
         </div>
       )}
 

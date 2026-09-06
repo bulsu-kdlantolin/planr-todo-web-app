@@ -9,6 +9,8 @@ import { ReminderModal } from './components/modals/ReminderModal';
 import { AuthModal } from './components/modals/AuthModal';
 import { IntentionModal } from './components/modals/IntentionModal';
 import { ShortcutsModal } from './components/modals/ShortcutsModal';
+import { FirstSessionTourModal } from './components/modals/FirstSessionTourModal';
+import { ProUpgradeModal } from './components/modals/ProUpgradeModal';
 
 // Code-split / lazy-loaded views for optimized initial chunk size
 const LandingView = lazy(() => import('./views/LandingView').then((m) => ({ default: m.LandingView })));
@@ -27,22 +29,26 @@ import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useHashRouter } from './hooks/useHashRouter';
 import { useDragDropRestore } from './hooks/useDragDropRestore';
 import { useThemeSync } from './hooks/useThemeSync';
+import { useTimerTitleSync } from './hooks/useTimerTitleSync';
 import { Upload, Minimize2 } from 'lucide-react';
 
 export const App: React.FC = () => {
   // 1. Theme synchronization hook
   useThemeSync();
 
-  // 2. Database hydration hook
+  // 2. Dynamic document title countdown sync
+  useTimerTitleSync();
+
+  // 3. Database hydration hook
   const { isLoading } = useHydration();
 
-  // 3. Hash routing hook with fallback
+  // 4. Hash routing hook with fallback
   const { activeView } = useHashRouter();
 
-  // 4. Global keyboard shortcuts hook
+  // 5. Global keyboard shortcuts hook
   useKeyboardShortcuts();
 
-  // 5. Drag-and-drop backup restoration hook
+  // 6. Drag-and-drop backup restoration hook
   const { isDraggingFile } = useDragDropRestore();
 
   // Grouped UI Store subscription with shallow diffing
@@ -160,6 +166,8 @@ export const App: React.FC = () => {
         onClose={closeIntentionModal}
       />
       <ShortcutsModal />
+      <FirstSessionTourModal />
+      <ProUpgradeModal />
 
       {/* Toast Notification Container */}
       <ToastContainer />

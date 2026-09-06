@@ -11,7 +11,8 @@ import {
   Calendar,
   ChevronDown,
   ChevronUp,
-  Sun
+  Sun,
+  Repeat
 } from 'lucide-react';
 
 interface TaskCardProps {
@@ -111,6 +112,17 @@ const TaskCardComponent: React.FC<TaskCardProps> = ({
               >
                 <Calendar className="w-3.5 h-3.5" aria-hidden="true" />
                 <span>{isToday ? 'Today' : task.dueDate}</span>
+              </span>
+            )}
+
+            {task.repeat && task.repeat !== 'Once' && (
+              <span
+                className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-primary-container/20 text-on-primary-container font-medium"
+                title={`Repeats ${task.repeat}`}
+                aria-label={`Repeats ${task.repeat}`}
+              >
+                <Repeat className="w-3 h-3" aria-hidden="true" />
+                <span>{task.repeat}</span>
               </span>
             )}
           </div>

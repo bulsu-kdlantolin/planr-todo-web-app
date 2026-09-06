@@ -4,9 +4,16 @@ import { supabase } from '../lib/supabase/client';
 import { insertTaskDb, updateTaskDb, deleteTaskDb } from '../lib/supabase/tasks';
 import { audioManager } from '../utils/audio';
 import { generateUUID } from '../utils/id';
+import { calculateNextRecurrenceDate } from '../utils/date';
+
+export interface TaskTombstone {
+  id: string;
+  deletedAt: string;
+}
 
 interface TaskState {
   tasks: Task[];
+  tombstones: TaskTombstone[];
   filter: TaskFilterType;
   sort: TaskSortType;
   searchQuery: string;
@@ -34,11 +41,16 @@ const getUserId = async (): Promise<string | null> => {
 
 export const useTaskStore = create<TaskState>((set, get) => ({
   tasks: [],
+  tombstones: [],
   filter: 'all',
   sort: 'dueDate',
   searchQuery: '',
 
-  setTasks: (tasks) => set({ tasks }),
+  setTasks: (tasks) => {
+    const tombstoneIds = new Set(get().tombstones.map((ts) => ts.id));
+    const validTasks = tasks.filter((t) => !tombstoneIds.has(t.id));
+    set({ tasks: validTasks });
+  },
   setFilter: (filter) => set({ filter }),
   setSort: (sort) => set({ sort }),
   setSearchQuery: (searchQuery) => set({ searchQuery }),
@@ -107,15 +119,39 @@ export const useTaskStore = create<TaskState>((set, get) => ({
       updatedAt: new Date().toISOString()
     };
 
-    set((state) => ({
-      tasks: state.tasks.map((t) => (t.id === id ? updated : t))
-    }));
+    let nextRecurringTask: Task | null = null;
+    if (nextCompleted && task.repeat && task.repeat !== 'Once') {
+      const nextDueDate = calculateNextRecurrenceDate(task.dueDate, task.repeat);
+      nextRecurringTask = {
+        ...task,
+        id: generateUUID('task'),
+        completed: false,
+        completedAt: undefined,
+        dueDate: nextDueDate,
+        subtasks: task.subtasks.map((s) => ({ ...s, completed: false })),
+        revision: 1,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+    }
+
+    set((state) => {
+      const updatedTasks = state.tasks.map((t) => (t.id === id ? updated : t));
+      return {
+        tasks: nextRecurringTask ? [nextRecurringTask, ...updatedTasks] : updatedTasks
+      };
+    });
 
     const userId = await getUserId();
     if (userId) {
       updateTaskDb(updated, userId).catch((err) =>
         console.error('Failed to sync task toggle to Supabase:', err)
       );
+      if (nextRecurringTask) {
+        insertTaskDb(nextRecurringTask, userId).catch((err) =>
+          console.error('Failed to sync next recurring task to Supabase:', err)
+        );
+      }
     }
   },
 
@@ -151,7 +187,8 @@ export const useTaskStore = create<TaskState>((set, get) => ({
     if (!target) return null;
 
     set((state) => ({
-      tasks: state.tasks.filter((t) => t.id !== id)
+      tasks: state.tasks.filter((t) => t.id !== id),
+      tombstones: [...state.tombstones, { id, deletedAt: new Date().toISOString() }]
     }));
 
     const userId = await getUserId();
@@ -170,7 +207,8 @@ export const useTaskStore = create<TaskState>((set, get) => ({
       updatedAt: new Date().toISOString()
     };
     set((state) => ({
-      tasks: [restored, ...state.tasks]
+      tasks: [restored, ...state.tasks],
+      tombstones: state.tombstones.filter((ts) => ts.id !== task.id)
     }));
 
     const userId = await getUserId();

@@ -77,4 +77,31 @@ describe('useTaskStore', () => {
     expect(updated?.title).toBe('Updated Title');
     expect(updated?.priority).toBe('high');
   });
+
+  it('schedules next recurrence when a recurring task is completed', async () => {
+    const task = await useTaskStore.getState().addTask({
+      title: 'Daily Standup',
+      category: 'Work',
+      priority: 'high',
+      dueDate: '2026-09-06',
+      repeat: 'Daily',
+      estimatedPomodoros: 1,
+      subtasks: [{ id: 'sub-1', title: 'Share blocker', completed: true }]
+    });
+
+    await useTaskStore.getState().toggleTask(task.id);
+
+    const allTasks = useTaskStore.getState().tasks;
+    expect(allTasks.length).toBe(2);
+
+    const completed = allTasks.find((t) => t.id === task.id);
+    expect(completed?.completed).toBe(true);
+
+    const nextTask = allTasks.find((t) => t.id !== task.id);
+    expect(nextTask?.completed).toBe(false);
+    expect(nextTask?.repeat).toBe('Daily');
+    expect(nextTask?.dueDate).toBe('2026-09-07');
+    expect(nextTask?.subtasks[0].completed).toBe(false);
+  });
 });
+

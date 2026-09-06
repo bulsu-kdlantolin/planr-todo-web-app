@@ -30,7 +30,9 @@ import {
   KeyRound,
   AlertCircle,
   Loader2,
-  Mail
+  Mail,
+  Sparkles,
+  Compass
 } from 'lucide-react';
 
 export const SettingsView: React.FC = () => {
@@ -47,6 +49,8 @@ export const SettingsView: React.FC = () => {
 
   const showToast = useUIStore((state) => state.showToast);
   const openShortcutsModal = useUIStore((state) => state.openShortcutsModal);
+  const openProUpgradeModal = useUIStore((state) => state.openProUpgradeModal);
+  const openFirstSessionTour = useUIStore((state) => state.openFirstSessionTour);
   const setActiveView = useUIStore((state) => state.setActiveView);
 
   const { signOut, sendPasswordResetEmail, session } = useAuth();
@@ -197,6 +201,45 @@ export const SettingsView: React.FC = () => {
               <span>Sign In</span>
             </button>
           )}
+        </div>
+      </div>
+
+      {/* Subscription & Plan Tier Card */}
+      <div className="bg-surface-lowest border border-outline-variant rounded-xl p-6 shadow-card flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex items-start gap-4">
+          <div className="w-11 h-11 rounded-lg bg-primary-container/20 text-primary flex items-center justify-center flex-shrink-0 mt-0.5 border border-primary/20">
+            <Sparkles className="w-5 h-5" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="font-serif text-base font-semibold text-on-surface">Plan & Subscription</h3>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-surface-low border border-outline-variant text-secondary">
+                Free Vault (Active)
+              </span>
+            </div>
+            <p className="text-xs text-secondary mt-0.5">
+              100% private on-device local storage. Upgrade to Pro for multi-device encrypted cloud sync.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 self-end sm:self-auto flex-wrap">
+          <button
+            type="button"
+            onClick={openFirstSessionTour}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-md bg-surface-low hover:bg-surface-container border border-outline-variant text-xs font-semibold text-secondary hover:text-on-surface transition-colors cursor-pointer"
+          >
+            <Compass className="w-3.5 h-3.5" />
+            <span>Launch Tour</span>
+          </button>
+          <button
+            type="button"
+            onClick={openProUpgradeModal}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-md bg-primary-container text-on-primary-container hover:bg-primary text-xs font-bold shadow-sm transition-all active:scale-95 cursor-pointer"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>Upgrade to Pro</span>
+          </button>
         </div>
       </div>
 

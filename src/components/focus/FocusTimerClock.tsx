@@ -78,6 +78,15 @@ export const FocusTimerClock: React.FC = memo(() => {
           )}
         </span>
       </div>
+
+      {/* Accessible Live Region for Screen Reader Announcements */}
+      <div className="sr-only" aria-live="polite" aria-atomic="true">
+        {remainingSec === 0
+          ? 'Focus block completed! Excellent work.'
+          : isRunning
+          ? `Timer running. ${mins} minutes remaining.`
+          : 'Timer paused.'}
+      </div>
     </div>
   );
 });

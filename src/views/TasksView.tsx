@@ -81,6 +81,11 @@ export const TasksView: React.FC = () => {
     };
   }, [tasks]);
 
+  const todayActiveCount = useMemo(
+    () => tasks.filter((t) => !t.completed && t.dueDate === getTodayDateString()).length,
+    [tasks]
+  );
+
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
   const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
 
@@ -200,6 +205,16 @@ export const TasksView: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {/* WIP Limit Guard Notice */}
+      {todayActiveCount > 5 && (
+        <div className="p-3.5 rounded-lg bg-primary-container/10 border border-primary-container/25 flex items-center gap-3 text-xs text-on-surface animate-fade-in shadow-xs">
+          <Sparkles className="w-4 h-4 text-primary flex-shrink-0 animate-pulse" aria-hidden="true" />
+          <span>
+            <strong className="font-semibold text-primary">WIP Limit Advice:</strong> You have {todayActiveCount} tasks scheduled for today. Prioritizing 3–5 items prevents task hoarding and cognitive fatigue.
+          </span>
+        </div>
+      )}
 
       {/* Inline Quick-Add Input Bar (shown in list mode) */}
       {viewMode === 'list' && <QuickAddBar />}

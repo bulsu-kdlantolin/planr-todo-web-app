@@ -108,7 +108,11 @@ export const TimePicker: React.FC<TimePickerProps> = ({
 
       {/* Time Popover */}
       {isOpen && (
-        <div className="absolute left-0 top-full mt-1.5 z-50 p-4 bg-surface-lowest border border-outline-variant rounded-md shadow-dropdown animate-dropdown-in flex flex-col items-center gap-3 select-none">
+        <div
+          role="dialog"
+          aria-label="Select custom time"
+          className="absolute left-0 top-full mt-1.5 z-50 p-4 bg-surface-lowest border border-outline-variant rounded-md shadow-dropdown animate-dropdown-in flex flex-col items-center gap-3 select-none"
+        >
           <div className="flex items-center gap-3">
             {/* Hours Column */}
             <div className="flex flex-col items-center">
@@ -120,7 +124,10 @@ export const TimePicker: React.FC<TimePickerProps> = ({
               >
                 <ChevronUp className="w-4 h-4" aria-hidden="true" />
               </button>
-              <span className="font-serif text-xl font-bold py-1 px-2.5 text-on-surface">
+              <span
+                className="font-serif text-xl font-bold py-1 px-2.5 text-on-surface"
+                aria-label={`Hours: ${timeFormat === '12h' ? display12Hours : String(currentHours).padStart(2, '0')}`}
+              >
                 {timeFormat === '12h' ? display12Hours : String(currentHours).padStart(2, '0')}
               </span>
               <button
@@ -133,7 +140,7 @@ export const TimePicker: React.FC<TimePickerProps> = ({
               </button>
             </div>
 
-            <span className="font-serif text-xl font-bold text-secondary pb-1">:</span>
+            <span className="font-serif text-xl font-bold text-secondary pb-1" aria-hidden="true">:</span>
 
             {/* Minutes Column */}
             <div className="flex flex-col items-center">
@@ -145,7 +152,10 @@ export const TimePicker: React.FC<TimePickerProps> = ({
               >
                 <ChevronUp className="w-4 h-4" aria-hidden="true" />
               </button>
-              <span className="font-serif text-xl font-bold py-1 px-2.5 text-on-surface">
+              <span
+                className="font-serif text-xl font-bold py-1 px-2.5 text-on-surface"
+                aria-label={`Minutes: ${String(currentMins).padStart(2, '0')}`}
+              >
                 {String(currentMins).padStart(2, '0')}
               </span>
               <button
@@ -164,6 +174,8 @@ export const TimePicker: React.FC<TimePickerProps> = ({
                 <button
                   type="button"
                   onClick={() => isPM && toggleAMPM()}
+                  aria-label="Select AM"
+                  aria-pressed={!isPM}
                   className={`px-2 py-1 rounded text-xs font-bold transition-colors ${
                     !isPM
                       ? 'bg-primary-container text-on-primary-container'
@@ -175,6 +187,8 @@ export const TimePicker: React.FC<TimePickerProps> = ({
                 <button
                   type="button"
                   onClick={() => !isPM && toggleAMPM()}
+                  aria-label="Select PM"
+                  aria-pressed={isPM}
                   className={`px-2 py-1 rounded text-xs font-bold transition-colors ${
                     isPM
                       ? 'bg-primary-container text-on-primary-container'

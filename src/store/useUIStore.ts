@@ -17,6 +17,8 @@ interface UIState {
   intentionModalOpen: boolean;
   profileModalOpen: boolean;
   shortcutsModalOpen: boolean;
+  firstSessionTourOpen: boolean;
+  proUpgradeModalOpen: boolean;
   toasts: ToastMessage[];
 
   setActiveView: (view: ViewType) => void;
@@ -37,6 +39,10 @@ interface UIState {
   closeProfileModal: () => void;
   openShortcutsModal: () => void;
   closeShortcutsModal: () => void;
+  openFirstSessionTour: () => void;
+  closeFirstSessionTour: () => void;
+  openProUpgradeModal: () => void;
+  closeProUpgradeModal: () => void;
 
   showToast: (msg: string, type?: 'success' | 'error' | 'info', actionText?: string, onAction?: () => void) => void;
   dismissToast: (id: string) => void;
@@ -57,6 +63,8 @@ export const useUIStore = create<UIState>((set, get) => ({
   intentionModalOpen: false,
   profileModalOpen: false,
   shortcutsModalOpen: false,
+  firstSessionTourOpen: false,
+  proUpgradeModalOpen: false,
   toasts: [],
 
   setActiveView: (activeView) => {
@@ -103,6 +111,12 @@ export const useUIStore = create<UIState>((set, get) => ({
 
   openShortcutsModal: () => set({ shortcutsModalOpen: true }),
   closeShortcutsModal: () => set({ shortcutsModalOpen: false }),
+
+  openFirstSessionTour: () => set({ firstSessionTourOpen: true }),
+  closeFirstSessionTour: () => set({ firstSessionTourOpen: false }),
+
+  openProUpgradeModal: () => set({ proUpgradeModalOpen: true }),
+  closeProUpgradeModal: () => set({ proUpgradeModalOpen: false }),
 
   showToast: (message, type = 'success', actionText, onAction) => {
     const id = generateUUID('toast');

@@ -81,3 +81,33 @@ export function getDateStatus(dueDateStr?: string): { isToday: boolean; isOverdu
     isOverdue: dueDateStr < today
   };
 }
+
+/**
+ * Calculates the next recurrence date (YYYY-MM-DD) based on recurrence rule
+ */
+export function calculateNextRecurrenceDate(
+  baseDateStr: string | undefined,
+  repeat?: 'Daily' | 'Weekdays' | 'Weekly' | 'Once'
+): string {
+  const today = getTodayDateString();
+  const startStr = baseDateStr && baseDateStr >= today ? baseDateStr : today;
+  const d = new Date(startStr + 'T00:00:00');
+
+  if (repeat === 'Daily') {
+    d.setDate(d.getDate() + 1);
+  } else if (repeat === 'Weekdays') {
+    d.setDate(d.getDate() + 1);
+    if (d.getDay() === 6) {
+      d.setDate(d.getDate() + 2);
+    } else if (d.getDay() === 0) {
+      d.setDate(d.getDate() + 1);
+    }
+  } else if (repeat === 'Weekly') {
+    d.setDate(d.getDate() + 7);
+  }
+
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
