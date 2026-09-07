@@ -129,6 +129,14 @@ export const ReminderModal: React.FC = () => {
     label: r
   }));
 
+  const soundOptions: SelectOption<ReminderSound>[] = [
+    { value: 'chime', label: '🔔 Gentle Chime' },
+    { value: 'bell', label: '🧘 Zen Bell' },
+    { value: 'marimba', label: '🪵 Warm Marimba' },
+    { value: 'beep', label: '📟 Digital Beep' },
+    { value: 'harp', label: '🎵 Soft Harp' }
+  ];
+
   return (
     <Modal
       isOpen={reminderModalOpen}
@@ -247,34 +255,26 @@ export const ReminderModal: React.FC = () => {
           </div>
 
           {sound && (
-            <div className="pt-2 border-t border-outline-subtle flex items-end gap-2 animate-fade-in">
+            <div className="pt-2.5 border-t border-outline-subtle flex items-end gap-2 animate-fade-in">
               <div className="flex-1">
-                <label htmlFor="reminder-sound-select" className="block text-[11px] font-semibold text-secondary mb-1 font-sans">
-                  Sound Option
-                </label>
-                <select
+                <Select<ReminderSound>
                   id="reminder-sound-select"
+                  label="Sound Option"
                   value={soundOption}
-                  onChange={(e) => {
-                    const chosen = e.target.value as ReminderSound;
+                  onChange={(chosen) => {
                     setSoundOption(chosen);
                     audioManager.playReminderSound(chosen);
                   }}
-                  className="w-full px-3 py-1.5 bg-surface-lowest border border-outline-variant rounded-md text-xs text-on-surface focus:border-primary-container focus:outline-none cursor-pointer"
-                >
-                  <option value="chime">🔔 Gentle Chime</option>
-                  <option value="bell">🧘 Zen Bell</option>
-                  <option value="marimba">🪵 Warm Marimba</option>
-                  <option value="beep">📟 Digital Beep</option>
-                  <option value="harp">🎵 Soft Harp</option>
-                </select>
+                  options={soundOptions}
+                  ariaLabel="Select reminder sound option"
+                />
               </div>
 
               <div>
                 <button
                   type="button"
                   onClick={() => audioManager.playReminderSound(soundOption)}
-                  className="px-2.5 py-1.5 bg-surface-lowest hover:bg-surface-container border border-outline-variant rounded-md text-secondary hover:text-on-surface text-xs transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95"
+                  className="px-3 py-2.5 bg-surface-lowest hover:bg-surface-container border border-outline-variant rounded-md text-secondary hover:text-on-surface text-xs transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95"
                   title="Play Sound Preview"
                   aria-label="Preview selected reminder sound"
                 >

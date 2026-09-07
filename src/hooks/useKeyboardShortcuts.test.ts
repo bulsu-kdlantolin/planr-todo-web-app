@@ -1,11 +1,23 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { useKeyboardShortcuts } from './useKeyboardShortcuts';
 import { useUIStore } from '../store/useUIStore';
 
 describe('useKeyboardShortcuts', () => {
+  beforeEach(() => {
+    useUIStore.setState({
+      shortcutsModalOpen: false,
+      taskModalOpen: false,
+      taskViewModalOpen: false,
+      reminderModalOpen: false,
+      authModalOpen: false,
+      intentionModalOpen: false,
+      profileModalOpen: false,
+      firstSessionTourOpen: false
+    });
+  });
+
   it('opens shortcuts modal when ? key is pressed', () => {
-    useUIStore.getState().closeShortcutsModal();
     renderHook(() => useKeyboardShortcuts());
 
     window.dispatchEvent(new KeyboardEvent('keydown', { key: '?' }));
@@ -24,5 +36,15 @@ describe('useKeyboardShortcuts', () => {
 
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'C' }));
     expect(useUIStore.getState().activeView).toBe('focus');
+  });
+
+  it('does not trigger shortcuts when a modal is open', () => {
+    useUIStore.setState({ activeView: 'tasks', taskModalOpen: true });
+    renderHook(() => useKeyboardShortcuts());
+
+    // Press D for daily view
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'D' }));
+    // View should remain on tasks
+    expect(useUIStore.getState().activeView).toBe('tasks');
   });
 });

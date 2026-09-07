@@ -130,11 +130,6 @@ export const DailyOverviewView: React.FC = () => {
 
   const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
 
-  const handlePlanForToday = async (taskId: string) => {
-    await updateTask(taskId, { dueDate: todayStr });
-    showToast('Task scheduled for Today ☀️');
-  };
-
   const handleRequestDeleteTask = (id: string) => {
     const task = tasks.find((t) => t.id === id);
     if (task) {
@@ -331,7 +326,6 @@ export const DailyOverviewView: React.FC = () => {
                   onEdit={(t) => openTaskModal(t)}
                   onDelete={handleRequestDeleteTask}
                   onView={(t) => openViewTaskModal(t)}
-                  onPlanToday={handlePlanForToday}
                 />
               ))}
               {priorityTasks.length > 5 && (

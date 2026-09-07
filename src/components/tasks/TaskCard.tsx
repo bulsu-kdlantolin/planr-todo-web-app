@@ -11,7 +11,6 @@ import {
   Calendar,
   ChevronDown,
   ChevronUp,
-  Sun,
   Repeat
 } from 'lucide-react';
 
@@ -22,7 +21,6 @@ interface TaskCardProps {
   onEdit?: (task: Task) => void;
   onDelete?: (id: string) => void;
   onView?: (task: Task) => void;
-  onPlanToday?: (taskId: string) => void;
   compact?: boolean;
 }
 
@@ -33,7 +31,6 @@ const TaskCardComponent: React.FC<TaskCardProps> = ({
   onEdit,
   onDelete,
   onView,
-  onPlanToday,
   compact = false
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -89,10 +86,11 @@ const TaskCardComponent: React.FC<TaskCardProps> = ({
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1.5 flex-wrap">
             <span
-              className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded inline-flex items-center gap-1 ${priorityMeta.badgeClass}`}
+              className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full inline-flex items-center gap-1 shadow-xs ${priorityMeta.badgeClass}`}
               aria-label={priorityMeta.ariaLabel}
+              title={`${priorityMeta.label} Priority - ${priorityMeta.description}`}
             >
-              <span aria-hidden="true" className="text-[8px]">{priorityMeta.iconSymbol}</span>
+              <span aria-hidden="true" className="text-[9px] leading-none">{priorityMeta.iconSymbol}</span>
               <span>{priorityMeta.label}</span>
             </span>
 
@@ -203,19 +201,6 @@ const TaskCardComponent: React.FC<TaskCardProps> = ({
 
         {/* Action Buttons */}
         <div className="flex items-center gap-1 flex-shrink-0 self-start">
-          {/* One-click Plan for Today quick action */}
-          {!task.completed && !isToday && onPlanToday && (
-            <button
-              type="button"
-              onClick={() => onPlanToday(task.id)}
-              aria-label={`Plan "${task.title}" for Today`}
-              className="p-1.5 text-secondary hover:text-amber-600 dark:hover:text-amber-400 rounded hover:bg-surface-low transition-colors"
-              title="Plan for Today"
-            >
-              <Sun className="w-4 h-4" aria-hidden="true" />
-            </button>
-          )}
-
           {onView && (
             <button
               type="button"

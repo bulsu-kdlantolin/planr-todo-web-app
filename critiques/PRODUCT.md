@@ -47,3 +47,44 @@
   - Full-width grid container with comfortable padding (`p-1.5`) and generous gap (`gap-2`) allowing multi-letter options like "Weekdays" and "Monthly" to breathe cleanly without text squeezing.
 - **Add to Reminders in Task Creation**:
   - Built-in toggle inside `TaskModal` to seamlessly schedule a corresponding reminder with customized time and sound choice upon creating or editing a task.
+
+## Architecture & Experience Refinements
+- **Zero Monetization & Subscription Friction**:
+  - Removed all "Pro Upgrade" modals, locks, badge counters, and subscription cards. Planr is 100% free, local-first, and private.
+- **Custom Sound Select Dropdown**:
+  - Replaced browser-native unstyled `<select>` elements with dark-mode optimized custom `<Select>` components matching Planr design tokens, complete with instant preview triggers.
+- **Modal Scrollbar Boundary Containment**:
+  - Re-architected modal dialogs to use fixed outer containers with `overflow-hidden` and inner scrollable viewports (`.custom-scrollbar`), preventing scrollbar tracks from protruding beyond rounded card corners.
+- **Autofocus Stability & Non-Jumping Arrow Adjustments**:
+  - Isolated modal autofocus execution from render cycles so incrementing/decrementing time inputs (e.g. reminder or focus duration) does not hijack focus or scroll the viewport to the top.
+- **Stacking Context & Popover Z-Index Elevation**:
+  - Elevated DatePicker popovers (`z-[70]`) and isolated parent recurrence sections to ensure popover calendar date selectors sit firmly above all sibling form elements without clipping.
+- **Autonomous "Today" Planning**:
+  - Replaced manual "Plan for Today" buttons with automatic date-based grouping. Tasks scheduled for today are natively surfaced on Daily Overview and Today filters without manual intervention.
+- **Hash Navigation Stability**:
+  - Fixed an issue where submitting tasks could reset router state to Daily Overview; views now strictly maintain current view state during and after task creation.
+- **Task-to-Reminder Cascade Deletion & Bidirectional Completion Sync**:
+  - Reminders and tasks share a linked relationship where reminders optionally attach to tasks.
+  - Marking a reminder as done (via Reminders view, Daily Overview, or alert toast action) automatically marks its connected task as completed.
+  - Toggling a task in Tasks view or Daily Overview automatically syncs the completion state of any attached reminders.
+- **Accurately Expressive Priority Tags**:
+  - Priority levels are engineered with calibrated semantic palettes, distinct iconography, and actionable descriptions:
+    - `⚡ Urgent` (P1 • Crimson/Rose alert): Immediate action required.
+    - `▲ High` (P2 • Warm Amber): Important • Schedule today.
+    - `◆ Medium` (P3 • Crisp Sky Blue): Standard priority.
+    - `▼ Low` (P4 • Subtle Slate): Low urgency • When time permits.
+  - Dropdowns in `TaskModal` and `QuickAddBar` render clear, clean labels (`⚡ Urgent`, `▲ High`, `◆ Medium`, `▼ Low`) without extra parenthetical words, while task cards and calendar inspect views display styled pill badges with descriptive tooltips.
+- **Dedicated Read-Only Task Details Inspection**:
+  - `TaskViewModal` is designed strictly for viewing, presenting all task details with clarity and zero accidental mutation risks:
+    - Status badge (Completed with timestamp, Overdue with alert, or In Progress).
+    - Expressive priority badge and category pill.
+    - 4-Card Overview: Due date with relative calendar context, full recurrence cadence and end date, attached reminder notification with sound audition preview, and estimated focus duration with pomodoro session progress.
+    - Notes & description formatted with preserved whitespace.
+    - Subtasks summary counter, visual progress bar, and read-only checklist.
+    - Creation and update audit timestamps.
+    - Dedicated "Edit Task" button to seamlessly transition to the editor when changes are desired.
+- **UI Simplifications**:
+  - Removed "Tour" button and fields from Settings to keep preferences focused and minimal.
+  - Removed "+15m" snooze button from reminder cards in Reminders view for a cleaner action bar.
+
+

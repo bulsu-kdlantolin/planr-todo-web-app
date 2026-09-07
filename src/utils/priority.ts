@@ -3,44 +3,59 @@ import { PriorityLevel } from '../types';
 export interface PriorityMeta {
   weight: number;
   label: string;
+  code: string;
   badgeClass: string;
   textClass: string;
+  dotClass: string;
   ariaLabel: string;
   iconSymbol: string;
+  description: string;
 }
 
 export const PRIORITY_CONFIG: Record<PriorityLevel, PriorityMeta> = {
   urgent: {
     weight: 4,
     label: 'Urgent',
-    badgeClass: 'bg-[#ffdad6] text-[#410002] dark:bg-[#93000a]/40 dark:text-[#ffdad6] border border-[#ffb4ab]/40',
-    textClass: 'text-[#ba1a1a] dark:text-[#ffb4ab]',
-    ariaLabel: 'Priority: Urgent (Highest)',
-    iconSymbol: '▲'
+    code: 'P1',
+    badgeClass: 'bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/30',
+    textClass: 'text-rose-600 dark:text-rose-400',
+    dotClass: 'bg-rose-500',
+    ariaLabel: 'Priority: Urgent (Immediate action required)',
+    iconSymbol: '⚡',
+    description: 'Immediate action required'
   },
   high: {
     weight: 3,
     label: 'High',
-    badgeClass: 'bg-[#ffddb9] text-[#2c1600] dark:bg-[#5c3000]/40 dark:text-[#ffddb9] border border-[#ffb877]/40',
-    textClass: 'text-[#8c5000] dark:text-[#ffb877]',
-    ariaLabel: 'Priority: High',
-    iconSymbol: '●'
+    code: 'P2',
+    badgeClass: 'bg-amber-500/15 text-amber-800 dark:text-amber-200 border border-amber-500/30',
+    textClass: 'text-amber-600 dark:text-amber-400',
+    dotClass: 'bg-amber-500',
+    ariaLabel: 'Priority: High (Important • Schedule today)',
+    iconSymbol: '▲',
+    description: 'Important • Schedule today'
   },
   medium: {
     weight: 2,
     label: 'Medium',
-    badgeClass: 'bg-surface-low text-secondary dark:bg-surface-container dark:text-secondary border border-outline-subtle',
-    textClass: 'text-secondary',
-    ariaLabel: 'Priority: Medium',
-    iconSymbol: '■'
+    code: 'P3',
+    badgeClass: 'bg-sky-500/15 text-sky-800 dark:text-sky-200 border border-sky-500/30',
+    textClass: 'text-sky-600 dark:text-sky-400',
+    dotClass: 'bg-sky-500',
+    ariaLabel: 'Priority: Medium (Standard priority)',
+    iconSymbol: '◆',
+    description: 'Standard priority'
   },
   low: {
     weight: 1,
     label: 'Low',
-    badgeClass: 'bg-surface-container-low text-secondary/80 dark:bg-surface-container-low dark:text-secondary/70 border border-outline-subtle/60',
-    textClass: 'text-secondary/80',
-    ariaLabel: 'Priority: Low',
-    iconSymbol: '▽'
+    code: 'P4',
+    badgeClass: 'bg-slate-500/15 text-slate-700 dark:text-slate-300 border border-slate-500/30',
+    textClass: 'text-slate-600 dark:text-slate-400',
+    dotClass: 'bg-slate-400 dark:bg-slate-500',
+    ariaLabel: 'Priority: Low (When time permits)',
+    iconSymbol: '▼',
+    description: 'When time permits'
   }
 };
 

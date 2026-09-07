@@ -55,19 +55,23 @@ export function useHashRouter() {
       if (VALID_VIEWS.includes(cleanHash)) {
         setActiveView(cleanHash);
       } else if (rawHash === '' || rawHash === '#') {
-        if (!VALID_VIEWS.includes(activeView)) {
+        const currentView = useUIStore.getState().activeView;
+        if (!VALID_VIEWS.includes(currentView)) {
           setActiveView('landing');
         }
       } else {
-        // Fallback for unrecognized route
-        setActiveView('daily');
+        // Fallback only if current active view is invalid; never disrupt an active valid view
+        const currentView = useUIStore.getState().activeView;
+        if (!VALID_VIEWS.includes(currentView)) {
+          setActiveView('daily');
+        }
       }
     };
 
     handleHashChange();
     window.addEventListener('hashchange', handleHashChange);
     return () => window.removeEventListener('hashchange', handleHashChange);
-  }, [setActiveView, activeView]);
+  }, [setActiveView]);
 
   return { activeView, setActiveView };
 }

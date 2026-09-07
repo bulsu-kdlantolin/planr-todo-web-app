@@ -4,6 +4,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { TaskViewModal } from './TaskViewModal';
 import { useUIStore } from '../../store/useUIStore';
 import { useTaskStore } from '../../store/useTaskStore';
+import { useReminderStore } from '../../store/useReminderStore';
 import { Task } from '../../types';
 
 describe('TaskViewModal Component', () => {
@@ -36,52 +37,80 @@ describe('TaskViewModal Component', () => {
       tasks: [mockRecurringTask],
       tombstones: []
     });
+    useReminderStore.setState({
+      reminders: [
+        {
+          id: 'rem-view-1',
+          taskId: 'task-view-1',
+          title: 'Review Sprint Velocity',
+          time: '10:00',
+          period: 'Morning',
+          repeat: 'Weekly',
+          sound: true,
+          soundOption: 'bell',
+          active: true,
+          completed: false
+        }
+      ],
+      filter: 'all'
+    });
     useUIStore.setState({
       taskViewModalOpen: true,
       viewingTask: mockRecurringTask
     });
   });
 
-  it('renders task details, status, recurrence info, and subtasks progress', () => {
+  it('renders all task details, expressive priority, recurrence, reminder, and subtasks progress in read-only presentation', () => {
     render(<TaskViewModal />);
 
+    // Title and description
     expect(screen.getByText('Review Sprint Velocity')).toBeInTheDocument();
     expect(screen.getByText('Detailed analytics and sprint goals')).toBeInTheDocument();
+
+    // Priority badge
+    expect(screen.getByText('High Priority')).toBeInTheDocument();
+
+    // Status badge
+    expect(screen.getByText('In Progress')).toBeInTheDocument();
+
+    // Recurrence cadence
     expect(screen.getByText(/Weekly on Mon, Wed/i)).toBeInTheDocument();
+
+    // Attached reminder
+    expect(screen.getByText(/10:00 AM \(Morning\)/i)).toBeInTheDocument();
+    expect(screen.getByText(/bell/i)).toBeInTheDocument();
+
+    // Subtasks summary and items
     expect(screen.getByText('Subtasks')).toBeInTheDocument();
-    expect(screen.getByText('1 of 2 completed')).toBeInTheDocument();
+    expect(screen.getByText(/1 of 2 completed \(50%\)/i)).toBeInTheDocument();
     expect(screen.getByText('Check burn-down')).toBeInTheDocument();
-    expect(screen.getByText('Stop Repeating')).toBeInTheDocument();
+    expect(screen.getByText('Analyze retro notes')).toBeInTheDocument();
+
+    // Focus estimate
+    expect(screen.getByText(/~50m \(2 sessions\)/i)).toBeInTheDocument();
+
+    // Action buttons
+    expect(screen.getByRole('button', { name: 'Close' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /edit task/i })).toBeInTheDocument();
   });
 
-  it('allows toggling subtasks from within the view modal', () => {
+  it('navigates to edit mode when "Edit Task" button is clicked', () => {
     render(<TaskViewModal />);
 
-    const subtask = screen.getByText('Check burn-down');
-    fireEvent.click(subtask);
+    const editBtn = screen.getByRole('button', { name: /edit task/i });
+    fireEvent.click(editBtn);
 
-    const updatedTask = useTaskStore.getState().tasks.find((t) => t.id === 'task-view-1');
-    expect(updatedTask?.subtasks[0].completed).toBe(true);
+    expect(useUIStore.getState().taskViewModalOpen).toBe(false);
+    expect(useUIStore.getState().taskModalOpen).toBe(true);
+    expect(useUIStore.getState().editingTask?.id).toBe('task-view-1');
   });
 
-  it('stops repeating when "Stop Repeating" button is clicked', async () => {
+  it('closes view modal when "Close" button is clicked', () => {
     render(<TaskViewModal />);
 
-    const stopBtn = screen.getByText('Stop Repeating');
-    fireEvent.click(stopBtn);
+    const closeBtn = screen.getByRole('button', { name: 'Close' });
+    fireEvent.click(closeBtn);
 
-    const updatedTask = useTaskStore.getState().tasks.find((t) => t.id === 'task-view-1');
-    expect(updatedTask?.repeat).toBe('Once');
-  });
-
-  it('opens delete confirmation and provides choice to delete entire series', () => {
-    render(<TaskViewModal />);
-
-    const deleteBtn = screen.getByRole('button', { name: /delete/i });
-    fireEvent.click(deleteBtn);
-
-    expect(screen.getByText(/is a repeating task\. would you like to delete only this occurrence/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /delete entire series/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /delete only this/i })).toBeInTheDocument();
+    expect(useUIStore.getState().taskViewModalOpen).toBe(false);
   });
 });

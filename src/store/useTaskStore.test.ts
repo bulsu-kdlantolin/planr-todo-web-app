@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useTaskStore } from './useTaskStore';
+import { useReminderStore } from './useReminderStore';
 
 describe('useTaskStore', () => {
   beforeEach(() => {
@@ -179,6 +180,65 @@ describe('useTaskStore', () => {
     const stopped = await useTaskStore.getState().stopTaskRecurrence(task.id);
     expect(stopped?.repeat).toBe('Once');
     expect(useTaskStore.getState().tasks.find((t) => t.id === task.id)?.repeat).toBe('Once');
+  });
+
+  it('cascades deletion to linked reminder when task is deleted', async () => {
+    useReminderStore.getState().setReminders([]);
+
+    const task = await useTaskStore.getState().addTask({
+      title: 'Submit Taxes',
+      category: 'Work',
+      priority: 'urgent',
+      estimatedPomodoros: 2,
+      subtasks: []
+    });
+
+    await useReminderStore.getState().addReminder({
+      taskId: task.id,
+      title: 'Submit Taxes',
+      time: '17:00',
+      period: 'Afternoon',
+      repeat: 'Once',
+      sound: true
+    });
+
+    expect(useReminderStore.getState().reminders.length).toBe(1);
+
+    await useTaskStore.getState().deleteTask(task.id);
+
+    expect(useTaskStore.getState().tasks.length).toBe(0);
+    expect(useReminderStore.getState().reminders.length).toBe(0);
+  });
+
+  it('syncs completion state to linked reminder when task is toggled', async () => {
+    useReminderStore.getState().setReminders([]);
+
+    const task = await useTaskStore.getState().addTask({
+      title: 'Prepare Quarterly Report',
+      category: 'Work',
+      priority: 'high',
+      estimatedPomodoros: 2,
+      subtasks: []
+    });
+
+    const reminder = await useReminderStore.getState().addReminder({
+      taskId: task.id,
+      title: 'Prepare Quarterly Report',
+      time: '15:00',
+      period: 'Afternoon',
+      repeat: 'Once',
+      sound: true
+    });
+
+    expect(reminder.completed).toBe(false);
+
+    // Toggle task to completed
+    await useTaskStore.getState().toggleTask(task.id);
+    expect(useReminderStore.getState().reminders.find((r) => r.id === reminder.id)?.completed).toBe(true);
+
+    // Toggle task back to active
+    await useTaskStore.getState().toggleTask(task.id);
+    expect(useReminderStore.getState().reminders.find((r) => r.id === reminder.id)?.completed).toBe(false);
   });
 });
 

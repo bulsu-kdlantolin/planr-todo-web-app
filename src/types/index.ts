@@ -51,6 +51,7 @@ export type ReminderSound = 'chime' | 'bell' | 'marimba' | 'beep' | 'harp';
 
 export interface Reminder {
   id: string;
+  taskId?: string; // Associated Task ID for cascaded lifecycle actions
   title: string;
   time: string; // HH:MM
   period: DaySegment;

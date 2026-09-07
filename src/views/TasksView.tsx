@@ -98,12 +98,6 @@ export const TasksView: React.FC = () => {
     setActiveView('focus');
   };
 
-  const handlePlanForToday = async (taskId: string) => {
-    const today = getTodayDateString();
-    await updateTask(taskId, { dueDate: today });
-    showToast('Task scheduled for Today ☀️', 'success');
-  };
-
   const handleAddTaskForDate = (dateStr: string) => {
     const todayStr = getTodayDateString();
     if (dateStr < todayStr) {
@@ -339,7 +333,6 @@ export const TasksView: React.FC = () => {
                     onEdit={(t) => openTaskModal(t)}
                     onDelete={handleRequestDeleteTask}
                     onView={(t) => openViewTaskModal(t)}
-                    onPlanToday={handlePlanForToday}
                   />
                 ))}
               </div>

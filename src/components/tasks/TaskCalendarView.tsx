@@ -343,12 +343,12 @@ export const TaskCalendarView: React.FC<TaskCalendarViewProps> = ({
                                 <span
                                   className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
                                     task.priority === 'urgent'
-                                      ? 'bg-red-500'
+                                      ? 'bg-rose-500'
                                       : task.priority === 'high'
                                       ? 'bg-amber-500'
                                       : task.priority === 'medium'
-                                      ? 'bg-blue-500'
-                                      : 'bg-stone-400'
+                                      ? 'bg-sky-500'
+                                      : 'bg-slate-400'
                                   }`}
                                   aria-hidden="true"
                                 />
@@ -462,9 +462,11 @@ export const TaskCalendarView: React.FC<TaskCalendarViewProps> = ({
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 mb-0.5">
                         <span
-                          className={`text-[9px] uppercase font-bold px-1.5 py-0.5 rounded ${priorityMeta.badgeClass}`}
+                          className={`text-[9px] uppercase font-bold px-1.5 py-0.5 rounded-full inline-flex items-center gap-1 ${priorityMeta.badgeClass}`}
+                          title={`${priorityMeta.label} Priority - ${priorityMeta.description}`}
                         >
-                          {priorityMeta.label}
+                          <span aria-hidden="true" className="text-[8px]">{priorityMeta.iconSymbol}</span>
+                          <span>{priorityMeta.label}</span>
                         </span>
                         <span className="text-[10px] text-secondary font-medium">
                           {task.category}

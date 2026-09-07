@@ -28,7 +28,6 @@ export const RemindersView: React.FC = () => {
   const filter = useReminderStore((state) => state.filter);
   const setFilter = useReminderStore((state) => state.setFilter);
   const toggleReminder = useReminderStore((state) => state.toggleReminder);
-  const snoozeReminder = useReminderStore((state) => state.snoozeReminder);
   const deleteReminder = useReminderStore((state) => state.deleteReminder);
   const restoreReminder = useReminderStore((state) => state.restoreReminder);
 
@@ -272,17 +271,6 @@ export const RemindersView: React.FC = () => {
                             </>
                           )}
                         </button>
-
-                        {!reminder.completed && (
-                          <button
-                            type="button"
-                            onClick={() => snoozeReminder(reminder.id, 15)}
-                            className="flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-medium bg-surface-low hover:bg-surface-container text-secondary hover:text-on-surface border border-outline-subtle transition-colors cursor-pointer"
-                          >
-                            <Clock className="w-3.5 h-3.5" aria-hidden="true" />
-                            <span>+15m</span>
-                          </button>
-                        )}
                       </div>
 
                       <div className="flex items-center gap-1">

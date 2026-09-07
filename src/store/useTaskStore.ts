@@ -5,6 +5,7 @@ import { insertTaskDb, updateTaskDb, deleteTaskDb } from '../lib/supabase/tasks'
 import { audioManager } from '../utils/audio';
 import { generateUUID } from '../utils/id';
 import { calculateNextRecurrenceDate } from '../utils/date';
+import { useReminderStore } from './useReminderStore';
 
 export interface TaskTombstone {
   id: string;
@@ -204,6 +205,16 @@ export const useTaskStore = create<TaskState>((set, get) => ({
       return { tasks: nextTasks };
     });
 
+    // Bidirectional Reminder Connection:
+    // When marked as done (or undone) in tasks, keep any attached reminder synchronized
+    try {
+      useReminderStore.getState().setReminderCompletedByTaskId(id, nextCompleted, task.title).catch((err) =>
+        console.error('Failed to sync linked reminder completion:', err)
+      );
+    } catch (err) {
+      console.error('Failed to call setReminderCompletedByTaskId:', err);
+    }
+
     const userId = await getUserId();
     if (userId) {
       updateTaskDb(updated, userId).catch((err) =>
@@ -258,6 +269,11 @@ export const useTaskStore = create<TaskState>((set, get) => ({
       tombstones: [...state.tombstones, { id, deletedAt: new Date().toISOString() }]
     }));
 
+    // Cascade deletion to associated reminder(s)
+    useReminderStore.getState().deleteRemindersByTaskId(id, target.title).catch((err) =>
+      console.error('Failed to cascade reminder deletion for task:', err)
+    );
+
     const userId = await getUserId();
     if (userId) {
       deleteTaskDb(id, userId).catch((err) =>
@@ -283,6 +299,11 @@ export const useTaskStore = create<TaskState>((set, get) => ({
         ...targets.map((t) => ({ id: t.id, deletedAt: nowIso }))
       ]
     }));
+
+    // Cascade deletion to associated series reminder(s)
+    useReminderStore.getState().deleteRemindersByTaskIds(Array.from(targetIds)).catch((err) =>
+      console.error('Failed to cascade series reminder deletion:', err)
+    );
 
     const userId = await getUserId();
     if (userId) {

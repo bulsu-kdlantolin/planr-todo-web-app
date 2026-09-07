@@ -43,23 +43,27 @@ describe('TaskModal Component', () => {
     expect(screen.getByLabelText(/Reminder Time/i)).toBeInTheDocument();
     expect(screen.getByRole('combobox', { name: /Reminder Sound/i })).toBeInTheDocument();
 
-    // Select different sound option
-    const soundSelect = screen.getByRole('combobox', { name: /Reminder Sound/i });
-    fireEvent.change(soundSelect, { target: { value: 'bell' } });
+    // Select different sound option via custom Select dropdown
+    const soundCombobox = screen.getByRole('combobox', { name: /Reminder Sound/i });
+    fireEvent.click(soundCombobox);
+    const bellOption = screen.getByText(/Zen Bell/i);
+    fireEvent.click(bellOption);
 
     // Submit form
     const submitBtn = screen.getByRole('button', { name: 'Create Task' });
     fireEvent.click(submitBtn);
 
-    // Verify task was added
-    const tasks = useTaskStore.getState().tasks;
-    expect(tasks.length).toBe(1);
-    expect(tasks[0].title).toBe('Launch Product Page');
+    // Verify task and reminder were added asynchronously
+    await vi.waitFor(() => {
+      const tasks = useTaskStore.getState().tasks;
+      expect(tasks.length).toBe(1);
+      expect(tasks[0].title).toBe('Launch Product Page');
 
-    // Verify reminder was scheduled with chosen sound
-    const reminders = useReminderStore.getState().reminders;
-    expect(reminders.length).toBe(1);
-    expect(reminders[0].title).toBe('Launch Product Page');
-    expect(reminders[0].soundOption).toBe('bell');
+      const reminders = useReminderStore.getState().reminders;
+      expect(reminders.length).toBe(1);
+      expect(reminders[0].title).toBe('Launch Product Page');
+      expect(reminders[0].soundOption).toBe('bell');
+      expect(reminders[0].taskId).toBe(tasks[0].id);
+    });
   });
 });

@@ -24,6 +24,8 @@ export const Modal: React.FC<ModalProps> = ({
   const modalRef = useRef<HTMLDivElement | null>(null);
   const previousActiveElement = useRef<HTMLElement | null>(null);
   const isMouseDownOnBackdrop = useRef(false);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
 
   useEffect(() => {
     if (isOpen) {
@@ -31,11 +33,21 @@ export const Modal: React.FC<ModalProps> = ({
       const originalOverflow = document.body.style.overflow;
       document.body.style.overflow = 'hidden';
 
+      // Auto-focus first input or container ONLY ONCE when opening
+      const focusTimer = setTimeout(() => {
+        if (modalRef.current) {
+          const firstInput = modalRef.current.querySelector<HTMLElement>(
+            'input, button:not([aria-label="Close dialog"])'
+          );
+          if (firstInput) firstInput.focus();
+        }
+      }, 50);
+
       // Escape key listener & focus trap
       const handleKeyDown = (e: KeyboardEvent) => {
         if (e.key === 'Escape') {
           e.preventDefault();
-          onClose();
+          onCloseRef.current();
         }
 
         // Focus trap
@@ -64,17 +76,8 @@ export const Modal: React.FC<ModalProps> = ({
 
       document.addEventListener('keydown', handleKeyDown);
 
-      // Auto-focus first input or container
-      setTimeout(() => {
-        if (modalRef.current) {
-          const firstInput = modalRef.current.querySelector<HTMLElement>(
-            'input, button:not([aria-label="Close dialog"])'
-          );
-          if (firstInput) firstInput.focus();
-        }
-      }, 50);
-
       return () => {
+        clearTimeout(focusTimer);
         document.body.style.overflow = originalOverflow;
         document.removeEventListener('keydown', handleKeyDown);
         if (previousActiveElement.current) {
@@ -82,7 +85,7 @@ export const Modal: React.FC<ModalProps> = ({
         }
       };
     }
-  }, [isOpen, onClose]);
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -94,14 +97,14 @@ export const Modal: React.FC<ModalProps> = ({
 
   const handleBackdropMouseUp = (e: React.MouseEvent<HTMLDivElement>) => {
     if (isMouseDownOnBackdrop.current && e.target === e.currentTarget) {
-      onClose();
+      onCloseRef.current();
     }
     isMouseDownOnBackdrop.current = false;
   };
 
   return createPortal(
     <div
-      className="fixed inset-0 bg-black/45 backdrop-blur-sm z-[100] flex items-center justify-center p-4"
+      className="fixed inset-0 bg-black/45 backdrop-blur-sm z-[100] flex items-center justify-center p-4 sm:p-6"
       onMouseDown={handleBackdropMouseDown}
       onMouseUp={handleBackdropMouseUp}
     >
@@ -110,9 +113,10 @@ export const Modal: React.FC<ModalProps> = ({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className={`bg-surface-lowest border border-outline-variant rounded-lg shadow-modal w-full ${maxWidthClass} max-h-[90vh] overflow-y-auto p-6 sm:p-8 animate-scale-in`}
+        className={`bg-surface-lowest border border-outline-variant rounded-xl shadow-modal w-full ${maxWidthClass} max-h-[90vh] flex flex-col overflow-hidden animate-scale-in`}
       >
-        <div className="flex items-center justify-between pb-4 border-b border-outline-subtle mb-4">
+        {/* Fixed Header */}
+        <div className="flex items-center justify-between px-6 pt-6 pb-4 sm:px-8 sm:pt-7 border-b border-outline-subtle flex-shrink-0">
           <div className="flex items-center gap-2.5">
             {icon}
             <h2 id={titleId} className="font-serif text-xl sm:text-2xl font-semibold text-on-surface">
@@ -121,15 +125,18 @@ export const Modal: React.FC<ModalProps> = ({
           </div>
           <button
             type="button"
-            onClick={onClose}
+            onClick={() => onCloseRef.current()}
             aria-label="Close dialog"
-            className="p-1.5 text-secondary hover:text-on-surface hover:bg-surface-low rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-primary-container"
+            className="p-1.5 text-secondary hover:text-on-surface hover:bg-surface-low rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-primary-container cursor-pointer"
           >
             <X className="w-5 h-5" aria-hidden="true" />
           </button>
         </div>
 
-        {children}
+        {/* Inner Scrollable Body */}
+        <div className="flex-1 overflow-y-auto px-6 py-4 sm:px-8 sm:py-6 custom-scrollbar">
+          {children}
+        </div>
       </div>
     </div>,
     document.body

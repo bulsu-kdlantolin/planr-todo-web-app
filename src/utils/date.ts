@@ -153,3 +153,20 @@ export function calculateNextRecurrenceDate(
   return nextDateStr;
 }
 
+/**
+ * Formats ISO date string to localized date and time, e.g. "Sep 8, 2026, 7:15 AM"
+ */
+export function formatDateTimeLong(isoStr?: string, locale?: string): string {
+  if (!isoStr) return '';
+  const date = new Date(isoStr);
+  if (isNaN(date.getTime())) return isoStr;
+  const userLocale = locale || (typeof navigator !== 'undefined' ? navigator.language : 'en-US');
+  return new Intl.DateTimeFormat(userLocale, {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit'
+  }).format(date);
+}
+

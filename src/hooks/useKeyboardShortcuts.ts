@@ -11,10 +11,23 @@ export function useKeyboardShortcuts() {
   const openShortcutsModal = useUIStore((state) => state.openShortcutsModal);
   const toggleFullScreenMode = useUIStore((state) => state.toggleFullScreenMode);
   const shortcuts = useMetaStore((state) => state.settings.shortcuts) || {};
+  const isAnyModalOpen = useUIStore(
+    (state) =>
+      state.taskModalOpen ||
+      state.taskViewModalOpen ||
+      state.reminderModalOpen ||
+      state.authModalOpen ||
+      state.intentionModalOpen ||
+      state.profileModalOpen ||
+      state.shortcutsModalOpen ||
+      state.firstSessionTourOpen
+  );
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Don't trigger shortcuts when user is actively typing in inputs/textareas/selects/contenteditable
+      // Don't trigger shortcuts when any modal is open or when user is typing
+      if (isAnyModalOpen) return;
+
       const target = document.activeElement as HTMLElement;
       if (
         target &&
@@ -56,5 +69,5 @@ export function useKeyboardShortcuts() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [openTaskModal, setActiveView, openShortcutsModal, toggleFullScreenMode, shortcuts]);
+  }, [openTaskModal, setActiveView, openShortcutsModal, toggleFullScreenMode, shortcuts, isAnyModalOpen]);
 }

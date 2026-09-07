@@ -118,23 +118,31 @@ export const TimePicker: React.FC<TimePickerProps> = ({
             <div className="flex flex-col items-center">
               <button
                 type="button"
-                onClick={() => handleHourChange(1)}
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleHourChange(1);
+                }}
                 aria-label="Increment hour"
-                className="p-1 rounded hover:bg-surface-low text-secondary hover:text-on-surface transition-colors"
+                className="p-1 rounded hover:bg-surface-low text-secondary hover:text-on-surface transition-colors cursor-pointer"
               >
                 <ChevronUp className="w-4 h-4" aria-hidden="true" />
               </button>
               <span
-                className="font-serif text-xl font-bold py-1 px-2.5 text-on-surface"
+                className="font-serif text-xl font-bold py-1 px-2.5 text-on-surface select-none"
                 aria-label={`Hours: ${timeFormat === '12h' ? display12Hours : String(currentHours).padStart(2, '0')}`}
               >
                 {timeFormat === '12h' ? display12Hours : String(currentHours).padStart(2, '0')}
               </span>
               <button
                 type="button"
-                onClick={() => handleHourChange(-1)}
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleHourChange(-1);
+                }}
                 aria-label="Decrement hour"
-                className="p-1 rounded hover:bg-surface-low text-secondary hover:text-on-surface transition-colors"
+                className="p-1 rounded hover:bg-surface-low text-secondary hover:text-on-surface transition-colors cursor-pointer"
               >
                 <ChevronDown className="w-4 h-4" aria-hidden="true" />
               </button>
@@ -146,23 +154,31 @@ export const TimePicker: React.FC<TimePickerProps> = ({
             <div className="flex flex-col items-center">
               <button
                 type="button"
-                onClick={() => handleMinChange(5)}
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleMinChange(5);
+                }}
                 aria-label="Increment minutes"
-                className="p-1 rounded hover:bg-surface-low text-secondary hover:text-on-surface transition-colors"
+                className="p-1 rounded hover:bg-surface-low text-secondary hover:text-on-surface transition-colors cursor-pointer"
               >
                 <ChevronUp className="w-4 h-4" aria-hidden="true" />
               </button>
               <span
-                className="font-serif text-xl font-bold py-1 px-2.5 text-on-surface"
+                className="font-serif text-xl font-bold py-1 px-2.5 text-on-surface select-none"
                 aria-label={`Minutes: ${String(currentMins).padStart(2, '0')}`}
               >
                 {String(currentMins).padStart(2, '0')}
               </span>
               <button
                 type="button"
-                onClick={() => handleMinChange(-5)}
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleMinChange(-5);
+                }}
                 aria-label="Decrement minutes"
-                className="p-1 rounded hover:bg-surface-low text-secondary hover:text-on-surface transition-colors"
+                className="p-1 rounded hover:bg-surface-low text-secondary hover:text-on-surface transition-colors cursor-pointer"
               >
                 <ChevronDown className="w-4 h-4" aria-hidden="true" />
               </button>
@@ -173,10 +189,14 @@ export const TimePicker: React.FC<TimePickerProps> = ({
               <div className="flex flex-col gap-1 pl-2 border-l border-outline-subtle">
                 <button
                   type="button"
-                  onClick={() => isPM && toggleAMPM()}
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    if (isPM) toggleAMPM();
+                  }}
                   aria-label="Select AM"
                   aria-pressed={!isPM}
-                  className={`px-2 py-1 rounded text-xs font-bold transition-colors ${
+                  className={`px-2 py-1 rounded text-xs font-bold transition-colors cursor-pointer ${
                     !isPM
                       ? 'bg-primary-container text-on-primary-container'
                       : 'text-secondary hover:bg-surface-low'
@@ -186,10 +206,14 @@ export const TimePicker: React.FC<TimePickerProps> = ({
                 </button>
                 <button
                   type="button"
-                  onClick={() => !isPM && toggleAMPM()}
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    if (!isPM) toggleAMPM();
+                  }}
                   aria-label="Select PM"
                   aria-pressed={isPM}
-                  className={`px-2 py-1 rounded text-xs font-bold transition-colors ${
+                  className={`px-2 py-1 rounded text-xs font-bold transition-colors cursor-pointer ${
                     isPM
                       ? 'bg-primary-container text-on-primary-container'
                       : 'text-secondary hover:bg-surface-low'
