@@ -10,6 +10,8 @@ interface UIState {
   taskModalOpen: boolean;
   editingTask: Task | null;
   initialTaskDueDate: string | null;
+  taskViewModalOpen: boolean;
+  viewingTask: Task | null;
   reminderModalOpen: boolean;
   editingReminder: Reminder | null;
   authModalOpen: boolean;
@@ -29,6 +31,8 @@ interface UIState {
   toggleZenMode: () => void;
   openTaskModal: (task?: Task | null, initialDueDate?: string | null) => void;
   closeTaskModal: () => void;
+  openViewTaskModal: (task: Task) => void;
+  closeViewTaskModal: () => void;
   openReminderModal: (reminder?: Reminder | null) => void;
   closeReminderModal: () => void;
   openAuthModal: (mode?: 'signin' | 'signup') => void;
@@ -56,6 +60,8 @@ export const useUIStore = create<UIState>((set, get) => ({
   taskModalOpen: false,
   editingTask: null,
   initialTaskDueDate: null,
+  taskViewModalOpen: false,
+  viewingTask: null,
   reminderModalOpen: false,
   editingReminder: null,
   authModalOpen: false,
@@ -96,6 +102,11 @@ export const useUIStore = create<UIState>((set, get) => ({
     set({ taskModalOpen: true, editingTask, initialTaskDueDate }),
   closeTaskModal: () =>
     set({ taskModalOpen: false, editingTask: null, initialTaskDueDate: null }),
+
+  openViewTaskModal: (viewingTask) =>
+    set({ taskViewModalOpen: true, viewingTask }),
+  closeViewTaskModal: () =>
+    set({ taskViewModalOpen: false, viewingTask: null }),
 
   openReminderModal: (editingReminder = null) => set({ reminderModalOpen: true, editingReminder }),
   closeReminderModal: () => set({ reminderModalOpen: false, editingReminder: null }),

@@ -9,6 +9,8 @@ import { WeeklyAnalytics } from '../components/analytics/WeeklyAnalytics';
 import { DailyMetricsCards } from '../components/daily/DailyMetricsCards';
 import { DailyRemindersCard } from '../components/daily/DailyRemindersCard';
 import { ConfirmModal } from '../components/common/ConfirmModal';
+import { Modal } from '../components/common/Modal';
+import { Logo } from '../components/common/Logo';
 import { Task } from '../types';
 import { getPriorityWeight } from '../utils/priority';
 import { getTodayDateString, formatHeaderDate, getLocalGreeting } from '../utils/date';
@@ -57,6 +59,7 @@ export const DailyOverviewView: React.FC = () => {
   const toggleTask = useTaskStore((state) => state.toggleTask);
   const toggleSubtask = useTaskStore((state) => state.toggleSubtask);
   const deleteTask = useTaskStore((state) => state.deleteTask);
+  const deleteTaskSeries = useTaskStore((state) => state.deleteTaskSeries);
   const updateTask = useTaskStore((state) => state.updateTask);
 
   const reminders = useReminderStore((state) => state.reminders);
@@ -69,6 +72,7 @@ export const DailyOverviewView: React.FC = () => {
   const timeFormat = useMetaStore((state) => state.settings.timeFormat || '12h');
 
   const openTaskModal = useUIStore((state) => state.openTaskModal);
+  const openViewTaskModal = useUIStore((state) => state.openViewTaskModal);
   const openIntentionModal = useUIStore((state) => state.openIntentionModal);
   const setActiveView = useUIStore((state) => state.setActiveView);
   const showToast = useUIStore((state) => state.showToast);
@@ -138,7 +142,7 @@ export const DailyOverviewView: React.FC = () => {
     }
   };
 
-  const handleConfirmDeleteTask = async () => {
+  const handleConfirmDeleteSingle = async () => {
     if (!taskToDelete) return;
     const target = taskToDelete;
     setTaskToDelete(null);
@@ -148,6 +152,15 @@ export const DailyOverviewView: React.FC = () => {
         useTaskStore.getState().restoreTask(deleted);
       });
     }
+  };
+
+  const handleConfirmDeleteSeries = async () => {
+    if (!taskToDelete) return;
+    const target = taskToDelete;
+    setTaskToDelete(null);
+    const seriesId = target.recurringSeriesId || target.id;
+    const deletedList = await deleteTaskSeries(seriesId);
+    showToast(`Deleted ${deletedList.length} tasks in recurring series`, 'info');
   };
 
   const handleShareIntention = async () => {
@@ -317,7 +330,7 @@ export const DailyOverviewView: React.FC = () => {
                   onToggleSubtask={toggleSubtask}
                   onEdit={(t) => openTaskModal(t)}
                   onDelete={handleRequestDeleteTask}
-                  onFocus={handleFocusOnTask}
+                  onView={(t) => openViewTaskModal(t)}
                   onPlanToday={handlePlanForToday}
                 />
               ))}
@@ -352,16 +365,57 @@ export const DailyOverviewView: React.FC = () => {
         />
       </div>
 
-      <ConfirmModal
-        isOpen={!!taskToDelete}
-        onClose={() => setTaskToDelete(null)}
-        onConfirm={handleConfirmDeleteTask}
-        title="Delete Task"
-        description={`Are you sure you want to delete "${taskToDelete?.title}"? This action can still be undone from the notification banner.`}
-        confirmText="Delete"
-        cancelText="Cancel"
-        isDestructive
-      />
+      {taskToDelete && taskToDelete.repeat && taskToDelete.repeat !== 'Once' ? (
+        <Modal
+          isOpen={!!taskToDelete}
+          onClose={() => setTaskToDelete(null)}
+          title="Delete Repeating Task"
+          titleId="delete-repeating-task-dialog"
+          maxWidthClass="max-w-md"
+          icon={<Logo size="sm" showWordmark={false} />}
+        >
+          <div className="space-y-4 my-2">
+            <p className="text-xs text-secondary leading-relaxed font-sans">
+              "{taskToDelete.title}" is a repeating task. Would you like to delete only this occurrence or remove all tasks in the series?
+            </p>
+
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2 pt-4 border-t border-outline-subtle">
+              <button
+                type="button"
+                onClick={() => setTaskToDelete(null)}
+                className="px-4 py-2 text-xs font-medium text-secondary hover:text-on-surface bg-surface-low hover:bg-surface-high border border-outline-subtle rounded-md transition-colors cursor-pointer text-center"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDeleteSeries}
+                className="px-4 py-2 text-xs font-semibold uppercase tracking-wider bg-red-500/15 hover:bg-red-500/25 text-red-600 dark:text-red-400 border border-red-500/30 rounded-md transition-all active:scale-[0.98] cursor-pointer text-center"
+              >
+                Delete Entire Series
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDeleteSingle}
+                className="px-5 py-2 text-xs font-semibold uppercase tracking-wider bg-primary-container hover:bg-primary text-on-primary-container rounded-md shadow-sm transition-all active:scale-[0.98] cursor-pointer text-center"
+              >
+                Delete Only This
+              </button>
+            </div>
+          </div>
+        </Modal>
+      ) : (
+        <ConfirmModal
+          isOpen={!!taskToDelete}
+          onClose={() => setTaskToDelete(null)}
+          onConfirm={handleConfirmDeleteSingle}
+          title="Delete Task"
+          description={`Are you sure you want to delete "${taskToDelete?.title}"? This action can still be undone from the notification banner.`}
+          confirmText="Delete"
+          cancelText="Cancel"
+          isDestructive
+        />
+      )}
     </div>
   );
 };

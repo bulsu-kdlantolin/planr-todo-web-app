@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useUIStore } from '../../store/useUIStore';
 import { useReminderStore } from '../../store/useReminderStore';
 import { useMetaStore } from '../../store/useMetaStore';
-import { DaySegment, Recurrence } from '../../types';
+import { DaySegment, Recurrence, ReminderSound } from '../../types';
 import { Modal } from '../common/Modal';
 import { Select, SelectOption } from '../common/Select';
 import { TimePicker } from '../common/TimePicker';
@@ -10,8 +10,9 @@ import { DatePicker } from '../common/DatePicker';
 import { ToggleSwitch } from '../common/ToggleSwitch';
 import { ModalFooter } from '../common/ModalFooter';
 import { Logo } from '../common/Logo';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Volume2 } from 'lucide-react';
 import { triggerHapticFeedback, getFieldValidationClass } from '../../utils/validation';
+import { audioManager } from '../../utils/audio';
 
 export const ReminderModal: React.FC = () => {
   const reminderModalOpen = useUIStore((state) => state.reminderModalOpen);
@@ -30,6 +31,7 @@ export const ReminderModal: React.FC = () => {
   const [repeat, setRepeat] = useState<Recurrence>('Daily');
   const [scheduledDate, setScheduledDate] = useState('');
   const [sound, setSound] = useState(true);
+  const [soundOption, setSoundOption] = useState<ReminderSound>('chime');
   const [description, setDescription] = useState('');
   const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
 
@@ -43,6 +45,7 @@ export const ReminderModal: React.FC = () => {
       setRepeat(editingReminder.repeat);
       setScheduledDate(editingReminder.scheduledDate || '');
       setSound(editingReminder.sound !== false);
+      setSoundOption(editingReminder.soundOption || 'chime');
       setDescription(editingReminder.description || '');
     } else {
       setTitle('');
@@ -51,6 +54,7 @@ export const ReminderModal: React.FC = () => {
       setRepeat('Daily');
       setScheduledDate('');
       setSound(true);
+      setSoundOption('chime');
       setDescription('');
     }
   }, [reminderModalOpen, editingReminder]);
@@ -61,7 +65,8 @@ export const ReminderModal: React.FC = () => {
       time !== editingReminder.time ||
       repeat !== editingReminder.repeat ||
       scheduledDate !== (editingReminder.scheduledDate || '') ||
-      sound !== (editingReminder.sound !== false)
+      sound !== (editingReminder.sound !== false) ||
+      soundOption !== (editingReminder.soundOption || 'chime')
     : title.trim() !== '' || description.trim() !== '';
 
   const handleRequestClose = () => {
@@ -88,6 +93,7 @@ export const ReminderModal: React.FC = () => {
         repeat,
         scheduledDate: repeat === 'Once' ? scheduledDate : undefined,
         sound,
+        soundOption: sound ? soundOption : undefined,
         description: description.trim() || undefined
       });
       showToast(`Reminder updated: "${title.trim()}"`, 'success');
@@ -99,6 +105,7 @@ export const ReminderModal: React.FC = () => {
         repeat,
         scheduledDate: repeat === 'Once' ? scheduledDate : undefined,
         sound,
+        soundOption: sound ? soundOption : undefined,
         description: description.trim() || undefined
       });
       showToast(`Reminder scheduled: "${title.trim()}"`, 'success');
@@ -200,7 +207,7 @@ export const ReminderModal: React.FC = () => {
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-4 items-end">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
           <Select<Recurrence>
             label="Repeat"
             value={repeat}
@@ -209,26 +216,75 @@ export const ReminderModal: React.FC = () => {
             ariaLabel="Select recurrence"
           />
 
-          <div className="flex items-center justify-between pb-2 px-1">
-            <ToggleSwitch
-              label="Audio Chime"
-              checked={sound}
-              onChange={(checked) => setSound(checked)}
-              ariaLabel="Toggle audio chime"
-            />
-          </div>
+          {repeat === 'Once' ? (
+            <div className="animate-fade-in">
+              <DatePicker
+                label="Scheduled Date"
+                value={scheduledDate}
+                onChange={(val) => setScheduledDate(val)}
+                placeholder="Pick scheduled day..."
+              />
+            </div>
+          ) : (
+            <div className="text-[11px] text-secondary pt-7 font-sans">
+              Recurs every {repeat.toLowerCase()}
+            </div>
+          )}
         </div>
 
-        {repeat === 'Once' && (
-          <div className="animate-fade-in">
-            <DatePicker
-              label="Scheduled Date"
-              value={scheduledDate}
-              onChange={(val) => setScheduledDate(val)}
-              placeholder="Pick scheduled day..."
+        {/* Audio Alert Sound Settings */}
+        <div className="p-3 bg-surface-low border border-outline-variant rounded-lg space-y-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <span className="text-xs font-semibold text-on-surface">Audio Alert</span>
+              <p className="text-[11px] text-secondary">Play an audible chime when reminder alerts</p>
+            </div>
+            <ToggleSwitch
+              checked={sound}
+              onChange={(checked) => setSound(checked)}
+              ariaLabel="Toggle audio alert"
             />
           </div>
-        )}
+
+          {sound && (
+            <div className="pt-2 border-t border-outline-subtle flex items-end gap-2 animate-fade-in">
+              <div className="flex-1">
+                <label htmlFor="reminder-sound-select" className="block text-[11px] font-semibold text-secondary mb-1 font-sans">
+                  Sound Option
+                </label>
+                <select
+                  id="reminder-sound-select"
+                  value={soundOption}
+                  onChange={(e) => {
+                    const chosen = e.target.value as ReminderSound;
+                    setSoundOption(chosen);
+                    audioManager.playReminderSound(chosen);
+                  }}
+                  className="w-full px-3 py-1.5 bg-surface-lowest border border-outline-variant rounded-md text-xs text-on-surface focus:border-primary-container focus:outline-none cursor-pointer"
+                >
+                  <option value="chime">🔔 Gentle Chime</option>
+                  <option value="bell">🧘 Zen Bell</option>
+                  <option value="marimba">🪵 Warm Marimba</option>
+                  <option value="beep">📟 Digital Beep</option>
+                  <option value="harp">🎵 Soft Harp</option>
+                </select>
+              </div>
+
+              <div>
+                <button
+                  type="button"
+                  onClick={() => audioManager.playReminderSound(soundOption)}
+                  className="px-2.5 py-1.5 bg-surface-lowest hover:bg-surface-container border border-outline-variant rounded-md text-secondary hover:text-on-surface text-xs transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95"
+                  title="Play Sound Preview"
+                  aria-label="Preview selected reminder sound"
+                >
+                  <Volume2 className="w-3.5 h-3.5 text-primary-container" />
+                  <span className="text-[11px] font-medium">Test</span>
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
 
         <div>
           <label htmlFor="reminder-notes-input" className="block text-xs font-semibold text-secondary uppercase tracking-wider mb-1.5 font-sans">

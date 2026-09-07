@@ -9,9 +9,9 @@ import {
   Calendar as CalendarIcon,
   CheckCircle2,
   Circle,
+  Eye,
   Edit2,
   Trash2,
-  Timer,
   CheckSquare
 } from 'lucide-react';
 
@@ -20,7 +20,7 @@ interface TaskCalendarViewProps {
   onToggleTask: (id: string) => void;
   onEditTask: (task: Task) => void;
   onDeleteTask: (id: string) => void;
-  onFocusTask?: (taskId: string) => void;
+  onViewTask?: (task: Task) => void;
   onAddTaskForDate: (dateStr: string) => void;
 }
 
@@ -29,7 +29,7 @@ export const TaskCalendarView: React.FC<TaskCalendarViewProps> = ({
   onToggleTask,
   onEditTask,
   onDeleteTask,
-  onFocusTask,
+  onViewTask,
   onAddTaskForDate
 }) => {
   const todayStr = getTodayDateString();
@@ -38,6 +38,7 @@ export const TaskCalendarView: React.FC<TaskCalendarViewProps> = ({
   const [viewYear, setViewYear] = useState(todayDate.getFullYear());
   const [viewMonth, setViewMonth] = useState(todayDate.getMonth()); // 0-indexed
   const [selectedDate, setSelectedDate] = useState<string>(todayStr);
+  const [activeChipTaskId, setActiveChipTaskId] = useState<string | null>(null);
 
   const monthNames = [
     'January', 'February', 'March', 'April', 'May', 'June',
@@ -265,38 +266,95 @@ export const TaskCalendarView: React.FC<TaskCalendarViewProps> = ({
                         </button>
                       )}
                     </div>
-
-                    {/* Middle: Task Chips / Pills */}
+                    {/* Middle: Task Chips / Pills with Sliding Actions */}
                     <div className="space-y-1 my-1 flex-1 overflow-hidden">
                       {dayTasks.slice(0, 2).map((task) => {
-                        const meta = getPriorityMeta(task.priority);
+                        const isActionActive = activeChipTaskId === task.id;
+
                         return (
                           <div
                             key={task.id}
                             onClick={(e) => {
                               e.stopPropagation();
-                              onEditTask(task);
+                              setActiveChipTaskId(isActionActive ? null : task.id);
                             }}
                             title={task.title}
-                            className={`px-2 py-0.5 rounded text-[11px] font-sans truncate flex items-center gap-1.5 transition-colors cursor-pointer border ${
-                              task.completed
-                                ? 'bg-surface-low text-secondary line-through border-outline-subtle opacity-70'
-                                : 'bg-surface-low hover:bg-surface-high text-on-surface border-outline-subtle'
+                            className={`rounded text-[11px] font-sans transition-all relative overflow-hidden border ${
+                              isActionActive
+                                ? 'bg-surface-lowest ring-1 ring-primary-container shadow-xs p-0.5'
+                                : task.completed
+                                ? 'px-2 py-0.5 bg-surface-low text-secondary line-through border-outline-subtle opacity-70 cursor-pointer'
+                                : 'px-2 py-0.5 bg-surface-low hover:bg-surface-high text-on-surface border-outline-subtle cursor-pointer'
                             }`}
                           >
-                            <span
-                              className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
-                                task.priority === 'urgent'
-                                  ? 'bg-red-500'
-                                  : task.priority === 'high'
-                                  ? 'bg-amber-500'
-                                  : task.priority === 'medium'
-                                  ? 'bg-blue-500'
-                                  : 'bg-stone-400'
-                              }`}
-                              aria-hidden="true"
-                            />
-                            <span className="truncate">{task.title}</span>
+                            {isActionActive ? (
+                              <div className="flex items-center justify-between gap-1 w-full animate-slide-in">
+                                <span className="truncate text-[10px] font-medium text-on-surface pl-1 max-w-[45px] sm:max-w-[65px]">
+                                  {task.title}
+                                </span>
+                                <div className="flex items-center gap-0.5 bg-surface-low rounded p-0.5 flex-shrink-0">
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setActiveChipTaskId(null);
+                                      if (onViewTask) {
+                                        onViewTask(task);
+                                      } else {
+                                        onEditTask(task);
+                                      }
+                                    }}
+                                    className="p-1 hover:bg-surface-high text-secondary hover:text-on-surface rounded transition-colors"
+                                    title="View task details"
+                                    aria-label={`View details for ${task.title}`}
+                                  >
+                                    <Eye className="w-3 h-3" aria-hidden="true" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setActiveChipTaskId(null);
+                                      onEditTask(task);
+                                    }}
+                                    className="p-1 hover:bg-surface-high text-secondary hover:text-on-surface rounded transition-colors"
+                                    title="Edit task"
+                                    aria-label={`Edit task ${task.title}`}
+                                  >
+                                    <Edit2 className="w-3 h-3" aria-hidden="true" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setActiveChipTaskId(null);
+                                      onDeleteTask(task.id);
+                                    }}
+                                    className="p-1 hover:bg-surface-high text-secondary hover:text-red-500 rounded transition-colors"
+                                    title="Delete task"
+                                    aria-label={`Delete task ${task.title}`}
+                                  >
+                                    <Trash2 className="w-3 h-3" aria-hidden="true" />
+                                  </button>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-1.5 truncate">
+                                <span
+                                  className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
+                                    task.priority === 'urgent'
+                                      ? 'bg-red-500'
+                                      : task.priority === 'high'
+                                      ? 'bg-amber-500'
+                                      : task.priority === 'medium'
+                                      ? 'bg-blue-500'
+                                      : 'bg-stone-400'
+                                  }`}
+                                  aria-hidden="true"
+                                />
+                                <span className="truncate">{task.title}</span>
+                              </div>
+                            )}
                           </div>
                         );
                       })}
@@ -424,15 +482,15 @@ export const TaskCalendarView: React.FC<TaskCalendarViewProps> = ({
 
                   {/* Actions */}
                   <div className="flex items-center gap-1 flex-shrink-0">
-                    {!task.completed && onFocusTask && (
+                    {onViewTask && (
                       <button
                         type="button"
-                        onClick={() => onFocusTask(task.id)}
-                        aria-label={`Focus on ${task.title}`}
-                        className="p-1.5 text-secondary hover:text-primary-container rounded hover:bg-surface-low transition-colors cursor-pointer"
-                        title="Focus session"
+                        onClick={() => onViewTask(task)}
+                        aria-label={`View details for ${task.title}`}
+                        className="p-1.5 text-secondary hover:text-on-surface rounded hover:bg-surface-low transition-colors cursor-pointer"
+                        title="View task details"
                       >
-                        <Timer className="w-3.5 h-3.5" aria-hidden="true" />
+                        <Eye className="w-3.5 h-3.5" aria-hidden="true" />
                       </button>
                     )}
 

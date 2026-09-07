@@ -1,14 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { useTaskStore } from '../../store/useTaskStore';
+import { useReminderStore } from '../../store/useReminderStore';
+import { useMetaStore } from '../../store/useMetaStore';
 import { useUIStore } from '../../store/useUIStore';
-import { TaskCategory, PriorityLevel, Subtask, Recurrence } from '../../types';
+import { TaskCategory, PriorityLevel, Subtask, Recurrence, RecurrenceConfig, ReminderSound, DaySegment } from '../../types';
 import { Modal } from '../common/Modal';
 import { Select, SelectOption } from '../common/Select';
 import { DatePicker } from '../common/DatePicker';
+import { TimePicker } from '../common/TimePicker';
+import { ToggleSwitch } from '../common/ToggleSwitch';
 import { ModalFooter } from '../common/ModalFooter';
 import { getPriorityLabel } from '../../utils/priority';
 import { generateUUID } from '../../utils/id';
 import { getTodayDateString } from '../../utils/date';
+import { audioManager } from '../../utils/audio';
 import { Logo } from '../common/Logo';
 import {
   CheckCircle2,
@@ -16,7 +21,10 @@ import {
   Plus,
   Clock,
   AlertCircle,
-  Repeat
+  Repeat,
+  Slash,
+  Bell,
+  Volume2
 } from 'lucide-react';
 import { triggerHapticFeedback, getFieldValidationClass } from '../../utils/validation';
 
@@ -26,6 +34,7 @@ export const TaskModal: React.FC = () => {
   const initialTaskDueDate = useUIStore((state) => state.initialTaskDueDate);
   const closeTaskModal = useUIStore((state) => state.closeTaskModal);
   const showToast = useUIStore((state) => state.showToast);
+  const timeFormat = useMetaStore((state) => state.settings.timeFormat || '12h');
 
   const addTask = useTaskStore((state) => state.addTask);
   const updateTask = useTaskStore((state) => state.updateTask);
@@ -37,10 +46,19 @@ export const TaskModal: React.FC = () => {
   const [priority, setPriority] = useState<PriorityLevel>('medium');
   const [dueDate, setDueDate] = useState<string>('');
   const [repeat, setRepeat] = useState<Recurrence>('Once');
+  const [recurrenceInterval, setRecurrenceInterval] = useState(1);
+  const [recurrenceUnit, setRecurrenceUnit] = useState<'days' | 'weeks' | 'months'>('days');
+  const [recurrenceWeekdays, setRecurrenceWeekdays] = useState<number[]>([]);
+  const [recurrenceEndDate, setRecurrenceEndDate] = useState<string>('');
   const [estimatedPomodoros, setEstimatedPomodoros] = useState(1);
   const [subtasks, setSubtasks] = useState<Subtask[]>([]);
   const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
   const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
+
+  // Add to Reminders Option State
+  const [addToReminders, setAddToReminders] = useState(false);
+  const [reminderTime, setReminderTime] = useState('09:00');
+  const [reminderSound, setReminderSound] = useState<ReminderSound>('chime');
 
   useEffect(() => {
     setTitleError(null);
@@ -52,6 +70,10 @@ export const TaskModal: React.FC = () => {
       setPriority(editingTask.priority);
       setDueDate(editingTask.dueDate || '');
       setRepeat(editingTask.repeat || 'Once');
+      setRecurrenceInterval(editingTask.recurrenceConfig?.interval || 1);
+      setRecurrenceUnit(editingTask.recurrenceConfig?.intervalUnit || 'days');
+      setRecurrenceWeekdays(editingTask.recurrenceConfig?.weekdays || []);
+      setRecurrenceEndDate(editingTask.recurrenceConfig?.endDate || '');
       setEstimatedPomodoros(editingTask.estimatedPomodoros || 1);
       setSubtasks(editingTask.subtasks ? [...editingTask.subtasks] : []);
     } else {
@@ -61,8 +83,15 @@ export const TaskModal: React.FC = () => {
       setPriority('medium');
       setDueDate(initialTaskDueDate || getTodayDateString());
       setRepeat('Once');
+      setRecurrenceInterval(1);
+      setRecurrenceUnit('days');
+      setRecurrenceWeekdays([]);
+      setRecurrenceEndDate('');
       setEstimatedPomodoros(1);
       setSubtasks([]);
+      setAddToReminders(false);
+      setReminderTime('09:00');
+      setReminderSound('chime');
     }
   }, [editingTask, taskModalOpen, initialTaskDueDate]);
 
@@ -73,8 +102,9 @@ export const TaskModal: React.FC = () => {
       priority !== editingTask.priority ||
       dueDate !== (editingTask.dueDate || '') ||
       repeat !== (editingTask.repeat || 'Once') ||
-      subtasks.length !== (editingTask.subtasks?.length || 0)
-    : title.trim() !== '' || description.trim() !== '' || subtasks.length > 0;
+      subtasks.length !== (editingTask.subtasks?.length || 0) ||
+      addToReminders
+    : title.trim() !== '' || description.trim() !== '' || subtasks.length > 0 || addToReminders;
 
   const handleRequestClose = () => {
     if (isDirty) {
@@ -114,6 +144,40 @@ export const TaskModal: React.FC = () => {
       return;
     }
 
+    const recurrenceConfig: RecurrenceConfig | undefined =
+      repeat !== 'Once'
+        ? {
+            frequency: repeat,
+            interval: recurrenceInterval > 1 || repeat === 'Custom' ? recurrenceInterval : 1,
+            intervalUnit: repeat === 'Custom' ? recurrenceUnit : undefined,
+            weekdays:
+              (repeat === 'Weekly' || (repeat === 'Custom' && recurrenceUnit === 'weeks')) &&
+              recurrenceWeekdays.length > 0
+                ? recurrenceWeekdays
+                : undefined,
+            endDate: recurrenceEndDate || undefined
+          }
+        : undefined;
+
+    let reminderScheduled = false;
+    if (addToReminders) {
+      const hours = parseInt(reminderTime.split(':')[0], 10) || 9;
+      const period: DaySegment =
+        hours < 12 ? 'Morning' : hours < 17 ? 'Afternoon' : hours < 21 ? 'Evening' : 'Night';
+
+      useReminderStore.getState().addReminder({
+        title: title.trim(),
+        time: reminderTime,
+        period,
+        repeat: repeat === 'Once' ? 'Once' : repeat,
+        scheduledDate: dueDate || undefined,
+        sound: true,
+        soundOption: reminderSound,
+        description: description.trim() || undefined
+      });
+      reminderScheduled = true;
+    }
+
     if (editingTask) {
       updateTask(editingTask.id, {
         title: title.trim(),
@@ -123,9 +187,10 @@ export const TaskModal: React.FC = () => {
         dueDate: dueDate || undefined,
         estimatedPomodoros,
         subtasks,
-        repeat
+        repeat,
+        recurrenceConfig
       });
-      showToast('Task updated', 'success');
+      showToast(reminderScheduled ? 'Task updated & reminder scheduled ⏰' : 'Task updated', 'success');
     } else {
       addTask({
         title: title.trim(),
@@ -135,9 +200,15 @@ export const TaskModal: React.FC = () => {
         dueDate: dueDate || undefined,
         estimatedPomodoros,
         subtasks,
-        repeat
+        repeat,
+        recurrenceConfig
       });
-      showToast('Task added', 'success');
+      showToast(
+        reminderScheduled
+          ? `Task created & reminder set for ${reminderTime} ⏰`
+          : 'Task added',
+        'success'
+      );
     }
     closeTaskModal();
   };
@@ -153,6 +224,32 @@ export const TaskModal: React.FC = () => {
     value: p,
     label: getPriorityLabel(p)
   }));
+
+  const daysOfWeek = [
+    { day: 1, label: 'M' },
+    { day: 2, label: 'T' },
+    { day: 3, label: 'W' },
+    { day: 4, label: 'T' },
+    { day: 5, label: 'F' },
+    { day: 6, label: 'S' },
+    { day: 0, label: 'S' }
+  ];
+
+  const toggleWeekday = (day: number) => {
+    if (recurrenceWeekdays.includes(day)) {
+      setRecurrenceWeekdays(recurrenceWeekdays.filter((d) => d !== day));
+    } else {
+      setRecurrenceWeekdays([...recurrenceWeekdays, day].sort());
+    }
+  };
+
+  const handleStopRepeating = () => {
+    setRepeat('Once');
+    setRecurrenceInterval(1);
+    setRecurrenceUnit('days');
+    setRecurrenceWeekdays([]);
+    setRecurrenceEndDate('');
+  };
 
   return (
     <Modal
@@ -190,6 +287,31 @@ export const TaskModal: React.FC = () => {
       )}
 
       <form noValidate onSubmit={handleSubmit} className="space-y-4 my-2">
+        {/* Repeating Task Active Indicator with Stop Repeating Option */}
+        {editingTask && editingTask.repeat && editingTask.repeat !== 'Once' && (
+          <div className="p-3 bg-primary-container/10 border border-primary-container/25 rounded-md flex items-center justify-between text-xs animate-fade-in">
+            <div className="flex items-center gap-2 text-on-surface">
+              <Repeat className="w-3.5 h-3.5 text-primary-container flex-shrink-0" />
+              <span>
+                Repeats <strong className="font-semibold">{editingTask.repeat}</strong>
+              </span>
+            </div>
+            {repeat !== 'Once' ? (
+              <button
+                type="button"
+                onClick={handleStopRepeating}
+                className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-secondary hover:text-red-600 dark:hover:text-red-400 bg-surface-low hover:bg-surface-lowest border border-outline-subtle rounded transition-colors cursor-pointer"
+              >
+                Stop Repeating
+              </button>
+            ) : (
+              <span className="text-[10px] font-medium text-amber-600 dark:text-amber-400">
+                Will not repeat after saving
+              </span>
+            )}
+          </div>
+        )}
+
         {/* Title Input */}
         <div>
           <label htmlFor="task-title-input" className="block text-xs font-semibold uppercase tracking-wider text-secondary mb-1 font-sans">
@@ -231,7 +353,7 @@ export const TaskModal: React.FC = () => {
           />
         </div>
 
-        {/* Category & Priority Grid with Custom Animated Selects */}
+        {/* Category & Priority Grid */}
         <div className="grid grid-cols-2 gap-4">
           <Select<TaskCategory>
             label="Category"
@@ -250,29 +372,30 @@ export const TaskModal: React.FC = () => {
           />
         </div>
 
-        {/* Due Date & Recurrence Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <DatePicker
-              label="Due Date"
-              value={dueDate}
-              onChange={(val) => setDueDate(val)}
-              minDate={getTodayDateString()}
-              placeholder="Pick due date..."
-            />
-          </div>
+        {/* Due Date */}
+        <div>
+          <DatePicker
+            label="Due Date"
+            value={dueDate}
+            onChange={(val) => setDueDate(val)}
+            minDate={getTodayDateString()}
+            placeholder="Pick due date..."
+          />
+        </div>
 
+        {/* Repeat Recurrence Selector (Spacious, full width, never squeezed) */}
+        <div className="space-y-3">
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-secondary mb-1 font-sans">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-secondary mb-1.5 font-sans">
               Repeat
             </label>
-            <div className="grid grid-cols-4 gap-1 p-1 bg-surface-low border border-outline-variant rounded-md">
-              {(['Once', 'Daily', 'Weekdays', 'Weekly'] as Recurrence[]).map((r) => (
+            <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 p-1.5 bg-surface-low border border-outline-variant rounded-lg">
+              {(['Once', 'Daily', 'Weekdays', 'Weekly', 'Monthly', 'Custom'] as Recurrence[]).map((r) => (
                 <button
                   key={r}
                   type="button"
                   onClick={() => setRepeat(r)}
-                  className={`py-1.5 text-[11px] font-medium rounded transition-all text-center ${
+                  className={`py-2 px-1 text-xs font-medium rounded-md transition-all text-center cursor-pointer ${
                     repeat === r
                       ? 'bg-primary-container text-on-primary-container font-semibold shadow-xs'
                       : 'text-secondary hover:text-on-surface hover:bg-surface-lowest'
@@ -283,6 +406,147 @@ export const TaskModal: React.FC = () => {
               ))}
             </div>
           </div>
+
+          {/* Advanced Recurrence Options Panel */}
+          {repeat !== 'Once' && (
+            <div className="p-3 bg-surface-low border border-outline-subtle rounded-lg space-y-3 animate-fade-in">
+              {/* Custom Interval and Unit */}
+              {repeat === 'Custom' && (
+                <div className="flex items-center gap-3 flex-wrap">
+                  <span className="text-xs text-secondary font-medium font-sans">Every</span>
+                  <input
+                    type="number"
+                    min={1}
+                    max={99}
+                    value={recurrenceInterval}
+                    onChange={(e) => setRecurrenceInterval(Math.max(1, parseInt(e.target.value, 10) || 1))}
+                    aria-label="Repeat interval"
+                    className="w-16 px-2.5 py-1.5 bg-surface-lowest border border-outline-variant rounded-md text-xs text-on-surface text-center focus:border-primary-container focus:outline-none no-spinners"
+                  />
+                  <div className="flex items-center gap-1 bg-surface-lowest border border-outline-variant rounded-md p-0.5">
+                    {(['days', 'weeks', 'months'] as const).map((unit) => (
+                      <button
+                        key={unit}
+                        type="button"
+                        onClick={() => setRecurrenceUnit(unit)}
+                        className={`px-2.5 py-1 text-[11px] rounded font-medium capitalize transition-colors ${
+                          recurrenceUnit === unit
+                            ? 'bg-primary-container text-on-primary-container font-semibold'
+                            : 'text-secondary hover:text-on-surface'
+                        }`}
+                      >
+                        {unit}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Day of week toggles for Weekly or Custom (weeks) */}
+              {(repeat === 'Weekly' || (repeat === 'Custom' && recurrenceUnit === 'weeks')) && (
+                <div>
+                  <span className="block text-[11px] font-semibold text-secondary mb-1.5 font-sans">
+                    Repeat on days of the week:
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    {daysOfWeek.map(({ day, label }, idx) => {
+                      const isSelected = recurrenceWeekdays.includes(day);
+                      return (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => toggleWeekday(day)}
+                          aria-label={`Toggle day ${label}`}
+                          className={`w-7 h-7 rounded-full text-xs font-semibold flex items-center justify-center transition-all cursor-pointer ${
+                            isSelected
+                              ? 'bg-primary-container text-on-primary-container shadow-xs scale-105'
+                              : 'bg-surface-lowest text-secondary hover:text-on-surface border border-outline-subtle'
+                          }`}
+                        >
+                          {label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Optional End Date */}
+              <div className="max-w-xs">
+                <DatePicker
+                  label="End repeat on (optional)"
+                  value={recurrenceEndDate}
+                  onChange={(val) => setRecurrenceEndDate(val)}
+                  minDate={dueDate || getTodayDateString()}
+                  placeholder="Never (repeat indefinitely)"
+                />
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Add to Reminders Section */}
+        <div className="p-3 bg-surface-low border border-outline-variant rounded-lg space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <div className="p-1.5 rounded-md bg-primary-container/15 text-primary-container">
+                <Bell className="w-4 h-4" aria-hidden="true" />
+              </div>
+              <div>
+                <span className="text-xs font-semibold text-on-surface">Add to Reminders</span>
+                <p className="text-[11px] text-secondary">Schedule an audio alert and reminder notification for this task</p>
+              </div>
+            </div>
+            <ToggleSwitch
+              checked={addToReminders}
+              onChange={setAddToReminders}
+              ariaLabel="Toggle add to reminders"
+            />
+          </div>
+
+          {addToReminders && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2.5 border-t border-outline-subtle animate-fade-in items-end">
+              <TimePicker
+                label="Reminder Time"
+                value={reminderTime}
+                onChange={setReminderTime}
+                timeFormat={timeFormat}
+              />
+
+              <div>
+                <label htmlFor="task-reminder-sound-select" className="block text-[11px] font-semibold text-secondary mb-1 font-sans">
+                  Reminder Sound
+                </label>
+                <div className="flex items-center gap-2">
+                  <select
+                    id="task-reminder-sound-select"
+                    value={reminderSound}
+                    onChange={(e) => {
+                      const chosen = e.target.value as ReminderSound;
+                      setReminderSound(chosen);
+                      audioManager.playReminderSound(chosen);
+                    }}
+                    className="flex-1 px-3 py-2 bg-surface-lowest border border-outline-variant rounded-md text-xs text-on-surface focus:border-primary-container focus:outline-none cursor-pointer"
+                  >
+                    <option value="chime">🔔 Gentle Chime</option>
+                    <option value="bell">🧘 Zen Bell</option>
+                    <option value="marimba">🪵 Warm Marimba</option>
+                    <option value="beep">📟 Digital Beep</option>
+                    <option value="harp">🎵 Soft Harp</option>
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => audioManager.playReminderSound(reminderSound)}
+                    className="px-2.5 py-2 bg-surface-lowest hover:bg-surface-container border border-outline-variant rounded-md text-secondary hover:text-on-surface text-xs transition-colors flex items-center gap-1 cursor-pointer shadow-xs active:scale-95"
+                    title="Play Sound Preview"
+                    aria-label="Preview reminder sound"
+                  >
+                    <Volume2 className="w-3.5 h-3.5 text-primary-container" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Subtasks Checklist Section */}

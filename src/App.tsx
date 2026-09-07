@@ -5,6 +5,7 @@ import { Sidebar } from './components/layout/Sidebar';
 import { ToastContainer } from './components/common/Toast';
 import { Logo } from './components/common/Logo';
 import { TaskModal } from './components/modals/TaskModal';
+import { TaskViewModal } from './components/modals/TaskViewModal';
 import { ReminderModal } from './components/modals/ReminderModal';
 import { AuthModal } from './components/modals/AuthModal';
 import { IntentionModal } from './components/modals/IntentionModal';
@@ -30,7 +31,8 @@ import { useHashRouter } from './hooks/useHashRouter';
 import { useDragDropRestore } from './hooks/useDragDropRestore';
 import { useThemeSync } from './hooks/useThemeSync';
 import { useTimerTitleSync } from './hooks/useTimerTitleSync';
-import { Upload, Minimize2 } from 'lucide-react';
+import { useReminderAlerts } from './hooks/useReminderAlerts';
+import { Upload } from 'lucide-react';
 
 export const App: React.FC = () => {
   // 1. Theme synchronization hook
@@ -38,6 +40,9 @@ export const App: React.FC = () => {
 
   // 2. Dynamic document title countdown sync
   useTimerTitleSync();
+
+  // 3. Proactive scheduled reminder audio alerts
+  useReminderAlerts();
 
   // 3. Database hydration hook
   const { isLoading } = useHydration();
@@ -105,19 +110,7 @@ export const App: React.FC = () => {
         </div>
       )}
 
-      {/* Floating Exit Zen / Full Screen Button */}
-      {fullScreenMode && !isFullPageView && (
-        <button
-          type="button"
-          onClick={toggleFullScreenMode}
-          className="fixed top-4 left-4 z-50 flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-surface-lowest/95 backdrop-blur-md border border-outline-variant shadow-ambient text-xs font-semibold text-secondary hover:text-on-surface hover:bg-surface-low transition-all animate-fade-in cursor-pointer active:scale-95"
-          title="Exit Full Screen Mode (F)"
-          aria-label="Exit Full Screen Mode"
-        >
-          <Minimize2 className="w-3.5 h-3.5 text-primary" aria-hidden="true" />
-          <span>Exit Full Screen (F)</span>
-        </button>
-      )}
+
 
       <div className="flex h-screen overflow-hidden relative">
         {/* Left Desktop Sidebar Navigation with Smooth CSS Slide Animation */}
@@ -159,6 +152,7 @@ export const App: React.FC = () => {
 
       {/* Global Modals & Dialogs */}
       <TaskModal />
+      <TaskViewModal />
       <ReminderModal />
       <AuthModal />
       <IntentionModal

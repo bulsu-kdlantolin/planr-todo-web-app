@@ -138,4 +138,32 @@ describe('TaskCalendarView Component', () => {
     // Add task button should not be rendered
     expect(screen.queryByRole('button', { name: /add task for this day/i })).not.toBeInTheDocument();
   });
+
+  it('slides action buttons (view, edit, delete) when a task chip is clicked in calendar cell', () => {
+    const handleView = vi.fn();
+    const handleEdit = vi.fn();
+    const handleDelete = vi.fn();
+
+    render(
+      <TaskCalendarView
+        tasks={mockTasks}
+        onToggleTask={vi.fn()}
+        onEditTask={handleEdit}
+        onDeleteTask={handleDelete}
+        onViewTask={handleView}
+        onAddTaskForDate={vi.fn()}
+      />
+    );
+
+    // Find first task chip in the cell
+    const taskChip = screen.getAllByText('Design high-fidelity calendar')[0];
+    fireEvent.click(taskChip);
+
+    // Action buttons should now be visible in the sliding drawer
+    const viewButtons = screen.getAllByRole('button', { name: /view details for design high-fidelity calendar/i });
+    expect(viewButtons.length).toBeGreaterThan(0);
+
+    fireEvent.click(viewButtons[0]);
+    expect(handleView).toHaveBeenCalledWith(mockTasks[0]);
+  });
 });

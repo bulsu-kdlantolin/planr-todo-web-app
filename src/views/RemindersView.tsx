@@ -3,7 +3,8 @@ import { useReminderStore } from '../store/useReminderStore';
 import { useMetaStore } from '../store/useMetaStore';
 import { useUIStore } from '../store/useUIStore';
 import { formatTimeDisplay } from '../utils/date';
-import { DaySegment, Recurrence, Reminder } from '../types';
+import { audioManager } from '../utils/audio';
+import { DaySegment, Recurrence, Reminder, ReminderSound } from '../types';
 import { ConfirmModal } from '../components/common/ConfirmModal';
 import {
   Plus,
@@ -223,9 +224,23 @@ export const RemindersView: React.FC = () => {
                         </h3>
                       </div>
 
-                      <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-surface-low text-secondary border border-outline-subtle flex-shrink-0 font-sans font-medium">
-                        {reminder.repeat}
-                      </span>
+                      <div className="flex items-center gap-1.5 flex-shrink-0">
+                        {reminder.sound !== false && (
+                          <button
+                            type="button"
+                            onClick={() => audioManager.playReminderSound(reminder.soundOption || 'chime')}
+                            title={`Preview ${reminder.soundOption || 'chime'} sound`}
+                            aria-label={`Preview ${reminder.soundOption || 'chime'} sound for ${reminder.title}`}
+                            className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-primary-container/15 hover:bg-primary-container/25 text-primary-container border border-primary-container/30 font-sans font-medium transition-colors cursor-pointer"
+                          >
+                            <Volume2 className="w-3 h-3" aria-hidden="true" />
+                            <span className="capitalize">{reminder.soundOption || 'chime'}</span>
+                          </button>
+                        )}
+                        <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-surface-low text-secondary border border-outline-subtle font-sans font-medium">
+                          {reminder.repeat}
+                        </span>
+                      </div>
                     </div>
 
                     {reminder.description && (

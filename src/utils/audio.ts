@@ -7,6 +7,8 @@ declare global {
   }
 }
 
+import { ReminderSound } from '../types';
+
 export interface AmbientMixerState {
   rain: number;
   forest: number;
@@ -128,6 +130,161 @@ class ProceduralAudioManager {
       });
     } catch {
       // Audio safety fallback
+    }
+  }
+
+  playBell() {
+    try {
+      this.init();
+      if (!this.ctx) return;
+
+      const now = this.ctx.currentTime;
+      const fundamental = 440; // Warm singing bowl fundamental
+      const partials = [
+        { freq: fundamental, gain: 0.22, decay: 2.2 },
+        { freq: fundamental * 2.01, gain: 0.1, decay: 1.6 },
+        { freq: fundamental * 3.02, gain: 0.05, decay: 1.1 }
+      ];
+
+      partials.forEach(({ freq, gain, decay }) => {
+        if (!this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const g = this.ctx.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, now);
+
+        g.gain.setValueAtTime(0.0001, now);
+        g.gain.exponentialRampToValueAtTime(this.masterVolume * gain, now + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, now + decay);
+
+        osc.connect(g);
+        g.connect(this.ctx.destination);
+
+        osc.start(now);
+        osc.stop(now + decay + 0.05);
+      });
+    } catch {
+      // Audio safety fallback
+    }
+  }
+
+  playMarimba() {
+    try {
+      this.init();
+      if (!this.ctx) return;
+
+      const now = this.ctx.currentTime;
+      const notes = [523.25, 783.99]; // C5 then G5 pleasant interval
+
+      notes.forEach((freq, idx) => {
+        if (!this.ctx) return;
+        const noteStart = now + idx * 0.1;
+        const osc = this.ctx.createOscillator();
+        const g = this.ctx.createGain();
+
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, noteStart);
+
+        g.gain.setValueAtTime(0.0001, noteStart);
+        g.gain.exponentialRampToValueAtTime(this.masterVolume * 0.22, noteStart + 0.008);
+        g.gain.exponentialRampToValueAtTime(0.0001, noteStart + 0.45);
+
+        osc.connect(g);
+        g.connect(this.ctx.destination);
+
+        osc.start(noteStart);
+        osc.stop(noteStart + 0.5);
+      });
+    } catch {
+      // Audio safety fallback
+    }
+  }
+
+  playBeep() {
+    try {
+      this.init();
+      if (!this.ctx) return;
+
+      const now = this.ctx.currentTime;
+      const beeps = [
+        { freq: 880, start: now, duration: 0.08 },
+        { freq: 1174.66, start: now + 0.1, duration: 0.14 }
+      ];
+
+      beeps.forEach(({ freq, start, duration }) => {
+        if (!this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const g = this.ctx.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, start);
+
+        g.gain.setValueAtTime(0.0001, start);
+        g.gain.exponentialRampToValueAtTime(this.masterVolume * 0.18, start + 0.01);
+        g.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+
+        osc.connect(g);
+        g.connect(this.ctx.destination);
+
+        osc.start(start);
+        osc.stop(start + duration + 0.02);
+      });
+    } catch {
+      // Audio safety fallback
+    }
+  }
+
+  playHarp() {
+    try {
+      this.init();
+      if (!this.ctx) return;
+
+      const now = this.ctx.currentTime;
+      const notes = [523.25, 659.25, 783.99, 987.77]; // C5, E5, G5, B5 arpeggio
+
+      notes.forEach((freq, idx) => {
+        if (!this.ctx) return;
+        const noteStart = now + idx * 0.08;
+        const osc = this.ctx.createOscillator();
+        const g = this.ctx.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, noteStart);
+
+        g.gain.setValueAtTime(0.0001, noteStart);
+        g.gain.exponentialRampToValueAtTime(this.masterVolume * 0.15, noteStart + 0.015);
+        g.gain.exponentialRampToValueAtTime(0.0001, noteStart + 1.2);
+
+        osc.connect(g);
+        g.connect(this.ctx.destination);
+
+        osc.start(noteStart);
+        osc.stop(noteStart + 1.25);
+      });
+    } catch {
+      // Audio safety fallback
+    }
+  }
+
+  playReminderSound(sound: ReminderSound = 'chime') {
+    switch (sound) {
+      case 'bell':
+        this.playBell();
+        break;
+      case 'marimba':
+        this.playMarimba();
+        break;
+      case 'beep':
+        this.playBeep();
+        break;
+      case 'harp':
+        this.playHarp();
+        break;
+      case 'chime':
+      default:
+        this.playChime();
+        break;
     }
   }
 

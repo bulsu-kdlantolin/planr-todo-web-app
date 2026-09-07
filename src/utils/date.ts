@@ -82,32 +82,74 @@ export function getDateStatus(dueDateStr?: string): { isToday: boolean; isOverdu
   };
 }
 
+import { Recurrence, RecurrenceConfig } from '../types';
+
 /**
- * Calculates the next recurrence date (YYYY-MM-DD) based on recurrence rule
+ * Calculates the next recurrence date (YYYY-MM-DD) based on recurrence rule and configuration
  */
 export function calculateNextRecurrenceDate(
   baseDateStr: string | undefined,
-  repeat?: 'Daily' | 'Weekdays' | 'Weekly' | 'Once'
-): string {
+  repeat?: Recurrence,
+  config?: RecurrenceConfig
+): string | null {
+  if (!repeat || repeat === 'Once') return null;
+
   const today = getTodayDateString();
   const startStr = baseDateStr && baseDateStr >= today ? baseDateStr : today;
   const d = new Date(startStr + 'T00:00:00');
 
+  const interval = Math.max(1, config?.interval || 1);
+
   if (repeat === 'Daily') {
-    d.setDate(d.getDate() + 1);
+    d.setDate(d.getDate() + interval);
   } else if (repeat === 'Weekdays') {
-    d.setDate(d.getDate() + 1);
-    if (d.getDay() === 6) {
-      d.setDate(d.getDate() + 2);
-    } else if (d.getDay() === 0) {
+    do {
       d.setDate(d.getDate() + 1);
-    }
+    } while (d.getDay() === 0 || d.getDay() === 6);
   } else if (repeat === 'Weekly') {
-    d.setDate(d.getDate() + 7);
+    if (config?.weekdays && config.weekdays.length > 0) {
+      // Find the next day that matches the configured weekdays
+      const targetDays = new Set(config.weekdays);
+      for (let i = 0; i < 14; i++) {
+        d.setDate(d.getDate() + 1);
+        if (targetDays.has(d.getDay())) break;
+      }
+    } else {
+      d.setDate(d.getDate() + interval * 7);
+    }
+  } else if (repeat === 'Monthly') {
+    d.setMonth(d.getMonth() + interval);
+  } else if (repeat === 'Yearly') {
+    d.setFullYear(d.getFullYear() + interval);
+  } else if (repeat === 'Custom') {
+    const unit = config?.intervalUnit || 'days';
+    if (unit === 'days') {
+      d.setDate(d.getDate() + interval);
+    } else if (unit === 'weeks') {
+      if (config?.weekdays && config.weekdays.length > 0) {
+        const targetDays = new Set(config.weekdays);
+        for (let i = 0; i < 14; i++) {
+          d.setDate(d.getDate() + 1);
+          if (targetDays.has(d.getDay())) break;
+        }
+      } else {
+        d.setDate(d.getDate() + interval * 7);
+      }
+    } else if (unit === 'months') {
+      d.setMonth(d.getMonth() + interval);
+    }
   }
 
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
+  const nextDateStr = `${y}-${m}-${day}`;
+
+  // If past end date, do not schedule next recurrence
+  if (config?.endDate && nextDateStr > config.endDate) {
+    return null;
+  }
+
+  return nextDateStr;
 }
+

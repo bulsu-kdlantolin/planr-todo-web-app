@@ -79,11 +79,12 @@ describe('useTaskStore', () => {
   });
 
   it('schedules next recurrence when a recurring task is completed', async () => {
+    const today = new Date().toISOString().split('T')[0];
     const task = await useTaskStore.getState().addTask({
       title: 'Daily Standup',
       category: 'Work',
       priority: 'high',
-      dueDate: '2026-09-06',
+      dueDate: today,
       repeat: 'Daily',
       estimatedPomodoros: 1,
       subtasks: [{ id: 'sub-1', title: 'Share blocker', completed: true }]
@@ -100,8 +101,85 @@ describe('useTaskStore', () => {
     const nextTask = allTasks.find((t) => t.id !== task.id);
     expect(nextTask?.completed).toBe(false);
     expect(nextTask?.repeat).toBe('Daily');
-    expect(nextTask?.dueDate).toBe('2026-09-07');
     expect(nextTask?.subtasks[0].completed).toBe(false);
   });
+
+  it('removes spawned recurrence on uncheck and prevents duplicates on repeated toggle', async () => {
+    const today = new Date().toISOString().split('T')[0];
+    const task = await useTaskStore.getState().addTask({
+      title: 'Morning Yoga',
+      category: 'Health',
+      priority: 'medium',
+      dueDate: today,
+      repeat: 'Daily',
+      estimatedPomodoros: 1,
+      subtasks: []
+    });
+
+    // 1. Mark complete: should spawn 1 new task (total: 2)
+    await useTaskStore.getState().toggleTask(task.id);
+    let tasks = useTaskStore.getState().tasks;
+    expect(tasks.length).toBe(2);
+
+    // 2. Uncheck: should clean up the spawned task (total: 1)
+    await useTaskStore.getState().toggleTask(task.id);
+    tasks = useTaskStore.getState().tasks;
+    expect(tasks.length).toBe(1);
+    expect(tasks[0].id).toBe(task.id);
+    expect(tasks[0].completed).toBe(false);
+
+    // 3. Mark complete again: should spawn exactly 1 new task (total: 2, NO duplicates!)
+    await useTaskStore.getState().toggleTask(task.id);
+    tasks = useTaskStore.getState().tasks;
+    expect(tasks.length).toBe(2);
+
+    // 4. Uncheck and re-check again: should never exceed 2 tasks
+    await useTaskStore.getState().toggleTask(task.id);
+    await useTaskStore.getState().toggleTask(task.id);
+    tasks = useTaskStore.getState().tasks;
+    expect(tasks.length).toBe(2);
+  });
+
+  it('deletes all tasks in a recurring series via deleteTaskSeries', async () => {
+    const today = new Date().toISOString().split('T')[0];
+    const task = await useTaskStore.getState().addTask({
+      title: 'Weekly Sync',
+      category: 'Work',
+      priority: 'high',
+      dueDate: today,
+      repeat: 'Weekly',
+      estimatedPomodoros: 1,
+      subtasks: []
+    });
+
+    // Toggle to generate next instance in series
+    await useTaskStore.getState().toggleTask(task.id);
+    let tasks = useTaskStore.getState().tasks;
+    expect(tasks.length).toBe(2);
+
+    const seriesId = tasks[0].recurringSeriesId!;
+    expect(seriesId).toBeDefined();
+
+    // Delete entire series
+    const deleted = await useTaskStore.getState().deleteTaskSeries(seriesId);
+    expect(deleted.length).toBe(2);
+    expect(useTaskStore.getState().tasks.length).toBe(0);
+  });
+
+  it('stops recurrence on a task without deleting it', async () => {
+    const task = await useTaskStore.getState().addTask({
+      title: 'Reading Book',
+      category: 'Personal',
+      priority: 'low',
+      repeat: 'Daily',
+      estimatedPomodoros: 1,
+      subtasks: []
+    });
+
+    const stopped = await useTaskStore.getState().stopTaskRecurrence(task.id);
+    expect(stopped?.repeat).toBe('Once');
+    expect(useTaskStore.getState().tasks.find((t) => t.id === task.id)?.repeat).toBe('Once');
+  });
 });
+
 

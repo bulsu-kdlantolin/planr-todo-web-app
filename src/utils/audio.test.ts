@@ -25,6 +25,18 @@ describe('AudioManager Audio Synthesizer', () => {
     expect(() => audioManager.playChime()).not.toThrow();
   });
 
+  it('triggers reminder sound variations without throwing errors', () => {
+    expect(() => audioManager.playBell()).not.toThrow();
+    expect(() => audioManager.playMarimba()).not.toThrow();
+    expect(() => audioManager.playBeep()).not.toThrow();
+    expect(() => audioManager.playHarp()).not.toThrow();
+    expect(() => audioManager.playReminderSound('chime')).not.toThrow();
+    expect(() => audioManager.playReminderSound('bell')).not.toThrow();
+    expect(() => audioManager.playReminderSound('marimba')).not.toThrow();
+    expect(() => audioManager.playReminderSound('beep')).not.toThrow();
+    expect(() => audioManager.playReminderSound('harp')).not.toThrow();
+  });
+
   it('starts and stops ambient soundscapes smoothly', () => {
     expect(() => audioManager.startAmbient('rain')).not.toThrow();
     expect(() => audioManager.startAmbient('forest')).not.toThrow();

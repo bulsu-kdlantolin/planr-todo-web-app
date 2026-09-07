@@ -69,4 +69,17 @@ describe('TaskCard Component', () => {
     fireEvent.click(screen.getByText('Subtask Alpha'));
     expect(handleToggleSubtask).toHaveBeenCalledWith('task-test-1', 'sub-1');
   });
+
+  it('calls onView when view button is clicked', () => {
+    const handleToggle = vi.fn();
+    const handleView = vi.fn();
+
+    render(<TaskCard task={mockTask} onToggle={handleToggle} onView={handleView} />);
+
+    const viewBtn = screen.getByTitle('View Task Details');
+    expect(viewBtn).toBeInTheDocument();
+    fireEvent.click(viewBtn);
+
+    expect(handleView).toHaveBeenCalledWith(mockTask);
+  });
 });

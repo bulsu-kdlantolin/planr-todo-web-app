@@ -31,10 +31,23 @@ export interface Task {
   deletedAt?: string | null;
   revision?: number;
   repeat?: Recurrence;
+  recurrenceConfig?: RecurrenceConfig;
+  recurringSeriesId?: string;
+  spawnedNextTaskId?: string;
 }
 
 export type DaySegment = 'Morning' | 'Afternoon' | 'Evening' | 'Night';
-export type Recurrence = 'Daily' | 'Weekdays' | 'Weekly' | 'Once';
+export type Recurrence = 'Once' | 'Daily' | 'Weekdays' | 'Weekly' | 'Monthly' | 'Yearly' | 'Custom';
+
+export interface RecurrenceConfig {
+  frequency: Recurrence;
+  interval?: number;
+  intervalUnit?: 'days' | 'weeks' | 'months';
+  weekdays?: number[]; // 0 = Sun, 1 = Mon, ..., 6 = Sat
+  endDate?: string; // YYYY-MM-DD
+}
+
+export type ReminderSound = 'chime' | 'bell' | 'marimba' | 'beep' | 'harp';
 
 export interface Reminder {
   id: string;
@@ -44,6 +57,7 @@ export interface Reminder {
   repeat: Recurrence;
   scheduledDate?: string; // YYYY-MM-DD for non-recurring or specific date
   sound: boolean;
+  soundOption?: ReminderSound;
   active: boolean;
   completed: boolean;
   description?: string;

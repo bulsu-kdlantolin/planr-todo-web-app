@@ -5,7 +5,7 @@ import { getDateStatus } from '../../utils/date';
 import {
   CheckCircle2,
   Circle,
-  Timer,
+  Eye,
   Edit2,
   Trash2,
   Calendar,
@@ -21,7 +21,7 @@ interface TaskCardProps {
   onToggleSubtask?: (taskId: string, subtaskId: string) => void;
   onEdit?: (task: Task) => void;
   onDelete?: (id: string) => void;
-  onFocus?: (taskId: string) => void;
+  onView?: (task: Task) => void;
   onPlanToday?: (taskId: string) => void;
   compact?: boolean;
 }
@@ -32,7 +32,7 @@ const TaskCardComponent: React.FC<TaskCardProps> = ({
   onToggleSubtask,
   onEdit,
   onDelete,
-  onFocus,
+  onView,
   onPlanToday,
   compact = false
 }) => {
@@ -216,15 +216,15 @@ const TaskCardComponent: React.FC<TaskCardProps> = ({
             </button>
           )}
 
-          {!task.completed && onFocus && (
+          {onView && (
             <button
               type="button"
-              onClick={() => onFocus(task.id)}
-              aria-label={`Start deep focus session on ${task.title}`}
-              className="p-1.5 text-secondary hover:text-primary-container rounded hover:bg-surface-low transition-colors"
-              title="Focus on this task"
+              onClick={() => onView(task)}
+              aria-label={`View details for ${task.title}`}
+              className="p-1.5 text-secondary hover:text-on-surface rounded hover:bg-surface-low transition-colors"
+              title="View Task Details"
             >
-              <Timer className="w-4 h-4" aria-hidden="true" />
+              <Eye className="w-4 h-4" aria-hidden="true" />
             </button>
           )}
 
