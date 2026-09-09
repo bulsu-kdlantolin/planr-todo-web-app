@@ -70,25 +70,28 @@ export const useMetaStore = create<MetaState>((set, get) => ({
       } catch {}
     }
 
-    const userId = await getUserId();
-    if (userId) {
-      if (updates.avatar !== undefined) {
-        try {
-          if (updates.avatar) {
-            localStorage.setItem(`planr_custom_avatar_${userId}`, updates.avatar);
-            localStorage.setItem(`planr_avatar_${userId}`, updates.avatar);
-          } else {
-            localStorage.removeItem(`planr_custom_avatar_${userId}`);
-            localStorage.removeItem(`planr_avatar_${userId}`);
-          }
-        } catch {}
-      }
+    // Persist remote changes to Supabase asynchronously in the background
+    (async () => {
       try {
-        await upsertUserProfileDb(userId, updates);
+        const userId = await getUserId();
+        if (userId) {
+          if (updates.avatar !== undefined) {
+            try {
+              if (updates.avatar) {
+                localStorage.setItem(`planr_custom_avatar_${userId}`, updates.avatar);
+                localStorage.setItem(`planr_avatar_${userId}`, updates.avatar);
+              } else {
+                localStorage.removeItem(`planr_custom_avatar_${userId}`);
+                localStorage.removeItem(`planr_avatar_${userId}`);
+              }
+            } catch {}
+          }
+          await upsertUserProfileDb(userId, updates);
+        }
       } catch (err) {
         console.error('Failed to sync profile update to Supabase:', err);
       }
-    }
+    })();
   },
 
   updateSettings: async (updates) => {

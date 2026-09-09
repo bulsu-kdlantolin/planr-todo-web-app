@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Task } from '../../types';
-import { getTodayDateString, formatDateLong } from '../../utils/date';
+import { getTodayDateString, formatDateLong, doesTaskRecurOnDate } from '../../utils/date';
 import { getPriorityMeta } from '../../utils/priority';
 import {
   ChevronLeft,
@@ -12,7 +12,8 @@ import {
   Eye,
   Edit2,
   Trash2,
-  CheckSquare
+  CheckSquare,
+  Repeat
 } from 'lucide-react';
 
 interface TaskCalendarViewProps {
@@ -110,9 +111,11 @@ export const TaskCalendarView: React.FC<TaskCalendarViewProps> = ({
     return days;
   }, [viewYear, viewMonth]);
 
-  // Index tasks by dueDate for O(1) lookups
+  // Index tasks by dueDate and project recurring task instances across calendar days
   const tasksByDate = useMemo(() => {
     const map = new Map<string, Task[]>();
+
+    // 1. Index all concrete tasks by their explicit dueDate
     for (const task of tasks) {
       if (task.dueDate) {
         const list = map.get(task.dueDate) || [];
@@ -120,14 +123,68 @@ export const TaskCalendarView: React.FC<TaskCalendarViewProps> = ({
         map.set(task.dueDate, list);
       }
     }
-    return map;
-  }, [tasks]);
 
-  // Monthly summary metrics
-  const monthPrefix = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}`;
+    // 2. Group recurring tasks by seriesId
+    const recurringSeriesMap = new Map<string, Task[]>();
+    for (const task of tasks) {
+      if (task.repeat && task.repeat !== 'Once') {
+        const seriesId = task.recurringSeriesId || task.id;
+        const series = recurringSeriesMap.get(seriesId) || [];
+        series.push(task);
+        recurringSeriesMap.set(seriesId, series);
+      }
+    }
+
+    // 3. Project recurring task instances onto visible calendarDays
+    for (const [, seriesTasks] of recurringSeriesMap.entries()) {
+      const pendingTask = seriesTasks.find((t) => !t.completed);
+      const repTask = pendingTask || seriesTasks[seriesTasks.length - 1];
+      if (!repTask) continue;
+
+      const baseDate = repTask.dueDate || repTask.createdAt.slice(0, 10);
+      const existingDates = new Set(seriesTasks.map((t) => t.dueDate).filter(Boolean));
+
+      for (const day of calendarDays) {
+        const dateStr = day.dateString;
+
+        // Skip if a concrete task for this series already exists on this date
+        if (existingDates.has(dateStr)) continue;
+
+        // Do not project before the recurring task's start date
+        if (dateStr < baseDate) continue;
+
+        if (doesTaskRecurOnDate(baseDate, dateStr, repTask.repeat, repTask.recurrenceConfig)) {
+          const projectedTask: Task = {
+            ...repTask,
+            id: `${repTask.id}_proj_${dateStr}`,
+            dueDate: dateStr,
+            completed: false,
+            completedAt: undefined
+          };
+
+          const list = map.get(dateStr) || [];
+          list.push(projectedTask);
+          map.set(dateStr, list);
+        }
+      }
+    }
+
+    return map;
+  }, [tasks, calendarDays]);
+
+  // Monthly summary metrics across current month days
+  const currentMonthDays = useMemo(() => {
+    return calendarDays.filter((d) => d.monthOffset === 0);
+  }, [calendarDays]);
+
   const monthTasks = useMemo(() => {
-    return tasks.filter((t) => t.dueDate && t.dueDate.startsWith(monthPrefix));
-  }, [tasks, monthPrefix]);
+    const list: Task[] = [];
+    for (const day of currentMonthDays) {
+      const dayTasks = tasksByDate.get(day.dateString) || [];
+      list.push(...dayTasks);
+    }
+    return list;
+  }, [currentMonthDays, tasksByDate]);
 
   const monthTotal = monthTasks.length;
   const monthCompleted = monthTasks.filter((t) => t.completed).length;
@@ -270,6 +327,12 @@ export const TaskCalendarView: React.FC<TaskCalendarViewProps> = ({
                     <div className="space-y-1 my-1 flex-1 overflow-hidden">
                       {dayTasks.slice(0, 2).map((task) => {
                         const isActionActive = activeChipTaskId === task.id;
+                        const isProjected = task.id.includes('_proj_');
+                        const isRecurring = Boolean(task.repeat && task.repeat !== 'Once');
+                        const baseTask = isProjected
+                          ? tasks.find((t) => t.id === task.id.split('_proj_')[0]) || task
+                          : task;
+                        const baseId = isProjected ? task.id.split('_proj_')[0] : task.id;
 
                         return (
                           <div
@@ -278,12 +341,14 @@ export const TaskCalendarView: React.FC<TaskCalendarViewProps> = ({
                               e.stopPropagation();
                               setActiveChipTaskId(isActionActive ? null : task.id);
                             }}
-                            title={task.title}
+                            title={`${task.title}${isRecurring ? ` (Repeats ${task.repeat})` : ''}`}
                             className={`rounded text-[11px] font-sans transition-all relative overflow-hidden border ${
                               isActionActive
                                 ? 'bg-surface-lowest ring-1 ring-primary-container shadow-xs p-0.5'
                                 : task.completed
                                 ? 'px-2 py-0.5 bg-surface-low text-secondary line-through border-outline-subtle opacity-70 cursor-pointer'
+                                : isProjected
+                                ? 'px-2 py-0.5 bg-surface-low/80 hover:bg-surface-high text-on-surface border-outline-subtle border-dashed cursor-pointer'
                                 : 'px-2 py-0.5 bg-surface-low hover:bg-surface-high text-on-surface border-outline-subtle cursor-pointer'
                             }`}
                           >
@@ -301,7 +366,7 @@ export const TaskCalendarView: React.FC<TaskCalendarViewProps> = ({
                                       if (onViewTask) {
                                         onViewTask(task);
                                       } else {
-                                        onEditTask(task);
+                                        onEditTask(baseTask);
                                       }
                                     }}
                                     className="p-1 hover:bg-surface-high text-secondary hover:text-on-surface rounded transition-colors"
@@ -315,7 +380,7 @@ export const TaskCalendarView: React.FC<TaskCalendarViewProps> = ({
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       setActiveChipTaskId(null);
-                                      onEditTask(task);
+                                      onEditTask(baseTask);
                                     }}
                                     className="p-1 hover:bg-surface-high text-secondary hover:text-on-surface rounded transition-colors"
                                     title="Edit task"
@@ -328,7 +393,7 @@ export const TaskCalendarView: React.FC<TaskCalendarViewProps> = ({
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       setActiveChipTaskId(null);
-                                      onDeleteTask(task.id);
+                                      onDeleteTask(baseId);
                                     }}
                                     className="p-1 hover:bg-surface-high text-secondary hover:text-red-500 rounded transition-colors"
                                     title="Delete task"
@@ -352,6 +417,9 @@ export const TaskCalendarView: React.FC<TaskCalendarViewProps> = ({
                                   }`}
                                   aria-hidden="true"
                                 />
+                                {isRecurring && (
+                                  <Repeat className="w-2.5 h-2.5 text-secondary flex-shrink-0" aria-label="Recurring" />
+                                )}
                                 <span className="truncate">{task.title}</span>
                               </div>
                             )}
@@ -434,12 +502,20 @@ export const TaskCalendarView: React.FC<TaskCalendarViewProps> = ({
           <div className="space-y-2.5">
             {selectedDateTasks.map((task) => {
               const priorityMeta = getPriorityMeta(task.priority);
+              const isProjected = task.id.includes('_proj_');
+              const baseTask = isProjected
+                ? tasks.find((t) => t.id === task.id.split('_proj_')[0]) || task
+                : task;
+              const baseId = isProjected ? task.id.split('_proj_')[0] : task.id;
+
               return (
                 <div
                   key={task.id}
                   className={`p-3.5 rounded-lg border flex items-center justify-between gap-3 transition-colors ${
                     task.completed
                       ? 'bg-surface-low/50 border-outline-subtle opacity-70'
+                      : isProjected
+                      ? 'bg-surface-lowest border-outline-subtle border-dashed hover:border-outline-variant shadow-xs'
                       : 'bg-surface-lowest border-outline-subtle hover:border-outline-variant shadow-xs'
                   }`}
                 >
@@ -460,7 +536,7 @@ export const TaskCalendarView: React.FC<TaskCalendarViewProps> = ({
                     </button>
 
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2 mb-0.5">
+                      <div className="flex items-center gap-2 mb-0.5 flex-wrap">
                         <span
                           className={`text-[9px] uppercase font-bold px-1.5 py-0.5 rounded-full inline-flex items-center gap-1 ${priorityMeta.badgeClass}`}
                           title={`${priorityMeta.label} Priority - ${priorityMeta.description}`}
@@ -471,6 +547,15 @@ export const TaskCalendarView: React.FC<TaskCalendarViewProps> = ({
                         <span className="text-[10px] text-secondary font-medium">
                           {task.category}
                         </span>
+                        {task.repeat && task.repeat !== 'Once' && (
+                          <span
+                            className="text-[9px] text-secondary inline-flex items-center gap-1 font-medium bg-surface-low px-1.5 py-0.5 rounded border border-outline-subtle"
+                            title={`Repeats ${task.repeat}`}
+                          >
+                            <Repeat className="w-2.5 h-2.5 text-tertiary" aria-hidden="true" />
+                            <span>{task.repeat}</span>
+                          </span>
+                        )}
                       </div>
                       <h4
                         className={`text-xs font-medium text-on-surface truncate ${
@@ -498,7 +583,7 @@ export const TaskCalendarView: React.FC<TaskCalendarViewProps> = ({
 
                     <button
                       type="button"
-                      onClick={() => onEditTask(task)}
+                      onClick={() => onEditTask(baseTask)}
                       aria-label={`Edit task ${task.title}`}
                       className="p-1.5 text-secondary hover:text-on-surface rounded hover:bg-surface-low transition-colors cursor-pointer"
                       title="Edit task"
@@ -508,7 +593,7 @@ export const TaskCalendarView: React.FC<TaskCalendarViewProps> = ({
 
                     <button
                       type="button"
-                      onClick={() => onDeleteTask(task.id)}
+                      onClick={() => onDeleteTask(baseId)}
                       aria-label={`Delete task ${task.title}`}
                       className="p-1.5 text-secondary hover:text-red-500 rounded hover:bg-surface-low transition-colors cursor-pointer"
                       title="Delete task"

@@ -166,4 +166,34 @@ describe('TaskCalendarView Component', () => {
     fireEvent.click(viewButtons[0]);
     expect(handleView).toHaveBeenCalledWith(mockTasks[0]);
   });
+
+  it('projects repeating tasks across future dates in the calendar', () => {
+    const recurringTask: Task = {
+      id: 'recurring-daily-task',
+      title: 'Daily Morning Standup',
+      category: 'Work',
+      priority: 'medium',
+      dueDate: todayStr,
+      completed: false,
+      repeat: 'Daily',
+      estimatedPomodoros: 1,
+      completedPomodoros: 0,
+      subtasks: [],
+      createdAt: new Date().toISOString()
+    };
+
+    render(
+      <TaskCalendarView
+        tasks={[recurringTask]}
+        onToggleTask={vi.fn()}
+        onEditTask={vi.fn()}
+        onDeleteTask={vi.fn()}
+        onAddTaskForDate={vi.fn()}
+      />
+    );
+
+    // The repeating task should project across multiple days in the month
+    const matchingChips = screen.getAllByText('Daily Morning Standup');
+    expect(matchingChips.length).toBeGreaterThan(1);
+  });
 });

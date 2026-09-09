@@ -123,6 +123,40 @@ export const useTaskStore = create<TaskState>((set, get) => ({
   },
 
   toggleTask: async (id) => {
+    if (id.includes('_proj_')) {
+      const [baseId, dateStr] = id.split('_proj_');
+      const baseTask = get().tasks.find((t) => t.id === baseId);
+      if (!baseTask) return;
+
+      audioManager.playTick();
+      const seriesId = baseTask.recurringSeriesId || baseTask.id;
+
+      // Materialize this recurring occurrence as completed on this specific projected date
+      const materializedTask: Task = {
+        ...baseTask,
+        id: generateUUID('task'),
+        recurringSeriesId: seriesId,
+        dueDate: dateStr,
+        completed: true,
+        completedAt: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        subtasks: (baseTask.subtasks || []).map((s) => ({ ...s, completed: true }))
+      };
+
+      set((state) => ({
+        tasks: [materializedTask, ...state.tasks]
+      }));
+
+      const userId = await getUserId();
+      if (userId) {
+        insertTaskDb(materializedTask, userId).catch((err) =>
+          console.error('Failed to sync materialized recurring task to Supabase:', err)
+        );
+      }
+      return;
+    }
+
     const task = get().tasks.find((t) => t.id === id);
     if (!task) return;
 
@@ -261,22 +295,23 @@ export const useTaskStore = create<TaskState>((set, get) => ({
   },
 
   deleteTask: async (id) => {
-    const target = get().tasks.find((t) => t.id === id) || null;
+    const actualId = id.includes('_proj_') ? id.split('_proj_')[0] : id;
+    const target = get().tasks.find((t) => t.id === actualId) || null;
     if (!target) return null;
 
     set((state) => ({
-      tasks: state.tasks.filter((t) => t.id !== id),
-      tombstones: [...state.tombstones, { id, deletedAt: new Date().toISOString() }]
+      tasks: state.tasks.filter((t) => t.id !== actualId),
+      tombstones: [...state.tombstones, { id: actualId, deletedAt: new Date().toISOString() }]
     }));
 
     // Cascade deletion to associated reminder(s)
-    useReminderStore.getState().deleteRemindersByTaskId(id, target.title).catch((err) =>
+    useReminderStore.getState().deleteRemindersByTaskId(actualId, target.title).catch((err) =>
       console.error('Failed to cascade reminder deletion for task:', err)
     );
 
     const userId = await getUserId();
     if (userId) {
-      deleteTaskDb(id, userId).catch((err) =>
+      deleteTaskDb(actualId, userId).catch((err) =>
         console.error('Failed to sync task deletion to Supabase:', err)
       );
     }

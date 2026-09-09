@@ -89,7 +89,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (isSubmitting) return;
 
@@ -114,15 +114,14 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
       return;
     }
 
-    setIsSubmitting(true);
-    await updateUser({
+    updateUser({
       name: cleanName,
       title: title.trim(),
       tagline: tagline.trim(),
       email: cleanEmail,
       avatar: avatar
     });
-    setIsSubmitting(false);
+
     showToast('Profile updated successfully 🌿', 'success');
     onClose();
   };

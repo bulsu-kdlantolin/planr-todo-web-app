@@ -188,21 +188,10 @@ export async function upsertUserProfileDb(
     }
   }
 
-  // 2. Fetch current settings so we preserve existing JSONB settings & extended profile fields
-  let currentSettings: Record<string, any> = { ...DEFAULT_SETTINGS };
-  try {
-    const { data: existingProfile } = await supabase
-      .from('profiles')
-      .select('settings')
-      .eq('id', userId)
-      .maybeSingle();
-    if (existingProfile?.settings) {
-      currentSettings = { ...currentSettings, ...existingProfile.settings };
-    }
-  } catch {}
-
+  // 2. Build strictly valid payload matching columns that exist in public.profiles:
+  // (id, name, email, avatar_url, settings, updated_at)
   const mergedSettings = {
-    ...currentSettings,
+    ...DEFAULT_SETTINGS,
     ...(settingsUpdates || {}),
     ...(profileUpdates?.title !== undefined ? { title: profileUpdates.title } : {}),
     ...(profileUpdates?.tagline !== undefined ? { tagline: profileUpdates.tagline } : {}),
@@ -212,8 +201,6 @@ export async function upsertUserProfileDb(
       : {})
   };
 
-  // 3. Build strictly valid payload matching columns that exist in public.profiles:
-  // (id, name, email, avatar_url, settings, updated_at)
   const payload: Record<string, any> = {
     id: userId,
     updated_at: new Date().toISOString(),
@@ -226,44 +213,36 @@ export async function upsertUserProfileDb(
     payload.avatar_url = profileUpdates.avatar || null;
   }
 
-  // 4. Persist to Supabase profiles table
-  const { error } = await supabase.from('profiles').upsert(payload);
-
-  if (error) {
-    console.error('Error upserting profile in Supabase profiles table:', error);
-    // If error occurs, retry with minimal safe payload
-    const safePayload: Record<string, any> = {
-      id: userId,
-      updated_at: new Date().toISOString()
-    };
-    if (payload.avatar_url !== undefined) safePayload.avatar_url = payload.avatar_url;
-    if (payload.name) safePayload.name = payload.name;
-    if (payload.settings) safePayload.settings = payload.settings;
-    const { error: retryError } = await supabase.from('profiles').upsert(safePayload);
-    if (retryError) {
-      console.error('Retry upsert profile in Supabase failed:', retryError);
-    }
+  // 3. Build metadata updates for Supabase Auth
+  const metaUpdates: Record<string, any> = {};
+  if (profileUpdates?.name !== undefined) metaUpdates.name = profileUpdates.name;
+  if (profileUpdates?.title !== undefined) metaUpdates.title = profileUpdates.title;
+  if (profileUpdates?.tagline !== undefined) metaUpdates.tagline = profileUpdates.tagline;
+  if (profileUpdates && 'avatar' in profileUpdates) {
+    metaUpdates.avatar_url = profileUpdates.avatar || null;
+    metaUpdates.picture = profileUpdates.avatar || null;
+    metaUpdates.avatar = profileUpdates.avatar || null;
+    metaUpdates.custom_avatar = profileUpdates.avatar || null;
+    metaUpdates.has_custom_avatar = Boolean(profileUpdates.avatar);
   }
 
-  // 5. Also persist to Supabase Auth user_metadata so avatar is dual-stored & survives reloads
-  try {
-    const metaUpdates: Record<string, any> = {};
-    if (profileUpdates?.name !== undefined) metaUpdates.name = profileUpdates.name;
-    if (profileUpdates?.title !== undefined) metaUpdates.title = profileUpdates.title;
-    if (profileUpdates?.tagline !== undefined) metaUpdates.tagline = profileUpdates.tagline;
-    if (profileUpdates && 'avatar' in profileUpdates) {
-      metaUpdates.avatar_url = profileUpdates.avatar || null;
-      metaUpdates.picture = profileUpdates.avatar || null;
-      metaUpdates.avatar = profileUpdates.avatar || null;
-      metaUpdates.custom_avatar = profileUpdates.avatar || null;
-      metaUpdates.has_custom_avatar = Boolean(profileUpdates.avatar);
-    }
+  // 4. Persist to Supabase profiles table and Supabase Auth concurrently in parallel
+  const tasks: PromiseLike<any>[] = [
+    supabase.from('profiles').upsert(payload)
+  ];
 
-    if (Object.keys(metaUpdates).length > 0) {
-      await supabase.auth.updateUser({ data: metaUpdates });
+  if (Object.keys(metaUpdates).length > 0) {
+    tasks.push(supabase.auth.updateUser({ data: metaUpdates }));
+  }
+
+  try {
+    const results = await Promise.allSettled(tasks.map((t) => Promise.resolve(t)));
+    const profileResult = results[0];
+    if (profileResult.status === 'rejected' || (profileResult.status === 'fulfilled' && profileResult.value?.error)) {
+      console.warn('Upsert profile in Supabase warning:', profileResult);
     }
-  } catch (authErr) {
-    console.warn('Could not update user metadata in auth:', authErr);
+  } catch (err) {
+    console.warn('Could not sync profile to remote Supabase:', err);
   }
 
   return true;

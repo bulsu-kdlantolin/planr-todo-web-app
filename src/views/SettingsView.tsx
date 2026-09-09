@@ -1,22 +1,24 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useMetaStore } from '../store/useMetaStore';
 import { useTaskStore } from '../store/useTaskStore';
-import { useReminderStore } from '../store/useReminderStore';
-import { useTimerStore } from '../store/useTimerStore';
 import { useUIStore } from '../store/useUIStore';
 import { useAuth } from '../context/AuthContext';
 import { Select } from '../components/common/Select';
 import { ToggleSwitch } from '../components/common/ToggleSwitch';
 import { ProfileModal } from '../components/modals/ProfileModal';
 import { exportWorkspaceAsJSON, exportTasksAsMarkdown, exportTasksAsCSV, restoreWorkspaceFromJSON } from '../utils/exportEngines';
+import { audioManager } from '../utils/audio';
+import { requestNotificationPermission } from '../utils/notifications';
 import { TimeFormat } from '../types';
 import {
   Moon,
   Sun,
   Volume2,
   VolumeX,
+  Volume1,
   Bell,
   Clock,
+  Timer,
   Download,
   Upload,
   User,
@@ -30,7 +32,8 @@ import {
   KeyRound,
   AlertCircle,
   Loader2,
-  Mail
+  Mail,
+  Play
 } from 'lucide-react';
 
 export const SettingsView: React.FC = () => {
@@ -39,11 +42,6 @@ export const SettingsView: React.FC = () => {
   const updateSettings = useMetaStore((state) => state.updateSettings);
 
   const tasks = useTaskStore((state) => state.tasks);
-  const setTasks = useTaskStore((state) => state.setTasks);
-  const reminders = useReminderStore((state) => state.reminders);
-  const setReminders = useReminderStore((state) => state.setReminders);
-  const focusSessions = useTimerStore((state) => state.focusSessions);
-  const setFocusSessions = useTimerStore((state) => state.setFocusSessions);
 
   const showToast = useUIStore((state) => state.showToast);
   const openShortcutsModal = useUIStore((state) => state.openShortcutsModal);
@@ -53,6 +51,28 @@ export const SettingsView: React.FC = () => {
 
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [importing, setImporting] = useState(false);
+  const [notificationPerm, setNotificationPerm] = useState<NotificationPermission>('default');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      setNotificationPerm(Notification.permission);
+    }
+  }, []);
+
+  const handleToggleNotifications = async (enabled: boolean) => {
+    if (enabled && typeof window !== 'undefined' && 'Notification' in window) {
+      if (Notification.permission === 'default') {
+        const granted = await requestNotificationPermission();
+        setNotificationPerm(Notification.permission);
+        if (granted) {
+          showToast('Desktop notifications enabled 🔔', 'success');
+        } else {
+          showToast('Notification permission was not granted', 'info');
+        }
+      }
+    }
+    updateSettings({ notificationsEnabled: enabled });
+  };
 
   // Password verification state
   const [isSendingVerification, setIsSendingVerification] = useState(false);
@@ -363,11 +383,29 @@ export const SettingsView: React.FC = () => {
 
       {/* Sounds & Audio Preferences */}
       <div className="bg-surface-lowest border border-outline-variant rounded-xl p-6 shadow-card space-y-5">
-        <h2 className="font-serif text-xl font-semibold text-on-surface border-b border-outline-subtle pb-3">
-          Audio & Sounds
-        </h2>
+        <div className="flex items-center justify-between border-b border-outline-subtle pb-3">
+          <div className="flex items-center gap-2">
+            <Volume2 className="w-5 h-5 text-tertiary" aria-hidden="true" />
+            <h2 className="font-serif text-xl font-semibold text-on-surface">
+              Audio & Notifications
+            </h2>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              audioManager.playChime();
+              showToast('Previewing audio chime 🔔', 'info');
+            }}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-surface-low hover:bg-surface-container border border-outline-variant text-[11px] font-semibold uppercase tracking-wider text-on-surface transition-colors cursor-pointer"
+            title="Test audio chime at current volume"
+          >
+            <Play className="w-3 h-3 text-tertiary" aria-hidden="true" />
+            <span>Test Chime</span>
+          </button>
+        </div>
 
         <div className="space-y-4">
+          {/* UI Sound Effects Toggle */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               {settings.soundEffects ? (
@@ -377,7 +415,7 @@ export const SettingsView: React.FC = () => {
               )}
               <div>
                 <p className="text-xs font-semibold text-on-surface">UI Chimes & Audio Cues</p>
-                <p className="text-[11px] text-secondary">Acoustic chimes for timer completion and reminders</p>
+                <p className="text-[11px] text-secondary">Acoustic chimes for timer completion, reminders, and checkoffs</p>
               </div>
             </div>
 
@@ -388,21 +426,151 @@ export const SettingsView: React.FC = () => {
             />
           </div>
 
+          {/* Master Sound Volume Slider */}
+          <div className="p-3.5 bg-surface-low rounded-lg border border-outline-subtle space-y-2">
+            <div className="flex items-center justify-between text-xs">
+              <div className="flex items-center gap-2 font-semibold text-on-surface">
+                <Volume1 className="w-4 h-4 text-tertiary" aria-hidden="true" />
+                <span>Sound Volume</span>
+              </div>
+              <span className="text-[11px] font-medium text-secondary tabular-nums">
+                {Math.round((settings.soundVolume ?? 0.5) * 100)}%
+              </span>
+            </div>
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.05"
+              value={settings.soundVolume ?? 0.5}
+              onChange={(e) => {
+                const vol = parseFloat(e.target.value);
+                updateSettings({ soundVolume: vol });
+              }}
+              aria-label="Sound volume slider"
+              className="w-full h-1.5 bg-surface-container rounded-lg appearance-none cursor-pointer accent-primary"
+            />
+          </div>
+
+          {/* Desktop & Browser Notifications Toggle */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Bell className="w-5 h-5 text-tertiary" aria-hidden="true" />
               <div>
-                <p className="text-xs font-semibold text-on-surface">Break Auto-Start</p>
-                <p className="text-[11px] text-secondary">Automatically begin rest countdown after focus blocks</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-xs font-semibold text-on-surface">Desktop Notifications</p>
+                  {notificationPerm === 'granted' ? (
+                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                      Active
+                    </span>
+                  ) : notificationPerm === 'denied' ? (
+                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300">
+                      Blocked in Browser
+                    </span>
+                  ) : null}
+                </div>
+                <p className="text-[11px] text-secondary">
+                  Push alerts for scheduled reminders and Pomodoro countdown completions
+                </p>
               </div>
             </div>
 
             <ToggleSwitch
-              checked={settings.autoStartBreaks}
-              onChange={(checked) => updateSettings({ autoStartBreaks: checked })}
-              ariaLabel="Toggle break auto-start"
+              checked={settings.notificationsEnabled ?? true}
+              onChange={handleToggleNotifications}
+              ariaLabel="Toggle desktop notifications"
             />
           </div>
+        </div>
+      </div>
+
+      {/* Focus & Timer Preferences */}
+      <div className="bg-surface-lowest border border-outline-variant rounded-xl p-6 shadow-card space-y-6">
+        <div className="flex items-center gap-2 border-b border-outline-subtle pb-3">
+          <Timer className="w-5 h-5 text-tertiary" aria-hidden="true" />
+          <h2 className="font-serif text-xl font-semibold text-on-surface">
+            Focus & Timer Preferences
+          </h2>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {/* Focus Block Duration */}
+          <div className="p-3.5 bg-surface-low rounded-lg border border-outline-subtle space-y-2">
+            <label className="block text-xs font-semibold text-on-surface">
+              Focus Session
+            </label>
+            <p className="text-[11px] text-secondary">Default duration per block</p>
+            <Select<string>
+              value={String(settings.focusDuration || 25)}
+              onChange={(val) => updateSettings({ focusDuration: Number(val) })}
+              options={[
+                { value: '15', label: '15 minutes' },
+                { value: '20', label: '20 minutes' },
+                { value: '25', label: '25m (Standard)' },
+                { value: '30', label: '30 minutes' },
+                { value: '45', label: '45 minutes' },
+                { value: '50', label: '50m (Deep Focus)' },
+                { value: '60', label: '60 minutes' }
+              ]}
+              ariaLabel="Select focus session duration"
+            />
+          </div>
+
+          {/* Short Break Duration */}
+          <div className="p-3.5 bg-surface-low rounded-lg border border-outline-subtle space-y-2">
+            <label className="block text-xs font-semibold text-on-surface">
+              Short Break
+            </label>
+            <p className="text-[11px] text-secondary">Rest between focus blocks</p>
+            <Select<string>
+              value={String(settings.shortBreakDuration || 5)}
+              onChange={(val) => updateSettings({ shortBreakDuration: Number(val) })}
+              options={[
+                { value: '3', label: '3 minutes' },
+                { value: '5', label: '5m (Standard)' },
+                { value: '8', label: '8 minutes' },
+                { value: '10', label: '10 minutes' }
+              ]}
+              ariaLabel="Select short break duration"
+            />
+          </div>
+
+          {/* Long Break Duration */}
+          <div className="p-3.5 bg-surface-low rounded-lg border border-outline-subtle space-y-2">
+            <label className="block text-xs font-semibold text-on-surface">
+              Long Break
+            </label>
+            <p className="text-[11px] text-secondary">Extended rest cycle</p>
+            <Select<string>
+              value={String(settings.longBreakDuration || 15)}
+              onChange={(val) => updateSettings({ longBreakDuration: Number(val) })}
+              options={[
+                { value: '10', label: '10 minutes' },
+                { value: '15', label: '15m (Standard)' },
+                { value: '20', label: '20 minutes' },
+                { value: '25', label: '25 minutes' },
+                { value: '30', label: '30 minutes' }
+              ]}
+              ariaLabel="Select long break duration"
+            />
+          </div>
+        </div>
+
+        {/* Break Auto-Start */}
+        <div className="flex items-center justify-between p-3.5 bg-surface-low rounded-lg border border-outline-subtle">
+          <div className="flex items-center gap-3">
+            <Clock className="w-5 h-5 text-tertiary" aria-hidden="true" />
+            <div>
+              <p className="text-xs font-semibold text-on-surface">Break Auto-Start</p>
+              <p className="text-[11px] text-secondary">Automatically begin rest countdown after each focus session completes</p>
+            </div>
+          </div>
+
+          <ToggleSwitch
+            checked={settings.autoStartBreaks}
+            onChange={(checked) => updateSettings({ autoStartBreaks: checked })}
+            ariaLabel="Toggle break auto-start"
+          />
         </div>
       </div>
 

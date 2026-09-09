@@ -27,4 +27,31 @@ describe('SettingsView Component', () => {
 
     expect(screen.queryByRole('button', { name: /^Tour$/i })).toBeNull();
   });
+
+  it('renders Audio & Notifications controls with test chime and volume slider', () => {
+    render(
+      <AuthProvider>
+        <SettingsView />
+      </AuthProvider>
+    );
+
+    expect(screen.getByText('Audio & Notifications')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /test chime/i })).toBeInTheDocument();
+    expect(screen.getByLabelText(/sound volume slider/i)).toBeInTheDocument();
+    expect(screen.getByText(/desktop notifications/i)).toBeInTheDocument();
+  });
+
+  it('renders Focus & Timer Preferences with session durations and break auto-start', () => {
+    render(
+      <AuthProvider>
+        <SettingsView />
+      </AuthProvider>
+    );
+
+    expect(screen.getByText('Focus & Timer Preferences')).toBeInTheDocument();
+    expect(screen.getByText('Focus Session')).toBeInTheDocument();
+    expect(screen.getByText('Short Break')).toBeInTheDocument();
+    expect(screen.getByText('Long Break')).toBeInTheDocument();
+    expect(screen.getByText('Break Auto-Start')).toBeInTheDocument();
+  });
 });
