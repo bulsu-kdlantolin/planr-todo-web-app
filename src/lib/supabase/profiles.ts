@@ -190,8 +190,17 @@ export async function upsertUserProfileDb(
 
   // 2. Build strictly valid payload matching columns that exist in public.profiles:
   // (id, name, email, avatar_url, settings, updated_at)
+  let cachedSettings: Partial<AppSettings> = {};
+  try {
+    const raw = localStorage.getItem('planr_settings');
+    if (raw) {
+      cachedSettings = JSON.parse(raw);
+    }
+  } catch {}
+
   const mergedSettings = {
     ...DEFAULT_SETTINGS,
+    ...cachedSettings,
     ...(settingsUpdates || {}),
     ...(profileUpdates?.title !== undefined ? { title: profileUpdates.title } : {}),
     ...(profileUpdates?.tagline !== undefined ? { tagline: profileUpdates.tagline } : {}),

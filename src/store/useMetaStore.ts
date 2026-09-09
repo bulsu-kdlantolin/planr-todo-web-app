@@ -36,16 +36,31 @@ const getUserId = async (): Promise<string | null> => {
   }
 };
 
+const getInitialSettings = (): AppSettings => {
+  try {
+    const raw = localStorage.getItem('planr_settings');
+    if (raw) {
+      return { ...DEFAULT_SETTINGS, ...JSON.parse(raw) };
+    }
+  } catch {}
+  return DEFAULT_SETTINGS;
+};
+
 export const useMetaStore = create<MetaState>((set, get) => ({
   user: DEFAULT_USER_PROFILE,
-  settings: DEFAULT_SETTINGS,
+  settings: getInitialSettings(),
   intention: '',
   isLoading: true,
   storageUsageBytes: null,
   storageQuotaBytes: null,
 
   setUser: (user) => set({ user }),
-  setSettings: (settings) => set({ settings }),
+  setSettings: (settings) => {
+    set({ settings });
+    try {
+      localStorage.setItem('planr_settings', JSON.stringify(settings));
+    } catch {}
+  },
   setIntention: (intention) => set({ intention }),
   setIsLoading: (isLoading) => set({ isLoading }),
 
@@ -70,7 +85,7 @@ export const useMetaStore = create<MetaState>((set, get) => ({
       } catch {}
     }
 
-    // Persist remote changes to Supabase asynchronously in the background
+    // Persist remote changes to Supabase asynchronously in the background while preserving existing settings
     (async () => {
       try {
         const userId = await getUserId();
@@ -86,7 +101,7 @@ export const useMetaStore = create<MetaState>((set, get) => ({
               }
             } catch {}
           }
-          await upsertUserProfileDb(userId, updates);
+          await upsertUserProfileDb(userId, updates, get().settings);
         }
       } catch (err) {
         console.error('Failed to sync profile update to Supabase:', err);
@@ -97,6 +112,9 @@ export const useMetaStore = create<MetaState>((set, get) => ({
   updateSettings: async (updates) => {
     const updated: AppSettings = { ...get().settings, ...updates };
     set({ settings: updated });
+    try {
+      localStorage.setItem('planr_settings', JSON.stringify(updated));
+    } catch {}
 
     if (updates.theme) {
       document.documentElement.setAttribute('data-theme', updates.theme);
@@ -108,7 +126,7 @@ export const useMetaStore = create<MetaState>((set, get) => ({
     const userId = await getUserId();
     if (userId) {
       try {
-        await upsertUserProfileDb(userId, undefined, updates);
+        await upsertUserProfileDb(userId, undefined, updated);
       } catch (err) {
         console.error('Failed to sync settings update to Supabase:', err);
       }
@@ -121,7 +139,7 @@ export const useMetaStore = create<MetaState>((set, get) => ({
     const userId = await getUserId();
     if (userId) {
       try {
-        await upsertUserProfileDb(userId, undefined, undefined, newIntention);
+        await upsertUserProfileDb(userId, undefined, get().settings, newIntention);
       } catch (err) {
         console.error('Failed to sync intention to Supabase:', err);
       }

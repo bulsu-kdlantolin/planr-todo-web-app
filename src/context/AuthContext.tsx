@@ -146,7 +146,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           email: currentSessionUser.email || profileData.profile.email,
           isLoggedIn: true
         });
-        setSettings(profileData.settings);
+        if (profileData.settings) {
+          setSettings({
+            ...useMetaStore.getState().settings,
+            ...profileData.settings
+          });
+        }
         setIntention(profileData.intention);
       } else {
         setMetaUser({

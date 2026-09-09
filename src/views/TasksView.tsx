@@ -7,8 +7,6 @@ import { QuickAddBar } from '../components/tasks/QuickAddBar';
 import { TaskCalendarView } from '../components/tasks/TaskCalendarView';
 import { Select, SelectOption } from '../components/common/Select';
 import { ConfirmModal } from '../components/common/ConfirmModal';
-import { Modal } from '../components/common/Modal';
-import { Logo } from '../components/common/Logo';
 import { TaskFilterType, TaskSortType, TaskCategory, Task } from '../types';
 import { filterTasks, sortTasks, getTaskMetrics } from '../utils/tasks';
 import { getTodayDateString } from '../utils/date';
@@ -32,7 +30,6 @@ export const TasksView: React.FC = () => {
   const toggleTask = useTaskStore((state) => state.toggleTask);
   const toggleSubtask = useTaskStore((state) => state.toggleSubtask);
   const deleteTask = useTaskStore((state) => state.deleteTask);
-  const deleteTaskSeries = useTaskStore((state) => state.deleteTaskSeries);
   const updateTask = useTaskStore((state) => state.updateTask);
   const filter = useTaskStore((state) => state.filter);
   const setFilter = useTaskStore((state) => state.setFilter);
@@ -114,7 +111,7 @@ export const TasksView: React.FC = () => {
     }
   };
 
-  const handleConfirmDeleteSingle = async () => {
+  const handleConfirmDelete = async () => {
     if (!taskToDelete) return;
     const target = taskToDelete;
     setTaskToDelete(null);
@@ -124,15 +121,6 @@ export const TasksView: React.FC = () => {
         useTaskStore.getState().restoreTask(deleted);
       });
     }
-  };
-
-  const handleConfirmDeleteSeries = async () => {
-    if (!taskToDelete) return;
-    const target = taskToDelete;
-    setTaskToDelete(null);
-    const seriesId = target.recurringSeriesId || target.id;
-    const deletedList = await deleteTaskSeries(seriesId);
-    showToast(`Deleted ${deletedList.length} tasks in recurring series`, 'info');
   };
 
   const filterTabs: { id: TaskFilterType; label: string }[] = [
@@ -454,57 +442,16 @@ export const TasksView: React.FC = () => {
         </div>
       )}
 
-      {taskToDelete && taskToDelete.repeat && taskToDelete.repeat !== 'Once' ? (
-        <Modal
-          isOpen={!!taskToDelete}
-          onClose={() => setTaskToDelete(null)}
-          title="Delete Repeating Task"
-          titleId="delete-repeating-task-dialog"
-          maxWidthClass="max-w-md"
-          icon={<Logo size="sm" showWordmark={false} />}
-        >
-          <div className="space-y-4 my-2">
-            <p className="text-xs text-secondary leading-relaxed font-sans">
-              "{taskToDelete.title}" is a repeating task. Would you like to delete only this occurrence or remove all tasks in the series?
-            </p>
-
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2 pt-4 border-t border-outline-subtle">
-              <button
-                type="button"
-                onClick={() => setTaskToDelete(null)}
-                className="px-4 py-2 text-xs font-medium text-secondary hover:text-on-surface bg-surface-low hover:bg-surface-high border border-outline-subtle rounded-md transition-colors cursor-pointer text-center"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleConfirmDeleteSeries}
-                className="px-4 py-2 text-xs font-semibold uppercase tracking-wider bg-red-500/15 hover:bg-red-500/25 text-red-600 dark:text-red-400 border border-red-500/30 rounded-md transition-all active:scale-[0.98] cursor-pointer text-center"
-              >
-                Delete Entire Series
-              </button>
-              <button
-                type="button"
-                onClick={handleConfirmDeleteSingle}
-                className="px-5 py-2 text-xs font-semibold uppercase tracking-wider bg-primary-container hover:bg-primary text-on-primary-container rounded-md shadow-sm transition-all active:scale-[0.98] cursor-pointer text-center"
-              >
-                Delete Only This
-              </button>
-            </div>
-          </div>
-        </Modal>
-      ) : (
-        <ConfirmModal
-          isOpen={!!taskToDelete}
-          onClose={() => setTaskToDelete(null)}
-          onConfirm={handleConfirmDeleteSingle}
-          title="Delete Task"
-          description={`Are you sure you want to delete "${taskToDelete?.title}"? This action can still be undone from the notification banner.`}
-          confirmText="Delete"
-          cancelText="Cancel"
-          isDestructive
-        />
-      )}
+      <ConfirmModal
+        isOpen={!!taskToDelete}
+        onClose={() => setTaskToDelete(null)}
+        onConfirm={handleConfirmDelete}
+        title="Delete Task"
+        description={`Are you sure you want to delete "${taskToDelete?.title}"? This action can still be undone from the notification banner.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        isDestructive
+      />
     </div>
   );
 };
