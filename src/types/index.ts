@@ -130,6 +130,8 @@ export interface ToastMessage {
   type: 'success' | 'error' | 'info';
   actionText?: string;
   onAction?: () => void;
+  secondaryActionText?: string;
+  onSecondaryAction?: () => void;
   duration?: number;
 }
 

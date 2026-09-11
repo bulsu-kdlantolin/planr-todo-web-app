@@ -6,6 +6,8 @@ import { useUIStore } from '../../store/useUIStore';
 import { useTaskStore } from '../../store/useTaskStore';
 import { useReminderStore } from '../../store/useReminderStore';
 
+import { getTodayDateString } from '../../utils/date';
+
 describe('TaskModal Component', () => {
   beforeEach(() => {
     useTaskStore.setState({ tasks: [], tombstones: [] });
@@ -13,7 +15,7 @@ describe('TaskModal Component', () => {
     useUIStore.setState({
       taskModalOpen: true,
       editingTask: null,
-      initialTaskDueDate: '2026-09-10'
+      initialTaskDueDate: getTodayDateString()
     });
   });
 

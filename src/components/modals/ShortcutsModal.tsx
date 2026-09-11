@@ -11,6 +11,7 @@ interface ShortcutAction {
 }
 
 const DEFAULT_SHORTCUTS: ShortcutAction[] = [
+  { id: 'commandPalette', label: 'Spotlight & Command Palette', defaultKey: '⌘K / /' },
   { id: 'newTask', label: 'Create new task', defaultKey: 'N' },
   { id: 'toggleFullScreen', label: 'Toggle Full Screen mode', defaultKey: 'F' },
   { id: 'dailyView', label: 'Go to Daily Overview', defaultKey: 'D' },

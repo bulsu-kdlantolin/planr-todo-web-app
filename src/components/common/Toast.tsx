@@ -33,6 +33,19 @@ export const ToastContainer: React.FC = () => {
 
             <span className="flex-1 leading-snug">{toast.message}</span>
 
+            {toast.secondaryActionText && toast.onSecondaryAction && (
+              <button
+                type="button"
+                onClick={() => {
+                  toast.onSecondaryAction?.();
+                  dismissToast(toast.id);
+                }}
+                className="px-2.5 py-1 text-xs font-medium text-secondary hover:text-on-surface bg-surface-low hover:bg-surface-container rounded border border-outline-subtle transition-colors cursor-pointer"
+              >
+                {toast.secondaryActionText}
+              </button>
+            )}
+
             {toast.actionText && toast.onAction && (
               <button
                 type="button"
@@ -40,7 +53,7 @@ export const ToastContainer: React.FC = () => {
                   toast.onAction?.();
                   dismissToast(toast.id);
                 }}
-                className="px-2.5 py-1 text-xs font-semibold text-primary bg-surface-low hover:bg-surface-container rounded border border-outline-subtle transition-colors"
+                className="px-2.5 py-1 text-xs font-semibold text-primary bg-surface-low hover:bg-surface-container rounded border border-outline-subtle transition-colors cursor-pointer"
               >
                 {toast.actionText}
               </button>

@@ -24,7 +24,8 @@ import {
   ChevronDown,
   ChevronUp,
   Inbox,
-  Loader2
+  Loader2,
+  Moon
 } from 'lucide-react';
 
 export const DailyOverviewView: React.FC = () => {
@@ -71,6 +72,7 @@ export const DailyOverviewView: React.FC = () => {
   const openTaskModal = useUIStore((state) => state.openTaskModal);
   const openViewTaskModal = useUIStore((state) => state.openViewTaskModal);
   const openIntentionModal = useUIStore((state) => state.openIntentionModal);
+  const openEveningWrapUpModal = useUIStore((state) => state.openEveningWrapUpModal);
   const setActiveView = useUIStore((state) => state.setActiveView);
   const showToast = useUIStore((state) => state.showToast);
 
@@ -209,9 +211,41 @@ export const DailyOverviewView: React.FC = () => {
             >
               <Edit2 className="w-3.5 h-3.5" aria-hidden="true" />
             </button>
+            <button
+              type="button"
+              onClick={openEveningWrapUpModal}
+              aria-label="Evening wrap-up and daily review"
+              className="p-1.5 text-secondary hover:text-indigo-500 rounded hover:bg-surface-container transition-colors"
+              title="Evening Wrap-Up & Review"
+            >
+              <Moon className="w-3.5 h-3.5" aria-hidden="true" />
+            </button>
           </div>
         </div>
       </div>
+
+      {/* Evening Review Banner (Surfaced after 5 PM or when all tasks are complete) */}
+      {(new Date().getHours() >= 17 || isAllDone) && (
+        <div className="p-4 bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-surface-low border border-indigo-500/20 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs animate-fade-in shadow-xs">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 flex items-center justify-center flex-shrink-0">
+              <Moon className="w-4 h-4" aria-hidden="true" />
+            </div>
+            <div>
+              <p className="font-semibold text-on-surface">Ready for your Evening Wrap-Up?</p>
+              <p className="text-secondary text-[11px]">Celebrate today&apos;s accomplishments and clear unfinished items off your plate.</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={openEveningWrapUpModal}
+            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-sm transition-all active:scale-[0.98] cursor-pointer flex items-center gap-1.5 flex-shrink-0"
+          >
+            <span>Start Evening Review</span>
+            <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
+          </button>
+        </div>
+      )}
 
       {/* Overdue Tasks Alert Banner */}
       {overdueTasks.length > 0 && (

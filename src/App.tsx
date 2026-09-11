@@ -11,6 +11,8 @@ import { AuthModal } from './components/modals/AuthModal';
 import { IntentionModal } from './components/modals/IntentionModal';
 import { ShortcutsModal } from './components/modals/ShortcutsModal';
 import { FirstSessionTourModal } from './components/modals/FirstSessionTourModal';
+import { CommandPaletteModal } from './components/modals/CommandPaletteModal';
+import { EveningWrapUpModal } from './components/modals/EveningWrapUpModal';
 
 // Code-split / lazy-loaded views for optimized initial chunk size
 const LandingView = lazy(() => import('./views/LandingView').then((m) => ({ default: m.LandingView })));
@@ -160,6 +162,8 @@ export const App: React.FC = () => {
       />
       <ShortcutsModal />
       <FirstSessionTourModal />
+      <CommandPaletteModal />
+      <EveningWrapUpModal />
 
       {/* Toast Notification Container */}
       <ToastContainer />

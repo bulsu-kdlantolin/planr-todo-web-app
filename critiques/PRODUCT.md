@@ -9,8 +9,8 @@
 - **Idempotent Completion Engine**:
   - Toggling a repeating task complete checks for existing uncompleted occurrences in the series to prevent duplicates.
   - Unchecking a completed repeating task automatically rolls back the pending future occurrence created by that task.
-- **Batch Deletion & Stop Recurrence**:
-  - Deleting a repeating task prompts between "Delete Only This" and "Delete Entire Series".
+- **Simple Task Deletion & Stop Recurrence**:
+  - Deleting a repeating task uses the unified single-action confirmation modal with instant undo banner. If a recurring schedule is no longer needed, it can be edited to not repeat without clunky series modals.
   - "Stop Repeating" action converts repeating tasks into standalone tasks without deleting past history.
 
 ## Calendar View Interactions
@@ -86,5 +86,24 @@
 - **UI Simplifications**:
   - Removed "Tour" button and fields from Settings to keep preferences focused and minimal.
   - Removed "+15m" snooze button from reminder cards in Reminders view for a cleaner action bar.
+
+## Productivity & Mindfulness Flow (Latest Additions)
+- **Natural Language Quick-Add Engine**:
+  - `QuickAddBar` extracts dates (`today`, `tomorrow`, `in 3 days`, weekdays like `next monday`), times (`at 3pm`, `10:30am`), recurrence (`daily`, `every weekday`, `weekly`), priorities (`@urgent`, `@high`), and categories (`#work`, `#personal`) from plain text on the fly.
+  - Real-time animated preview badges render beneath the input while typing, showing detected properties before submission.
+  - Automatically schedules an attached reminder if a time is specified.
+- **Dual-Action Reminder Alerts & 10-Minute Snooze**:
+  - When scheduled reminders trigger, alert toasts feature both "Mark Done" and "Snooze 10m" actions.
+  - Clicking "Snooze 10m" cleanly postpones the reminder by 10 minutes without navigating away.
+- **Evening Wrap-Up Ritual & Daily Reflection**:
+  - Prompts in `DailyOverviewView` after 5:00 PM or when all tasks are done.
+  - Summarizes today's completed tasks count and focus sprint minutes.
+  - Offers a one-click "Move all to Tomorrow" button to migrate unfinished tasks to the next day.
+  - Includes an optional closing reflection prompt and plays a calming temple bell chime upon closing the day.
+- **Global Command Palette & Quick Search (`Cmd+K` / `Ctrl+K` / `/`)**:
+  - Instant spotlight overlay accessible globally via `Cmd+K`, `Ctrl+K`, or `/` (when not typing).
+  - Searches across all tasks (with priority badges & categories) and reminders with live fuzzy matching.
+  - Quick action commands for switching views, creating tasks/reminders, toggling themes, and exporting backup JSON with full arrow-key and enter navigation.
+
 
 

@@ -9,6 +9,7 @@ export function useKeyboardShortcuts() {
   const setActiveView = useUIStore((state) => state.setActiveView);
   const openTaskModal = useUIStore((state) => state.openTaskModal);
   const openShortcutsModal = useUIStore((state) => state.openShortcutsModal);
+  const openCommandPalette = useUIStore((state) => state.openCommandPalette);
   const toggleFullScreenMode = useUIStore((state) => state.toggleFullScreenMode);
   const shortcuts = useMetaStore((state) => state.settings.shortcuts) || {};
   const isAnyModalOpen = useUIStore(
@@ -20,12 +21,21 @@ export function useKeyboardShortcuts() {
       state.intentionModalOpen ||
       state.profileModalOpen ||
       state.shortcutsModalOpen ||
-      state.firstSessionTourOpen
+      state.firstSessionTourOpen ||
+      state.commandPaletteOpen ||
+      state.eveningWrapUpModalOpen
   );
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Don't trigger shortcuts when any modal is open or when user is typing
+      // Global Spotlight Command Palette (Cmd+K or Ctrl+K) works from anywhere
+      if ((e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K')) {
+        e.preventDefault();
+        openCommandPalette();
+        return;
+      }
+
+      // Don't trigger single-key shortcuts when any modal is open or when user is typing
       if (isAnyModalOpen) return;
 
       const target = document.activeElement as HTMLElement;
@@ -33,6 +43,13 @@ export function useKeyboardShortcuts() {
         target &&
         (['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName) || target.isContentEditable)
       ) {
+        return;
+      }
+
+      // Quick '/' shortcut for spotlight search when not in text field
+      if (e.key === '/' && !e.shiftKey) {
+        e.preventDefault();
+        openCommandPalette();
         return;
       }
 

@@ -20,6 +20,8 @@ interface UIState {
   profileModalOpen: boolean;
   shortcutsModalOpen: boolean;
   firstSessionTourOpen: boolean;
+  commandPaletteOpen: boolean;
+  eveningWrapUpModalOpen: boolean;
   toasts: ToastMessage[];
 
   setActiveView: (view: ViewType) => void;
@@ -44,8 +46,19 @@ interface UIState {
   closeShortcutsModal: () => void;
   openFirstSessionTour: () => void;
   closeFirstSessionTour: () => void;
+  openCommandPalette: () => void;
+  closeCommandPalette: () => void;
+  openEveningWrapUpModal: () => void;
+  closeEveningWrapUpModal: () => void;
 
-  showToast: (msg: string, type?: 'success' | 'error' | 'info', actionText?: string, onAction?: () => void) => void;
+  showToast: (
+    msg: string,
+    type?: 'success' | 'error' | 'info',
+    actionText?: string,
+    onAction?: () => void,
+    secondaryActionText?: string,
+    onSecondaryAction?: () => void
+  ) => void;
   dismissToast: (id: string) => void;
 }
 
@@ -67,6 +80,8 @@ export const useUIStore = create<UIState>((set, get) => ({
   profileModalOpen: false,
   shortcutsModalOpen: false,
   firstSessionTourOpen: false,
+  commandPaletteOpen: false,
+  eveningWrapUpModalOpen: false,
   toasts: [],
 
   setActiveView: (activeView) => {
@@ -122,15 +137,29 @@ export const useUIStore = create<UIState>((set, get) => ({
   openFirstSessionTour: () => set({ firstSessionTourOpen: true }),
   closeFirstSessionTour: () => set({ firstSessionTourOpen: false }),
 
-  showToast: (message, type = 'success', actionText, onAction) => {
+  openCommandPalette: () => set({ commandPaletteOpen: true }),
+  closeCommandPalette: () => set({ commandPaletteOpen: false }),
+
+  openEveningWrapUpModal: () => set({ eveningWrapUpModalOpen: true }),
+  closeEveningWrapUpModal: () => set({ eveningWrapUpModalOpen: false }),
+
+  showToast: (message, type = 'success', actionText, onAction, secondaryActionText, onSecondaryAction) => {
     const id = generateUUID('toast');
-    const newToast: ToastMessage = { id, message, type, actionText, onAction };
+    const newToast: ToastMessage = {
+      id,
+      message,
+      type,
+      actionText,
+      onAction,
+      secondaryActionText,
+      onSecondaryAction
+    };
 
     set((state) => ({ toasts: [...state.toasts, newToast] }));
 
     setTimeout(() => {
       get().dismissToast(id);
-    }, 4000);
+    }, 4500);
   },
 
   dismissToast: (id) => {

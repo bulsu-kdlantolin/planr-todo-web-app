@@ -16,6 +16,7 @@ import { getTodayDateString } from '../utils/date';
 export function useReminderAlerts() {
   const reminders = useReminderStore((state) => state.reminders);
   const toggleReminder = useReminderStore((state) => state.toggleReminder);
+  const snoozeReminder = useReminderStore((state) => state.snoozeReminder);
   const notificationsEnabled = useMetaStore((state) => state.settings.notificationsEnabled ?? true);
   const soundEffects = useMetaStore((state) => state.settings.soundEffects ?? true);
   const showToast = useUIStore((state) => state.showToast);
@@ -79,13 +80,18 @@ export function useReminderAlerts() {
           });
         }
 
-        // 3. Display interactive toast
+        // 3. Display interactive toast with Mark Done and Snooze 10m
         showToast(
           `⏰ Reminder: ${r.title}`,
           'info',
           'Mark Done',
           () => {
             toggleReminder(r.id);
+          },
+          'Snooze 10m',
+          () => {
+            snoozeReminder(r.id, 10);
+            showToast(`Reminder snoozed for 10 minutes ⏰`, 'info');
           }
         );
       });
