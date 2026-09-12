@@ -99,14 +99,14 @@ export const ShortcutsModal: React.FC = () => {
                   type="button"
                   onClick={() => setRecordingActionId(sc.id)}
                   aria-label={`Remap shortcut for ${sc.label}, currently ${currentKey}`}
-                  className={`px-2.5 py-1 rounded font-mono text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm ${
+                  className={`min-h-[36px] px-3 py-1.5 rounded font-mono text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm ${
                     isRecording
                       ? 'bg-tertiary text-on-primary animate-pulse ring-2 ring-tertiary'
                       : 'bg-surface-lowest border border-outline-variant text-primary hover:border-primary'
                   }`}
                 >
                   <span>{isRecording ? 'Press key...' : currentKey}</span>
-                  {!isRecording && <Edit3 className="w-3 h-3 text-secondary opacity-60" />}
+                  {!isRecording && <Edit3 className="w-3.5 h-3.5 text-secondary opacity-60" aria-hidden="true" />}
                 </button>
               </div>
             );
@@ -118,7 +118,7 @@ export const ShortcutsModal: React.FC = () => {
         <button
           type="button"
           onClick={handleResetDefaults}
-          className="flex items-center gap-1.5 text-secondary hover:text-on-surface transition-colors"
+          className="min-h-[40px] flex items-center gap-1.5 text-secondary hover:text-on-surface transition-colors px-2 py-1"
         >
           <RotateCcw className="w-3.5 h-3.5" aria-hidden="true" />
           <span>Reset to Defaults</span>
@@ -127,7 +127,7 @@ export const ShortcutsModal: React.FC = () => {
         <button
           type="button"
           onClick={closeShortcutsModal}
-          className="px-4 py-1.5 rounded-md bg-primary-container hover:bg-primary text-on-primary-container font-semibold uppercase tracking-wider text-[11px] shadow-sm transition-all"
+          className="min-h-[40px] px-4 py-2 rounded-md bg-primary-container hover:bg-primary text-on-primary-container font-semibold uppercase tracking-wider text-[11px] shadow-sm transition-all"
         >
           Done
         </button>

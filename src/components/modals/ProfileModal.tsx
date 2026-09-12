@@ -151,9 +151,9 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
               type="button"
               onClick={() => fileInputRef.current?.click()}
               aria-label="Upload profile picture"
-              className="absolute inset-0 bg-black/50 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer"
+              className="absolute inset-0 bg-black/50 text-white rounded-full opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity flex items-center justify-center cursor-pointer"
             >
-              <Camera className="w-5 h-5" />
+              <Camera className="w-5 h-5" aria-hidden="true" />
             </button>
           </div>
 
@@ -174,9 +174,9 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="px-3 py-1.5 rounded-lg bg-surface hover:bg-surface-container border border-outline-variant text-[11px] font-semibold text-on-surface transition-colors flex items-center gap-1.5 cursor-pointer"
+                className="min-h-[38px] px-3.5 py-1.5 rounded-lg bg-surface hover:bg-surface-container border border-outline-variant text-xs font-semibold text-on-surface transition-colors flex items-center gap-1.5 cursor-pointer"
               >
-                <Upload className="w-3 h-3 text-tertiary" />
+                <Upload className="w-3.5 h-3.5 text-tertiary" aria-hidden="true" />
                 <span>{avatar ? 'Change' : 'Upload'}</span>
               </button>
 
@@ -184,9 +184,9 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
                 <button
                   type="button"
                   onClick={handleRemoveAvatar}
-                  className="px-3 py-1.5 rounded-lg bg-surface hover:bg-red-50 dark:hover:bg-red-950/40 border border-outline-variant text-[11px] font-semibold text-red-600 dark:text-red-400 transition-colors flex items-center gap-1 cursor-pointer"
+                  className="min-h-[38px] px-3.5 py-1.5 rounded-lg bg-surface hover:bg-red-50 dark:hover:bg-red-950/40 border border-outline-variant text-xs font-semibold text-red-600 dark:text-red-400 transition-colors flex items-center gap-1 cursor-pointer"
                 >
-                  <Trash2 className="w-3 h-3" />
+                  <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
                   <span>Remove</span>
                 </button>
               )}
@@ -201,6 +201,10 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
           <input
             id="profile-name-input"
             type="text"
+            required
+            aria-required="true"
+            aria-invalid={!!nameError}
+            aria-describedby={nameError ? 'profile-name-error' : undefined}
             value={name}
             onChange={(e) => {
               setName(e.target.value);
@@ -211,7 +215,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
             )}`}
           />
           {nameError && (
-            <p className="text-[11px] text-red-500 mt-1.5 flex items-center gap-1 animate-fade-in font-medium" role="alert">
+            <p id="profile-name-error" className="text-[11px] text-red-500 mt-1.5 flex items-center gap-1 animate-fade-in font-medium" role="alert">
               <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
               <span>{nameError}</span>
             </p>
@@ -253,6 +257,10 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
           <input
             id="profile-email-input"
             type="email"
+            required
+            aria-required="true"
+            aria-invalid={!!emailError}
+            aria-describedby={emailError ? 'profile-email-error' : undefined}
             value={email}
             onChange={(e) => {
               setEmail(e.target.value);
@@ -263,7 +271,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
             )}`}
           />
           {emailError && (
-            <p className="text-[11px] text-red-500 mt-1.5 flex items-center gap-1 animate-fade-in font-medium" role="alert">
+            <p id="profile-email-error" className="text-[11px] text-red-500 mt-1.5 flex items-center gap-1 animate-fade-in font-medium" role="alert">
               <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
               <span>{emailError}</span>
             </p>

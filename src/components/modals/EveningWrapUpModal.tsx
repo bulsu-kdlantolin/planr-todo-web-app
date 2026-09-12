@@ -150,10 +150,10 @@ export const EveningWrapUpModal: React.FC = () => {
               <button
                 type="button"
                 onClick={handleMigrateRemaining}
-                className="text-[11px] font-semibold text-primary hover:text-primary-container flex items-center gap-1 transition-colors cursor-pointer"
+                className="min-h-[36px] px-2 py-1 text-[11px] font-semibold text-primary hover:text-primary-container flex items-center gap-1 transition-colors cursor-pointer"
               >
                 <span>Move all to Tomorrow</span>
-                <ArrowRight className="w-3 h-3" aria-hidden="true" />
+                <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
               </button>
             )}
           </div>
@@ -176,7 +176,7 @@ export const EveningWrapUpModal: React.FC = () => {
                     type="button"
                     onClick={() => toggleTask(t.id)}
                     aria-label={`Mark ${t.title} done`}
-                    className="p-1 text-secondary hover:text-emerald-500 rounded transition-colors flex items-center gap-1 text-[11px]"
+                    className="min-h-[36px] px-2.5 py-1 text-secondary hover:text-emerald-500 rounded transition-colors flex items-center gap-1 text-[11px]"
                   >
                     <Check className="w-3.5 h-3.5" aria-hidden="true" />
                     <span>Done</span>
@@ -207,14 +207,14 @@ export const EveningWrapUpModal: React.FC = () => {
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-xs font-medium text-secondary hover:text-on-surface bg-surface-low hover:bg-surface-high border border-outline-subtle rounded-md transition-colors cursor-pointer"
+            className="min-h-[40px] px-4 py-2 text-xs font-medium text-secondary hover:text-on-surface bg-surface-low hover:bg-surface-high border border-outline-subtle rounded-md transition-colors cursor-pointer"
           >
             Cancel
           </button>
           <button
             type="button"
             onClick={handleCompleteWrapUp}
-            className="px-5 py-2 text-xs font-semibold uppercase tracking-wider bg-primary-container hover:bg-primary text-on-primary-container rounded-md shadow-sm transition-all active:scale-[0.98] cursor-pointer flex items-center gap-1.5"
+            className="min-h-[40px] px-5 py-2 text-xs font-semibold uppercase tracking-wider bg-primary-container hover:bg-primary text-on-primary-container rounded-md shadow-sm transition-all active:scale-[0.98] cursor-pointer flex items-center gap-1.5"
           >
             <span>Close the Day</span>
             <Moon className="w-3.5 h-3.5" aria-hidden="true" />

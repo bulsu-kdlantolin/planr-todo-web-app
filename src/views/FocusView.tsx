@@ -126,8 +126,9 @@ export const FocusView: React.FC = () => {
           <div className="flex flex-wrap items-center justify-center gap-2" role="group" aria-label="Timer presets">
             <button
               type="button"
+              aria-pressed={currentPreset === 'pomodoro'}
               onClick={() => setPreset('pomodoro', 25)}
-              className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer ${
+              className={`px-4 py-2 min-h-[36px] rounded-full text-xs font-medium transition-all cursor-pointer ${
                 currentPreset === 'pomodoro'
                   ? 'bg-surface-container text-on-surface border border-outline-variant font-semibold shadow-xs'
                   : 'text-secondary hover:text-on-surface hover:bg-surface-low'
@@ -137,8 +138,9 @@ export const FocusView: React.FC = () => {
             </button>
             <button
               type="button"
+              aria-pressed={currentPreset === 'deep'}
               onClick={() => setPreset('deep', 50)}
-              className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer ${
+              className={`px-4 py-2 min-h-[36px] rounded-full text-xs font-medium transition-all cursor-pointer ${
                 currentPreset === 'deep'
                   ? 'bg-surface-container text-on-surface border border-outline-variant font-semibold shadow-xs'
                   : 'text-secondary hover:text-on-surface hover:bg-surface-low'
@@ -148,8 +150,9 @@ export const FocusView: React.FC = () => {
             </button>
             <button
               type="button"
+              aria-pressed={currentPreset === 'short'}
               onClick={() => setPreset('short', 5)}
-              className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer ${
+              className={`px-4 py-2 min-h-[36px] rounded-full text-xs font-medium transition-all cursor-pointer ${
                 currentPreset === 'short'
                   ? 'bg-surface-container text-on-surface border border-outline-variant font-semibold shadow-xs'
                   : 'text-secondary hover:text-on-surface hover:bg-surface-low'
@@ -159,8 +162,9 @@ export const FocusView: React.FC = () => {
             </button>
             <button
               type="button"
+              aria-pressed={currentPreset === 'long'}
               onClick={() => setPreset('long', 15)}
-              className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer ${
+              className={`px-4 py-2 min-h-[36px] rounded-full text-xs font-medium transition-all cursor-pointer ${
                 currentPreset === 'long'
                   ? 'bg-surface-container text-on-surface border border-outline-variant font-semibold shadow-xs'
                   : 'text-secondary hover:text-on-surface hover:bg-surface-low'
@@ -170,12 +174,13 @@ export const FocusView: React.FC = () => {
             </button>
             <button
               type="button"
+              aria-pressed={currentPreset === 'custom'}
               onClick={() => {
                 if (currentPreset !== 'custom') {
                   applyCustomDuration(customHours, customMinutes, customSeconds);
                 }
               }}
-              className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer flex items-center gap-1.5 ${
+              className={`px-4 py-2 min-h-[36px] rounded-full text-xs font-medium transition-all cursor-pointer flex items-center gap-1.5 ${
                 currentPreset === 'custom'
                   ? 'bg-primary-container text-on-primary-container border border-primary font-semibold shadow-xs'
                   : 'text-secondary hover:text-on-surface hover:bg-surface-low'
@@ -414,8 +419,9 @@ export const FocusView: React.FC = () => {
                 <button
                   key={snd.id}
                   type="button"
+                  aria-pressed={ambientType === snd.id}
                   onClick={() => setAmbientType(snd.id as AmbientType)}
-                  className={`py-2 px-1 rounded-md text-xs font-medium transition-all text-center truncate cursor-pointer ${
+                  className={`min-h-[44px] py-2 px-1 rounded-md text-xs font-medium transition-all text-center truncate cursor-pointer flex items-center justify-center ${
                     ambientType === snd.id
                       ? 'bg-primary-container text-on-primary-container font-semibold shadow-xs'
                       : 'bg-surface-low text-secondary hover:text-on-surface hover:bg-surface-container'

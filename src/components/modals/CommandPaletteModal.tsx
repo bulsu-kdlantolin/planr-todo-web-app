@@ -35,6 +35,8 @@ interface PaletteItem {
   onSelect: () => void;
 }
 
+import { useFocusTrap } from '../../hooks/useFocusTrap';
+
 export const CommandPaletteModal: React.FC = () => {
   const isOpen = useUIStore((state) => state.commandPaletteOpen);
   const onClose = useUIStore((state) => state.closeCommandPalette);
@@ -56,6 +58,14 @@ export const CommandPaletteModal: React.FC = () => {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  const paletteCardRef = useRef<HTMLDivElement>(null);
+
+  // Focus trap for command palette dialog
+  useFocusTrap(paletteCardRef, {
+    isActive: isOpen,
+    onEscape: onClose,
+    restoreFocus: true
+  });
 
   // Auto-focus input when opened
   useEffect(() => {
@@ -316,9 +326,14 @@ export const CommandPaletteModal: React.FC = () => {
 
       {/* Palette Modal Card */}
       <div
+        ref={paletteCardRef}
         className="relative w-full max-w-xl bg-surface-lowest border border-outline-variant rounded-2xl shadow-2xl overflow-hidden flex flex-col z-10 transition-all text-on-surface"
         onClick={(e) => e.stopPropagation()}
       >
+        <h2 id="command-palette-title" className="sr-only">
+          Command Palette
+        </h2>
+
         {/* Search Header */}
         <div className="flex items-center gap-3 px-4 py-3.5 border-b border-outline-subtle bg-surface-lowest">
           <Search className="w-5 h-5 text-secondary flex-shrink-0" aria-hidden="true" />
@@ -336,7 +351,8 @@ export const CommandPaletteModal: React.FC = () => {
             <button
               type="button"
               onClick={() => setQuery('')}
-              className="p-1 text-secondary hover:text-on-surface rounded transition-colors"
+              aria-label="Clear search query"
+              className="w-8 h-8 flex items-center justify-center text-secondary hover:text-on-surface rounded transition-colors cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>

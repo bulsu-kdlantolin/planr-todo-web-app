@@ -185,13 +185,16 @@ export const ReminderModal: React.FC = () => {
               setTitle(e.target.value);
               if (titleError) setTitleError(null);
             }}
+            aria-required="true"
+            aria-invalid={!!titleError}
+            aria-describedby={titleError ? 'reminder-title-error' : undefined}
             placeholder="e.g. Stretch and drink water..."
             className={`w-full px-3.5 py-2.5 bg-surface-low border rounded-md text-xs text-on-surface transition-all shadow-card focus:outline-none ${getFieldValidationClass(
               !!titleError
             )}`}
           />
           {titleError && (
-            <p className="text-[11px] text-red-500 mt-1.5 flex items-center gap-1 animate-fade-in font-medium" role="alert">
+            <p id="reminder-title-error" className="text-[11px] text-red-500 mt-1.5 flex items-center gap-1 animate-fade-in font-medium" role="alert">
               <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
               <span>{titleError}</span>
             </p>

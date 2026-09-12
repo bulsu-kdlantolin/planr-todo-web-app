@@ -377,13 +377,16 @@ export const TaskModal: React.FC = () => {
               setTitle(e.target.value);
               if (titleError) setTitleError(null);
             }}
+            aria-required="true"
+            aria-invalid={!!titleError}
+            aria-describedby={titleError ? 'task-title-error' : undefined}
             placeholder="e.g. Write design documentation..."
             className={`w-full px-3.5 py-2.5 bg-surface-low border rounded-md text-xs text-on-surface transition-all shadow-card focus:outline-none ${getFieldValidationClass(
               !!titleError
             )}`}
           />
           {titleError && (
-            <p className="text-[11px] text-red-500 mt-1.5 flex items-center gap-1 animate-fade-in font-medium" role="alert">
+            <p id="task-title-error" className="text-[11px] text-red-500 mt-1.5 flex items-center gap-1 animate-fade-in font-medium" role="alert">
               <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
               <span>{titleError}</span>
             </p>
@@ -446,8 +449,9 @@ export const TaskModal: React.FC = () => {
                 <button
                   key={r}
                   type="button"
+                  aria-pressed={repeat === r}
                   onClick={() => setRepeat(r)}
-                  className={`py-2 px-1 text-xs font-medium rounded-md transition-all text-center cursor-pointer ${
+                  className={`py-2.5 px-1 min-h-[40px] text-xs font-medium rounded-md transition-all text-center cursor-pointer ${
                     repeat === r
                       ? 'bg-primary-container text-on-primary-container font-semibold shadow-xs'
                       : 'text-secondary hover:text-on-surface hover:bg-surface-lowest'

@@ -12,7 +12,7 @@ export const ToastContainer: React.FC = () => {
     <div
       aria-live="polite"
       aria-atomic="true"
-      className="fixed bottom-6 right-6 z-[120] flex flex-col gap-2.5 max-w-sm w-full pointer-events-none px-4 sm:px-0"
+      className="fixed bottom-20 lg:bottom-6 right-4 sm:right-6 z-[120] flex flex-col gap-2.5 max-w-sm w-full pointer-events-none px-2 sm:px-0"
     >
       {toasts.map((toast) => {
         return (

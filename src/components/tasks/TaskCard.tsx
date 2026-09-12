@@ -71,7 +71,7 @@ const TaskCardComponent: React.FC<TaskCardProps> = ({
           aria-checked={task.completed}
           aria-label={`Mark "${task.title}" as ${task.completed ? 'incomplete' : 'completed'}`}
           onClick={handleToggleClick}
-          className={`mt-0.5 text-secondary hover:text-tertiary flex-shrink-0 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-container rounded ${
+          className={`w-9 h-9 -ml-1.5 -mt-1.5 flex items-center justify-center text-secondary hover:text-tertiary flex-shrink-0 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-container rounded cursor-pointer ${
             justToggled ? 'animate-spring-bounce' : ''
           }`}
         >
@@ -151,7 +151,7 @@ const TaskCardComponent: React.FC<TaskCardProps> = ({
                 type="button"
                 onClick={() => setIsExpanded(!isExpanded)}
                 aria-expanded={isExpanded}
-                className="flex items-center gap-2 text-xs font-semibold text-secondary hover:text-on-surface transition-colors"
+                className="flex items-center gap-2 text-xs font-semibold text-secondary hover:text-on-surface transition-colors min-h-[36px]"
               >
                 {isExpanded ? (
                   <ChevronUp className="w-3.5 h-3.5" aria-hidden="true" />
@@ -168,27 +168,26 @@ const TaskCardComponent: React.FC<TaskCardProps> = ({
                   {subtasks.map((sub) => (
                     <div
                       key={sub.id}
-                      onClick={() => onToggleSubtask?.(task.id, sub.id)}
-                      className="flex items-center gap-2.5 text-xs text-on-surface cursor-pointer select-none group"
+                      className="flex items-center gap-2.5 text-xs text-on-surface select-none group min-h-[36px]"
                     >
                       <button
                         type="button"
                         role="checkbox"
                         aria-checked={sub.completed}
                         aria-label={`Mark subtask "${sub.title}" as ${sub.completed ? 'incomplete' : 'completed'}`}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onToggleSubtask?.(task.id, sub.id);
-                        }}
-                        className="text-secondary group-hover:text-tertiary focus:outline-none"
+                        onClick={() => onToggleSubtask?.(task.id, sub.id)}
+                        className="w-8 h-8 flex items-center justify-center text-secondary group-hover:text-tertiary focus:outline-none focus:ring-2 focus:ring-primary-container rounded cursor-pointer flex-shrink-0"
                       >
                         {sub.completed ? (
-                          <CheckCircle2 className="w-3.5 h-3.5 text-tertiary" aria-hidden="true" />
+                          <CheckCircle2 className="w-4 h-4 text-tertiary" aria-hidden="true" />
                         ) : (
-                          <Circle className="w-3.5 h-3.5" aria-hidden="true" />
+                          <Circle className="w-4 h-4" aria-hidden="true" />
                         )}
                       </button>
-                      <span className={`group-hover:text-on-surface ${sub.completed ? 'line-through text-secondary' : ''}`}>
+                      <span
+                        onClick={() => onToggleSubtask?.(task.id, sub.id)}
+                        className={`cursor-pointer group-hover:text-on-surface ${sub.completed ? 'line-through text-secondary' : ''}`}
+                      >
                         {sub.title}
                       </span>
                     </div>
@@ -200,13 +199,13 @@ const TaskCardComponent: React.FC<TaskCardProps> = ({
         </div>
 
         {/* Action Buttons */}
-        <div className="flex items-center gap-1 flex-shrink-0 self-start">
+        <div className="flex items-center gap-0.5 sm:gap-1 flex-shrink-0 self-start">
           {onView && (
             <button
               type="button"
               onClick={() => onView(task)}
               aria-label={`View details for ${task.title}`}
-              className="p-1.5 text-secondary hover:text-on-surface rounded hover:bg-surface-low transition-colors"
+              className="w-10 h-10 sm:w-8 sm:h-8 flex items-center justify-center text-secondary hover:text-on-surface rounded-lg hover:bg-surface-low transition-colors cursor-pointer"
               title="View Task Details"
             >
               <Eye className="w-4 h-4" aria-hidden="true" />
@@ -218,7 +217,7 @@ const TaskCardComponent: React.FC<TaskCardProps> = ({
               type="button"
               onClick={() => onEdit(task)}
               aria-label={`Edit task ${task.title}`}
-              className="p-1.5 text-secondary hover:text-on-surface rounded hover:bg-surface-low transition-colors"
+              className="w-10 h-10 sm:w-8 sm:h-8 flex items-center justify-center text-secondary hover:text-on-surface rounded-lg hover:bg-surface-low transition-colors cursor-pointer"
               title="Edit Task"
             >
               <Edit2 className="w-4 h-4" aria-hidden="true" />
@@ -230,7 +229,7 @@ const TaskCardComponent: React.FC<TaskCardProps> = ({
               type="button"
               onClick={() => onDelete(task.id)}
               aria-label={`Delete task ${task.title}`}
-              className="p-1.5 text-secondary hover:text-error rounded hover:bg-surface-low transition-colors"
+              className="w-10 h-10 sm:w-8 sm:h-8 flex items-center justify-center text-secondary hover:text-error rounded-lg hover:bg-surface-low transition-colors cursor-pointer"
               title="Delete Task"
             >
               <Trash2 className="w-4 h-4" aria-hidden="true" />

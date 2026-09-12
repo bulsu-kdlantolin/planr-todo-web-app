@@ -32,7 +32,7 @@ export const FocusTimerClock: React.FC = memo(() => {
         <SoundwaveCanvas isPlaying={isRunning} ambientType={ambientType} />
       </div>
 
-      <svg className="w-72 h-72 -rotate-90 transform" aria-label={`Timer: ${timeFormatted}`}>
+      <svg viewBox="0 0 288 288" className="w-64 h-64 sm:w-72 sm:h-72 max-w-full -rotate-90 transform" role="img" aria-label={`Timer dial: ${timeFormatted}`}>
         <circle
           cx="144"
           cy="144"

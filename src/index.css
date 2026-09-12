@@ -79,12 +79,12 @@
   --color-on-surface: #f1efeb;
   --color-on-surface-variant: #b8b3ab;
 
-  /* Brand Sandstone / Taupe Brown in Dark Mode (#9e9389) */
+  /* Brand Sandstone / Taupe Brown in Dark Mode (#b8aea5) */
   --color-primary: #b8aea5;
-  --color-primary-container: #9e9389;
+  --color-primary-container: #b8aea5;
   --color-on-primary: #1e1b19;
-  --color-on-primary-container: #ffffff;
-  --color-primary-hover: #8d8278;
+  --color-on-primary-container: #1e1b19;
+  --color-primary-hover: #a89e95;
 
   --color-secondary: #b0aaa5;
   --color-secondary-container: #363330;
@@ -117,6 +117,43 @@ body {
 
 h1, h2, h3, h4, .font-serif {
   font-family: 'Source Serif 4', Georgia, serif;
+}
+
+/* Universal Accessible Focus Indicators (WCAG 2.4.7 Focus Visible) */
+:focus-visible {
+  outline: 2px solid var(--color-primary-container);
+  outline-offset: 2px;
+}
+
+/* Ensure interactive elements have crisp focus rings without clipping */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[role="button"]:focus-visible,
+[role="switch"]:focus-visible,
+[role="checkbox"]:focus-visible,
+[tabindex="0"]:focus-visible {
+  outline: 2px solid var(--color-primary-container);
+  outline-offset: 2px;
+}
+
+/* iOS Safe Area Padding Utilities */
+.pb-safe {
+  padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+}
+.pt-safe {
+  padding-top: max(0.5rem, env(safe-area-inset-top));
+}
+
+/* Hide scrollbar utility for touch swipe bars */
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
 }
 
 /* Custom Scrollbar for Serene Aesthetic */

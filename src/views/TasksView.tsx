@@ -166,7 +166,7 @@ export const TasksView: React.FC = () => {
               type="button"
               onClick={() => setViewMode('list')}
               aria-pressed={viewMode === 'list'}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer ${
+              className={`flex items-center gap-1.5 px-3 py-2 min-h-[38px] rounded-md text-xs font-medium transition-colors cursor-pointer ${
                 viewMode === 'list'
                   ? 'bg-surface-lowest text-on-surface font-semibold shadow-xs'
                   : 'text-secondary hover:text-on-surface'
@@ -179,7 +179,7 @@ export const TasksView: React.FC = () => {
               type="button"
               onClick={() => setViewMode('calendar')}
               aria-pressed={viewMode === 'calendar'}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer ${
+              className={`flex items-center gap-1.5 px-3 py-2 min-h-[38px] rounded-md text-xs font-medium transition-colors cursor-pointer ${
                 viewMode === 'calendar'
                   ? 'bg-surface-lowest text-on-surface font-semibold shadow-xs'
                   : 'text-secondary hover:text-on-surface'
@@ -193,7 +193,7 @@ export const TasksView: React.FC = () => {
           <button
             type="button"
             onClick={() => openTaskModal()}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-md bg-primary-container hover:bg-primary text-on-primary-container text-xs font-semibold uppercase tracking-wider transition-colors shadow-sm active:scale-[0.98] cursor-pointer"
+            className="flex items-center gap-2 px-5 py-2.5 min-h-[44px] rounded-md bg-primary-container hover:bg-primary text-on-primary-container text-xs font-semibold uppercase tracking-wider transition-colors shadow-sm active:scale-[0.98] cursor-pointer"
           >
             <Plus className="w-4 h-4" aria-hidden="true" />
             <span>New Task</span>
@@ -203,7 +203,7 @@ export const TasksView: React.FC = () => {
 
       {/* WIP Limit Guard Notice */}
       {todayActiveCount > 5 && (
-        <div className="p-3.5 rounded-lg bg-primary-container/10 border border-primary-container/25 flex items-center gap-3 text-xs text-on-surface animate-fade-in shadow-xs">
+        <div className="p-3.5 rounded-lg bg-primary-container/10 border border-primary-container/25 flex flex-col sm:flex-row sm:items-center gap-3 text-xs text-on-surface animate-fade-in shadow-xs">
           <Sparkles className="w-4 h-4 text-primary flex-shrink-0 animate-pulse" aria-hidden="true" />
           <span>
             <strong className="font-semibold text-primary">Planning Tip:</strong> You have {todayActiveCount} tasks scheduled for today. Limiting yourself to 3–5 key items helps you make real progress instead of feeling overwhelmed.
@@ -262,7 +262,7 @@ export const TasksView: React.FC = () => {
             </div>
 
             {/* Filter Navigation Tabs */}
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 border-b border-outline-subtle scrollbar-none" role="tablist" aria-label="Task filters">
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1.5 border-b border-outline-subtle scrollbar-none" role="tablist" aria-label="Task filters">
               {filterTabs.map((tab) => (
                 <button
                   key={tab.id}
@@ -270,7 +270,7 @@ export const TasksView: React.FC = () => {
                   role="tab"
                   aria-selected={filter === tab.id}
                   onClick={() => setFilter(tab.id)}
-                  className={`px-3 py-1.5 rounded-md text-xs font-medium whitespace-nowrap transition-colors cursor-pointer ${
+                  className={`px-3.5 py-2 min-h-[38px] rounded-md text-xs font-medium whitespace-nowrap transition-colors cursor-pointer flex items-center justify-center ${
                     filter === tab.id
                       ? 'bg-surface-low text-on-surface font-semibold shadow-card border border-outline-variant'
                       : 'text-secondary hover:text-on-surface hover:bg-surface-low/50'

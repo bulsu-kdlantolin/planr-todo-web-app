@@ -246,7 +246,7 @@ export const TaskCalendarView: React.FC<TaskCalendarViewProps> = ({
 
       {/* Calendar Grid Card */}
       <div className="bg-surface-lowest border border-outline-subtle rounded-xl shadow-card overflow-hidden">
-        <div className="overflow-x-auto scrollbar-thin">
+        <div className="overflow-x-auto scrollbar-thin [overscroll-behavior-x:contain] [-webkit-overflow-scrolling:touch]">
           <div className="min-w-[700px]">
             {/* Days of Week Row */}
             <div className="grid grid-cols-7 border-b border-outline-subtle bg-surface-low/60 text-center">
@@ -260,23 +260,21 @@ export const TaskCalendarView: React.FC<TaskCalendarViewProps> = ({
               ))}
             </div>
 
-            {/* 7-Column Day Cells */}
-            <div className="grid grid-cols-7 divide-x divide-y divide-outline-subtle/70">
-              {calendarDays.map(({ day, monthOffset, dateString }) => {
-                const dayTasks = tasksByDate.get(dateString) || [];
-                const isToday = dateString === todayStr;
-                const isSelected = dateString === selectedDate;
-                const isCurrentMonth = monthOffset === 0;
+            {/* Day Slots 7x5 or 7x6 */}
+            <div className="grid grid-cols-7 divide-x divide-y divide-outline-subtle border-b border-outline-subtle">
+              {calendarDays.map((item, idx) => {
+                const { day, monthOffset, dateString } = item;
+                const isSelected = selectedDate === dateString;
+                const isToday = todayStr === dateString;
                 const isPast = dateString < todayStr;
+                const dayTasks = tasksByDate.get(dateString) || [];
 
                 return (
                   <div
-                    key={dateString}
+                    key={idx}
                     onClick={() => setSelectedDate(dateString)}
-                    className={`min-h-[105px] sm:min-h-[115px] lg:min-h-[125px] p-2 sm:p-2.5 flex flex-col justify-between transition-all cursor-pointer group relative ${
-                      !isCurrentMonth
-                        ? 'bg-surface-low/30 opacity-40'
-                        : isPast
+                    className={`min-h-[115px] p-2 flex flex-col justify-between transition-colors relative group select-none ${
+                      monthOffset !== 0
                         ? 'bg-surface-lowest/70 hover:bg-surface-low/30'
                         : 'bg-surface-lowest hover:bg-surface-low/40'
                     } ${isSelected ? 'ring-2 ring-primary-container ring-inset z-10' : ''} ${
@@ -316,7 +314,7 @@ export const TaskCalendarView: React.FC<TaskCalendarViewProps> = ({
                             onAddTaskForDate(dateString);
                           }}
                           aria-label={`Add task for ${dateString}`}
-                          className="opacity-0 group-hover:opacity-100 p-1 hover:bg-surface-high text-secondary hover:text-on-surface rounded transition-opacity cursor-pointer"
+                          className="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100 w-7 h-7 flex items-center justify-center hover:bg-surface-high text-secondary hover:text-on-surface rounded transition-opacity cursor-pointer"
                           title="Add task for this day"
                         >
                           <Plus className="w-3.5 h-3.5" aria-hidden="true" />

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useId } from 'react';
 
 interface ToggleSwitchProps {
   checked: boolean;
@@ -13,24 +13,26 @@ export const ToggleSwitch: React.FC<ToggleSwitchProps> = ({
   checked,
   onChange,
   label,
-  id,
+  id: customId,
   ariaLabel,
   disabled = false
 }) => {
+  const autoId = useId();
+  const switchId = customId || autoId;
+
   return (
-    <div className="inline-flex items-center gap-3">
+    <div className="inline-flex items-center gap-3 min-h-[44px]">
       {label && (
         <label
-          htmlFor={id}
-          className="text-xs font-semibold uppercase tracking-wider text-secondary font-sans cursor-pointer"
-          onClick={() => !disabled && onChange(!checked)}
+          htmlFor={switchId}
+          className="text-xs font-semibold uppercase tracking-wider text-secondary font-sans cursor-pointer select-none"
         >
           {label}
         </label>
       )}
 
       <button
-        id={id}
+        id={switchId}
         type="button"
         role="switch"
         aria-checked={checked}

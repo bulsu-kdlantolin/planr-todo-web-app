@@ -193,32 +193,32 @@ export const DailyOverviewView: React.FC = () => {
               onClick={handleShareIntention}
               disabled={isSharing}
               aria-label="Share or download focus quote card"
-              className="p-1.5 text-secondary hover:text-on-surface rounded hover:bg-surface-container transition-colors disabled:opacity-50"
+              className="w-9 h-9 flex items-center justify-center text-secondary hover:text-on-surface rounded-lg hover:bg-surface-container transition-colors disabled:opacity-50 cursor-pointer"
               title="Share Quote Card"
             >
               {isSharing ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" aria-hidden="true" />
+                <Loader2 className="w-4 h-4 animate-spin text-primary" aria-hidden="true" />
               ) : (
-                <Share2 className="w-3.5 h-3.5" aria-hidden="true" />
+                <Share2 className="w-4 h-4" aria-hidden="true" />
               )}
             </button>
             <button
               type="button"
               onClick={openIntentionModal}
               aria-label="Edit daily focus"
-              className="p-1.5 text-secondary hover:text-on-surface rounded hover:bg-surface-container transition-colors"
+              className="w-9 h-9 flex items-center justify-center text-secondary hover:text-on-surface rounded-lg hover:bg-surface-container transition-colors cursor-pointer"
               title="Edit Focus"
             >
-              <Edit2 className="w-3.5 h-3.5" aria-hidden="true" />
+              <Edit2 className="w-4 h-4" aria-hidden="true" />
             </button>
             <button
               type="button"
               onClick={openEveningWrapUpModal}
               aria-label="Evening wrap-up and daily review"
-              className="p-1.5 text-secondary hover:text-indigo-500 rounded hover:bg-surface-container transition-colors"
+              className="w-9 h-9 flex items-center justify-center text-secondary hover:text-indigo-500 rounded-lg hover:bg-surface-container transition-colors cursor-pointer"
               title="Evening Wrap-Up & Review"
             >
-              <Moon className="w-3.5 h-3.5" aria-hidden="true" />
+              <Moon className="w-4 h-4" aria-hidden="true" />
             </button>
           </div>
         </div>
@@ -239,7 +239,7 @@ export const DailyOverviewView: React.FC = () => {
           <button
             type="button"
             onClick={openEveningWrapUpModal}
-            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-sm transition-all active:scale-[0.98] cursor-pointer flex items-center gap-1.5 flex-shrink-0"
+            className="px-4 py-2 min-h-[40px] bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-sm transition-all active:scale-[0.98] cursor-pointer flex items-center gap-1.5 flex-shrink-0"
           >
             <span>Start Evening Review</span>
             <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
@@ -249,7 +249,7 @@ export const DailyOverviewView: React.FC = () => {
 
       {/* Overdue Tasks Alert Banner */}
       {overdueTasks.length > 0 && (
-        <div className="p-4 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-lg flex items-center justify-between gap-3 text-amber-900 dark:text-amber-200 animate-fade-in shadow-sm">
+        <div className="p-4 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-amber-900 dark:text-amber-200 animate-fade-in shadow-sm">
           <div className="flex items-center gap-2.5 text-xs font-semibold">
             <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0" aria-hidden="true" />
             <span>

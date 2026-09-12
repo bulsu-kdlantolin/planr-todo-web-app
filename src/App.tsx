@@ -2,6 +2,8 @@ import React, { Suspense, lazy } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useUIStore } from './store/useUIStore';
 import { Sidebar } from './components/layout/Sidebar';
+import { MobileHeader } from './components/layout/MobileHeader';
+import { MobileBottomNav } from './components/layout/MobileBottomNav';
 import { ToastContainer } from './components/common/Toast';
 import { Logo } from './components/common/Logo';
 import { TaskModal } from './components/modals/TaskModal';
@@ -126,10 +128,12 @@ export const App: React.FC = () => {
         <main
           id="main-content"
           tabIndex={-1}
-          className={`flex-1 overflow-y-auto overflow-x-hidden flex flex-col pb-20 md:pb-0 focus:outline-none transition-all duration-300 ease-in-out ${
+          className={`flex-1 overflow-y-auto overflow-x-hidden flex flex-col pb-24 lg:pb-0 focus:outline-none transition-all duration-300 ease-in-out ${
             !isFullPageView && !fullScreenMode ? 'lg:pl-64' : 'pl-0'
           }`}
         >
+          {showSidebar && !fullScreenMode && <MobileHeader />}
+
           <Suspense
             fallback={
               <div className="flex-1 flex items-center justify-center p-12 text-secondary">
@@ -150,6 +154,9 @@ export const App: React.FC = () => {
           </Suspense>
         </main>
       </div>
+
+      {/* Mobile Bottom Navigation Bar */}
+      {showSidebar && !fullScreenMode && <MobileBottomNav />}
 
       {/* Global Modals & Dialogs */}
       <TaskModal />

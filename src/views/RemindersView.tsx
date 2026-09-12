@@ -123,7 +123,7 @@ export const RemindersView: React.FC = () => {
         <button
           type="button"
           onClick={() => openReminderModal()}
-          className="flex items-center gap-2 px-5 py-2.5 bg-primary-container text-on-primary-container hover:bg-primary rounded-md text-xs font-semibold uppercase tracking-wider shadow-sm transition-all focus:ring-2 focus:ring-primary-container focus:outline-none active:scale-[0.98] cursor-pointer self-start sm:self-auto"
+          className="flex items-center gap-2 px-5 py-2.5 min-h-[44px] bg-primary-container text-on-primary-container hover:bg-primary rounded-md text-xs font-semibold uppercase tracking-wider shadow-sm transition-all focus:ring-2 focus:ring-primary-container focus:outline-none active:scale-[0.98] cursor-pointer self-start sm:self-auto"
         >
           <Plus className="w-4 h-4" aria-hidden="true" />
           <span>New Reminder</span>
@@ -135,13 +135,13 @@ export const RemindersView: React.FC = () => {
         {/* Main Reminders Column (8 cols) */}
         <div className="lg:col-span-8 space-y-5">
           {/* Standardized Filter Tabs */}
-          <div className="flex items-center gap-1.5 border-b border-outline-subtle pb-1" role="tablist" aria-label="Reminder filters">
+          <div className="flex items-center gap-1.5 border-b border-outline-subtle pb-1.5 overflow-x-auto scrollbar-none" role="tablist" aria-label="Reminder filters">
             <button
               type="button"
               role="tab"
               aria-selected={filter === 'active'}
               onClick={() => setFilter('active')}
-              className={`px-3 py-1.5 rounded-md text-xs font-medium whitespace-nowrap transition-colors cursor-pointer ${
+              className={`px-3.5 py-2 min-h-[38px] rounded-md text-xs font-medium whitespace-nowrap transition-colors cursor-pointer flex items-center justify-center ${
                 filter === 'active'
                   ? 'bg-surface-low text-on-surface font-semibold shadow-card border border-outline-variant'
                   : 'text-secondary hover:text-on-surface hover:bg-surface-low/50'
@@ -154,7 +154,7 @@ export const RemindersView: React.FC = () => {
               role="tab"
               aria-selected={filter === 'completed'}
               onClick={() => setFilter('completed')}
-              className={`px-3 py-1.5 rounded-md text-xs font-medium whitespace-nowrap transition-colors cursor-pointer ${
+              className={`px-3.5 py-2 min-h-[38px] rounded-md text-xs font-medium whitespace-nowrap transition-colors cursor-pointer flex items-center justify-center ${
                 filter === 'completed'
                   ? 'bg-surface-low text-on-surface font-semibold shadow-card border border-outline-variant'
                   : 'text-secondary hover:text-on-surface hover:bg-surface-low/50'
@@ -167,7 +167,7 @@ export const RemindersView: React.FC = () => {
               role="tab"
               aria-selected={filter === 'all'}
               onClick={() => setFilter('all')}
-              className={`px-3 py-1.5 rounded-md text-xs font-medium whitespace-nowrap transition-colors cursor-pointer ${
+              className={`px-3.5 py-2 min-h-[38px] rounded-md text-xs font-medium whitespace-nowrap transition-colors cursor-pointer flex items-center justify-center ${
                 filter === 'all'
                   ? 'bg-surface-low text-on-surface font-semibold shadow-card border border-outline-variant'
                   : 'text-secondary hover:text-on-surface hover:bg-surface-low/50'
@@ -273,12 +273,12 @@ export const RemindersView: React.FC = () => {
                         </button>
                       </div>
 
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-0.5 sm:gap-1">
                         <button
                           type="button"
                           onClick={() => openReminderModal(reminder)}
                           aria-label={`Edit reminder ${reminder.title}`}
-                          className="p-1.5 text-secondary hover:text-on-surface rounded-md hover:bg-surface-low transition-colors cursor-pointer"
+                          className="w-10 h-10 sm:w-8 sm:h-8 flex items-center justify-center text-secondary hover:text-on-surface rounded-lg hover:bg-surface-low transition-colors cursor-pointer"
                         >
                           <Edit2 className="w-4 h-4" aria-hidden="true" />
                         </button>
@@ -286,7 +286,7 @@ export const RemindersView: React.FC = () => {
                           type="button"
                           onClick={() => setReminderToDelete(reminder)}
                           aria-label={`Delete reminder ${reminder.title}`}
-                          className="p-1.5 text-secondary hover:text-red-500 rounded-md hover:bg-surface-low transition-colors cursor-pointer"
+                          className="w-10 h-10 sm:w-8 sm:h-8 flex items-center justify-center text-secondary hover:text-red-500 rounded-lg hover:bg-surface-low transition-colors cursor-pointer"
                         >
                           <Trash2 className="w-4 h-4" aria-hidden="true" />
                         </button>

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { useUIStore } from '../../store/useUIStore';
 import { useTaskStore } from '../../store/useTaskStore';
 import { useReminderStore } from '../../store/useReminderStore';
@@ -6,6 +6,7 @@ import { useTimerStore } from '../../store/useTimerStore';
 import { useMetaStore } from '../../store/useMetaStore';
 import { ViewType } from '../../types';
 import { Logo } from '../common/Logo';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 import {
   SunMedium,
   CheckSquare,
@@ -26,6 +27,14 @@ interface SidebarProps {
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, setMobileOpen }) => {
+  const sidebarRef = useRef<HTMLElement | null>(null);
+
+  // Trap focus strictly within mobile drawer when opened
+  useFocusTrap(sidebarRef, {
+    isActive: mobileOpen,
+    onEscape: () => setMobileOpen(false)
+  });
+
   const activeView = useUIStore((state) => state.activeView);
   const setActiveView = useUIStore((state) => state.setActiveView);
   const openShortcutsModal = useUIStore((state) => state.openShortcutsModal);
@@ -73,13 +82,19 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, setMobileOpen }) =
       {/* Mobile Backdrop */}
       {mobileOpen && !fullScreenMode && (
         <div
-          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 lg:hidden transition-opacity duration-300 animate-fade-in"
+          className="fixed inset-0 bg-black/50 backdrop-blur-xs z-40 lg:hidden transition-opacity duration-300 animate-fade-in"
           onClick={() => setMobileOpen(false)}
+          aria-hidden="true"
         />
       )}
 
       {/* Animated Desktop & Mobile Sidebar */}
       <aside
+        ref={sidebarRef}
+        id="app-sidebar"
+        role={mobileOpen ? 'dialog' : 'complementary'}
+        aria-modal={mobileOpen ? true : undefined}
+        aria-label="Application Navigation"
         className={`fixed top-0 bottom-0 left-0 w-64 bg-surface border-r border-outline-subtle flex flex-col py-6 px-4 z-40 transition-all duration-300 ease-in-out ${
           fullScreenMode
             ? '-translate-x-full opacity-0 pointer-events-none'
@@ -92,7 +107,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, setMobileOpen }) =
         <div className="flex items-center justify-between px-2 pb-5 border-b border-outline-subtle mb-4">
           <div
             className="flex items-center cursor-pointer select-none"
-            onClick={() => handleNavClick('landing')}
+            onClick={() => handleNavClick('daily')}
           >
             <Logo size="md" />
           </div>
@@ -100,8 +115,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, setMobileOpen }) =
           <button
             type="button"
             onClick={() => setMobileOpen(false)}
-            aria-label="Close sidebar"
-            className="lg:hidden p-1.5 text-secondary hover:text-on-surface rounded-md hover:bg-surface-low transition-colors cursor-pointer"
+            aria-label="Close navigation sidebar"
+            className="lg:hidden w-11 h-11 flex items-center justify-center text-secondary hover:text-on-surface rounded-md hover:bg-surface-low transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" aria-hidden="true" />
           </button>
@@ -161,12 +176,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, setMobileOpen }) =
                 type="button"
                 onClick={toggleTimer}
                 aria-label={isTimerRunning ? 'Pause timer' : 'Resume timer'}
-                className="p-2 rounded-md bg-primary-container hover:bg-primary text-on-primary-container transition-all active:scale-95 shadow-xs cursor-pointer flex-shrink-0"
+                className="w-10 h-10 flex items-center justify-center rounded-md bg-primary-container hover:bg-primary text-on-primary-container transition-all active:scale-95 shadow-xs cursor-pointer flex-shrink-0"
               >
                 {isTimerRunning ? (
-                  <Pause className="w-3.5 h-3.5" aria-hidden="true" />
+                  <Pause className="w-4 h-4" aria-hidden="true" />
                 ) : (
-                  <Play className="w-3.5 h-3.5 fill-current" aria-hidden="true" />
+                  <Play className="w-4 h-4 fill-current" aria-hidden="true" />
                 )}
               </button>
             </div>
@@ -178,33 +193,47 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, setMobileOpen }) =
           <button
             type="button"
             onClick={toggleFullScreenMode}
-            className="flex items-center gap-1.5 text-xs text-secondary hover:text-primary font-medium transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 text-xs text-secondary hover:text-primary font-medium transition-colors cursor-pointer min-h-[36px]"
             title="Toggle Full Screen Mode (F)"
+            aria-label="Toggle Full Screen Mode"
           >
             <Maximize2 className="w-3.5 h-3.5 text-tertiary" aria-hidden="true" />
-            <span>Full Screen Mode (F)</span>
+            <span>Full Screen (F)</span>
           </button>
 
           <button
             type="button"
             onClick={openShortcutsModal}
             aria-label="Open keyboard shortcuts cheat sheet"
-            className="p-1 text-secondary hover:text-on-surface rounded hover:bg-surface-low transition-colors cursor-pointer"
+            className="w-9 h-9 flex items-center justify-center text-secondary hover:text-on-surface rounded hover:bg-surface-low transition-colors cursor-pointer"
             title="Keyboard Shortcuts (?)"
           >
-            <Keyboard className="w-3.5 h-3.5" aria-hidden="true" />
+            <Keyboard className="w-4 h-4" aria-hidden="true" />
           </button>
         </div>
 
         {/* User Profile & Settings Link */}
         <div className="px-2 pt-3 border-t border-outline-subtle space-y-2">
           <div
-            className="flex items-center gap-2.5 cursor-pointer flex-1 min-w-0 hover:opacity-80 transition-opacity"
+            role="button"
+            tabIndex={0}
+            aria-label={`Profile and settings: ${user.name || (user.isLoggedIn ? 'User' : 'Guest')}`}
+            className="flex items-center gap-2.5 cursor-pointer flex-1 min-w-0 hover:opacity-80 transition-opacity p-1.5 rounded-lg hover:bg-surface-low/60"
             onClick={() => {
               if (user.isLoggedIn) {
                 handleNavClick('settings');
               } else {
                 handleNavClick('signin' as any);
+              }
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                if (user.isLoggedIn) {
+                  handleNavClick('settings');
+                } else {
+                  handleNavClick('signin' as any);
+                }
               }
             }}
           >

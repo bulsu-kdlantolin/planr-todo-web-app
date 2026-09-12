@@ -58,6 +58,16 @@ export function Select<T extends string = string>({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isOpen]);
 
+  // Auto-scroll highlighted option into view
+  useEffect(() => {
+    if (isOpen && highlightedIndex >= 0 && listboxRef.current) {
+      const activeEl = listboxRef.current.children[highlightedIndex] as HTMLElement | undefined;
+      if (typeof activeEl?.scrollIntoView === 'function') {
+        activeEl.scrollIntoView({ block: 'nearest' });
+      }
+    }
+  }, [isOpen, highlightedIndex]);
+
   // Keyboard navigation
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (disabled) return;
@@ -95,6 +105,20 @@ export function Select<T extends string = string>({
           setHighlightedIndex(currentIndex >= 0 ? currentIndex : options.length - 1);
         } else {
           setHighlightedIndex((prev) => (prev - 1 >= 0 ? prev - 1 : options.length - 1));
+        }
+        break;
+
+      case 'Home':
+        if (isOpen) {
+          e.preventDefault();
+          setHighlightedIndex(0);
+        }
+        break;
+
+      case 'End':
+        if (isOpen) {
+          e.preventDefault();
+          setHighlightedIndex(options.length - 1);
         }
         break;
 
@@ -198,7 +222,7 @@ export function Select<T extends string = string>({
                 aria-selected={isSelected}
                 onClick={() => handleSelect(option.value)}
                 onMouseEnter={() => setHighlightedIndex(index)}
-                className={`flex items-center justify-between px-3.5 py-2 text-xs cursor-pointer select-none transition-colors ${
+                className={`flex items-center justify-between px-3.5 py-2.5 min-h-[40px] text-xs cursor-pointer select-none transition-colors ${
                   isSelected
                     ? 'bg-surface-low text-on-surface font-semibold'
                     : isHighlighted

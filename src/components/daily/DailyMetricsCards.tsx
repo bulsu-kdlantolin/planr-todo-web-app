@@ -58,7 +58,7 @@ export const DailyMetricsCards: React.FC<DailyMetricsCardsProps> = ({
           {isAllDone && (
             <div className="absolute inset-0 rounded-full border-2 border-emerald-500/50 animate-ping pointer-events-none" />
           )}
-          <svg className="w-14 h-14 -rotate-90 transform" aria-label={`Completion: ${percentage}%`}>
+          <svg className="w-14 h-14 -rotate-90 transform" role="img" aria-label={`Completion: ${percentage}%`}>
             <circle
               cx="28"
               cy="28"
