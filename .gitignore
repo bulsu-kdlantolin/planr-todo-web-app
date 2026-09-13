@@ -30,3 +30,7 @@ dist-ssr
 # Agent Customizations & Skills
 .agents/
 .agents
+
+# Test reports & artifacts
+playwright-report/
+test-results/

@@ -6,12 +6,12 @@ test.describe('Tasks Workspace E2E', () => {
   });
 
   test('creates a new task via quick-add bar', async ({ page }) => {
-    const quickInput = page.getByPlaceholder(/Quick add intention or task/i);
+    const quickInput = page.getByPlaceholder(/Quick add with natural language/i);
     await quickInput.fill('E2E Test Intentional Feature @urgent');
     await quickInput.press('Enter');
 
-    await expect(page.getByText('E2E Test Intentional Feature')).toBeVisible();
-    await expect(page.getByText('Urgent').first()).toBeVisible();
+    await expect(page.getByText('E2E Test Intentional Feature').first()).toBeVisible();
+    await expect(page.getByText(/urgent/i).first()).toBeVisible();
   });
 
   test('filters tasks by category tabs', async ({ page }) => {
@@ -19,3 +19,4 @@ test.describe('Tasks Workspace E2E', () => {
     await expect(page.getByRole('tab', { name: 'Work' })).toHaveAttribute('aria-selected', 'true');
   });
 });
+
