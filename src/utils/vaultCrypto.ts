@@ -27,6 +27,26 @@ async function getKey(pin: string, salt: Uint8Array, iterations = ITERATIONS_V2)
   );
 }
 
+function uint8ArrayToBase64(bytes: Uint8Array): string {
+  let binary = '';
+  const len = bytes.byteLength;
+  const chunkSize = 8192;
+  for (let i = 0; i < len; i += chunkSize) {
+    const chunk = bytes.subarray(i, Math.min(i + chunkSize, len));
+    binary += String.fromCharCode.apply(null, chunk as unknown as number[]);
+  }
+  return btoa(binary);
+}
+
+function base64ToUint8Array(base64: string): Uint8Array {
+  const binaryString = atob(base64);
+  const bytes = new Uint8Array(binaryString.length);
+  for (let i = 0; i < binaryString.length; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+  return bytes;
+}
+
 export async function encryptData(plainText: string, pin: string): Promise<string> {
   const enc = new TextEncoder();
   const salt = window.crypto.getRandomValues(new Uint8Array(16));
@@ -44,7 +64,7 @@ export async function encryptData(plainText: string, pin: string): Promise<strin
   combined.set(iv, salt.length);
   combined.set(new Uint8Array(encrypted), salt.length + iv.length);
 
-  return V2_PREFIX + btoa(String.fromCharCode(...combined));
+  return V2_PREFIX + uint8ArrayToBase64(combined);
 }
 
 export async function decryptData(cipherText: string, pin: string): Promise<string> {
@@ -52,11 +72,7 @@ export async function decryptData(cipherText: string, pin: string): Promise<stri
   const cipherBase64 = isV2 ? cipherText.slice(V2_PREFIX.length) : cipherText;
   const iterations = isV2 ? ITERATIONS_V2 : ITERATIONS_V1;
 
-  const binaryString = atob(cipherBase64);
-  const bytes = new Uint8Array(binaryString.length);
-  for (let i = 0; i < binaryString.length; i++) {
-    bytes[i] = binaryString.charCodeAt(i);
-  }
+  const bytes = base64ToUint8Array(cipherBase64);
 
   const salt = bytes.slice(0, 16);
   const iv = bytes.slice(16, 28);

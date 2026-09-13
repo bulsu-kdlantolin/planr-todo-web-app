@@ -16,6 +16,8 @@ import {
   EyeOff
 } from 'lucide-react';
 import { triggerHapticFeedback, getFieldValidationClass } from '../utils/validation';
+import { PrivacyModal } from '../components/modals/PrivacyModal';
+import { TermsModal } from '../components/modals/TermsModal';
 
 type SignInMode = 'signin' | 'forgot_password';
 
@@ -38,6 +40,8 @@ export const SignInView: React.FC = () => {
   const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({});
   const [resetSent, setResetSent] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
+  const [privacyOpen, setPrivacyOpen] = useState(false);
+  const [termsOpen, setTermsOpen] = useState(false);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
@@ -498,7 +502,7 @@ export const SignInView: React.FC = () => {
 
         {/* Switch to Sign Up */}
         <div className="pt-2 text-center text-xs text-secondary">
-          <span>Don't have an account? </span>
+          <span>Don&apos;t have an account? </span>
           <button
             type="button"
             onClick={() => setActiveView('signup')}
@@ -507,6 +511,28 @@ export const SignInView: React.FC = () => {
             Create an account
           </button>
         </div>
+
+        {/* Compliance Links (Privacy Policy & Terms) */}
+        <div className="pt-4 border-t border-outline-subtle text-center text-[11px] text-secondary flex items-center justify-center gap-3">
+          <button
+            type="button"
+            onClick={() => setPrivacyOpen(true)}
+            className="hover:text-on-surface underline transition-colors cursor-pointer"
+          >
+            Privacy Policy
+          </button>
+          <span>•</span>
+          <button
+            type="button"
+            onClick={() => setTermsOpen(true)}
+            className="hover:text-on-surface underline transition-colors cursor-pointer"
+          >
+            Terms of Service
+          </button>
+        </div>
+
+        <PrivacyModal isOpen={privacyOpen} onClose={() => setPrivacyOpen(false)} />
+        <TermsModal isOpen={termsOpen} onClose={() => setTermsOpen(false)} />
       </div>
     </div>
   );

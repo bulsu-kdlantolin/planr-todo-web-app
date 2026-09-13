@@ -40,6 +40,7 @@ export const TaskCalendarView: React.FC<TaskCalendarViewProps> = ({
   const [viewMonth, setViewMonth] = useState(todayDate.getMonth()); // 0-indexed
   const [selectedDate, setSelectedDate] = useState<string>(todayStr);
   const [activeChipTaskId, setActiveChipTaskId] = useState<string | null>(null);
+  const [layoutMode, setLayoutMode] = useState<'grid' | 'agenda'>('grid');
 
   const monthNames = [
     'January', 'February', 'March', 'April', 'May', 'June',
@@ -194,6 +195,25 @@ export const TaskCalendarView: React.FC<TaskCalendarViewProps> = ({
     return tasksByDate.get(selectedDate) || [];
   }, [tasksByDate, selectedDate]);
 
+  // Mobile Agenda View items
+  const agendaDaysWithTasks = useMemo(() => {
+    const list: Array<{ dateString: string; tasks: Task[]; isToday: boolean; isSelected: boolean }> = [];
+    for (const item of calendarDays) {
+      if (item.monthOffset === 0) {
+        const dTasks = tasksByDate.get(item.dateString) || [];
+        if (dTasks.length > 0 || item.dateString === todayStr || item.dateString === selectedDate) {
+          list.push({
+            dateString: item.dateString,
+            tasks: dTasks,
+            isToday: item.dateString === todayStr,
+            isSelected: item.dateString === selectedDate
+          });
+        }
+      }
+    }
+    return list;
+  }, [calendarDays, tasksByDate, todayStr, selectedDate]);
+
   const weekDayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
   return (
@@ -214,7 +234,35 @@ export const TaskCalendarView: React.FC<TaskCalendarViewProps> = ({
           </div>
         </div>
 
-        <div className="flex items-center gap-2 self-start sm:self-auto">
+        <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+          {/* Layout Mode Toggle: Grid vs Agenda */}
+          <div className="flex items-center bg-surface-low border border-outline-subtle rounded-md p-0.5 text-xs">
+            <button
+              type="button"
+              onClick={() => setLayoutMode('grid')}
+              aria-pressed={layoutMode === 'grid'}
+              className={`px-3 py-1.5 rounded font-medium transition-colors cursor-pointer ${
+                layoutMode === 'grid'
+                  ? 'bg-surface-lowest text-on-surface shadow-xs font-semibold'
+                  : 'text-secondary hover:text-on-surface'
+              }`}
+            >
+              Grid
+            </button>
+            <button
+              type="button"
+              onClick={() => setLayoutMode('agenda')}
+              aria-pressed={layoutMode === 'agenda'}
+              className={`px-3 py-1.5 rounded font-medium transition-colors cursor-pointer ${
+                layoutMode === 'agenda'
+                  ? 'bg-surface-lowest text-on-surface shadow-xs font-semibold'
+                  : 'text-secondary hover:text-on-surface'
+              }`}
+            >
+              Agenda
+            </button>
+          </div>
+
           <button
             type="button"
             onClick={handleJumpToToday}
@@ -244,200 +292,301 @@ export const TaskCalendarView: React.FC<TaskCalendarViewProps> = ({
         </div>
       </div>
 
-      {/* Calendar Grid Card */}
-      <div className="bg-surface-lowest border border-outline-subtle rounded-xl shadow-card overflow-hidden">
-        <div className="overflow-x-auto scrollbar-thin [overscroll-behavior-x:contain] [-webkit-overflow-scrolling:touch]">
-          <div className="min-w-[700px]">
-            {/* Days of Week Row */}
-            <div className="grid grid-cols-7 border-b border-outline-subtle bg-surface-low/60 text-center">
-              {weekDayLabels.map((lbl) => (
-                <div
-                  key={lbl}
-                  className="py-2.5 text-[11px] font-semibold uppercase tracking-wider text-secondary font-sans"
-                >
-                  {lbl}
-                </div>
-              ))}
-            </div>
-
-            {/* Day Slots 7x5 or 7x6 */}
-            <div className="grid grid-cols-7 divide-x divide-y divide-outline-subtle border-b border-outline-subtle">
-              {calendarDays.map((item, idx) => {
-                const { day, monthOffset, dateString } = item;
-                const isSelected = selectedDate === dateString;
-                const isToday = todayStr === dateString;
-                const isPast = dateString < todayStr;
-                const dayTasks = tasksByDate.get(dateString) || [];
-
-                return (
+      {/* Calendar Grid or Agenda View */}
+      {layoutMode === 'grid' ? (
+        <div className="bg-surface-lowest border border-outline-subtle rounded-xl shadow-card overflow-hidden">
+          <div className="overflow-x-auto scrollbar-thin [overscroll-behavior-x:contain] [-webkit-overflow-scrolling:touch]">
+            <div className="min-w-[700px]">
+              {/* Days of Week Row */}
+              <div className="grid grid-cols-7 border-b border-outline-subtle bg-surface-low/60 text-center">
+                {weekDayLabels.map((lbl) => (
                   <div
-                    key={idx}
-                    onClick={() => setSelectedDate(dateString)}
-                    className={`min-h-[115px] p-2 flex flex-col justify-between transition-colors relative group select-none ${
-                      monthOffset !== 0
-                        ? 'bg-surface-lowest/70 hover:bg-surface-low/30'
-                        : 'bg-surface-lowest hover:bg-surface-low/40'
-                    } ${isSelected ? 'ring-2 ring-primary-container ring-inset z-10' : ''} ${
-                      isToday && !isSelected ? 'bg-primary-container/[0.04]' : ''
-                    }`}
-                    role="button"
-                    tabIndex={0}
-                    aria-label={`${formatDateLong(dateString)}, ${dayTasks.length} tasks`}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        setSelectedDate(dateString);
-                      }
-                    }}
+                    key={lbl}
+                    className="py-2.5 text-[11px] font-semibold uppercase tracking-wider text-secondary font-sans"
                   >
-                    {/* Top: Day Number & Quick Add */}
-                    <div className="flex items-center justify-between">
-                      <span
-                        className={`inline-flex items-center justify-center text-xs font-sans rounded-full ${
-                          isToday
-                            ? 'w-6 h-6 bg-primary-container text-on-primary-container font-bold shadow-xs'
-                            : isSelected
-                            ? 'font-bold text-on-surface'
-                            : isPast
-                            ? 'font-medium text-secondary/60'
-                            : 'font-medium text-secondary'
-                        }`}
-                      >
-                        {day}
-                      </span>
+                    {lbl}
+                  </div>
+                ))}
+              </div>
 
-                      {!isPast && (
+              {/* Day Slots 7x5 or 7x6 */}
+              <div className="grid grid-cols-7 divide-x divide-y divide-outline-subtle border-b border-outline-subtle">
+                {calendarDays.map((item, idx) => {
+                  const { day, monthOffset, dateString } = item;
+                  const isSelected = selectedDate === dateString;
+                  const isToday = todayStr === dateString;
+                  const isPast = dateString < todayStr;
+                  const dayTasks = tasksByDate.get(dateString) || [];
+
+                  return (
+                    <div
+                      key={idx}
+                      onClick={() => setSelectedDate(dateString)}
+                      className={`min-h-[115px] p-2 flex flex-col justify-between transition-colors relative group select-none ${
+                        monthOffset !== 0
+                          ? 'bg-surface-lowest/70 hover:bg-surface-low/30'
+                          : 'bg-surface-lowest hover:bg-surface-low/40'
+                      } ${isSelected ? 'ring-2 ring-primary-container ring-inset z-10' : ''} ${
+                        isToday && !isSelected ? 'bg-primary-container/[0.04]' : ''
+                      }`}
+                      role="button"
+                      tabIndex={0}
+                      aria-label={`${formatDateLong(dateString)}, ${dayTasks.length} tasks`}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          setSelectedDate(dateString);
+                        }
+                      }}
+                    >
+                      {/* Top: Day Number & Quick Add */}
+                      <div className="flex items-center justify-between">
+                        <span
+                          className={`inline-flex items-center justify-center text-xs font-sans rounded-full ${
+                            isToday
+                              ? 'w-6 h-6 bg-primary-container text-on-primary-container font-bold shadow-xs'
+                              : isSelected
+                              ? 'font-bold text-on-surface'
+                              : monthOffset !== 0
+                              ? 'text-secondary/40'
+                              : isPast
+                              ? 'text-secondary'
+                              : 'text-on-surface'
+                          }`}
+                        >
+                          {day}
+                        </span>
+
                         <button
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
                             onAddTaskForDate(dateString);
                           }}
-                          aria-label={`Add task for ${dateString}`}
-                          className="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100 w-7 h-7 flex items-center justify-center hover:bg-surface-high text-secondary hover:text-on-surface rounded transition-opacity cursor-pointer"
-                          title="Add task for this day"
+                          className="w-5 h-5 rounded hover:bg-surface-container flex items-center justify-center text-secondary hover:text-on-surface opacity-100 sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100 transition-all cursor-pointer"
+                          title={`Add task for ${formatDateLong(dateString)}`}
+                          aria-label={`Add task for ${formatDateLong(dateString)}`}
                         >
                           <Plus className="w-3.5 h-3.5" aria-hidden="true" />
                         </button>
-                      )}
-                    </div>
-                    {/* Middle: Task Chips / Pills with Sliding Actions */}
-                    <div className="space-y-1 my-1 flex-1 overflow-hidden">
-                      {dayTasks.slice(0, 2).map((task) => {
-                        const isActionActive = activeChipTaskId === task.id;
-                        const isProjected = task.id.includes('_proj_');
-                        const isRecurring = Boolean(task.repeat && task.repeat !== 'Once');
-                        const baseTask = isProjected
-                          ? tasks.find((t) => t.id === task.id.split('_proj_')[0]) || task
-                          : task;
-                        const baseId = isProjected ? task.id.split('_proj_')[0] : task.id;
+                      </div>
 
-                        return (
-                          <div
-                            key={task.id}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setActiveChipTaskId(isActionActive ? null : task.id);
-                            }}
-                            title={`${task.title}${isRecurring ? ` (Repeats ${task.repeat})` : ''}`}
-                            className={`rounded text-[11px] font-sans transition-all relative overflow-hidden border ${
-                              isActionActive
-                                ? 'bg-surface-lowest ring-1 ring-primary-container shadow-xs p-0.5'
-                                : task.completed
-                                ? 'px-2 py-0.5 bg-surface-low text-secondary line-through border-outline-subtle opacity-70 cursor-pointer'
-                                : isProjected
-                                ? 'px-2 py-0.5 bg-surface-low/80 hover:bg-surface-high text-on-surface border-outline-subtle border-dashed cursor-pointer'
-                                : 'px-2 py-0.5 bg-surface-low hover:bg-surface-high text-on-surface border-outline-subtle cursor-pointer'
-                            }`}
-                          >
-                            {isActionActive ? (
-                              <div className="flex items-center justify-between gap-1 w-full animate-slide-in">
-                                <span className="truncate text-[10px] font-medium text-on-surface pl-1 max-w-[45px] sm:max-w-[65px]">
-                                  {task.title}
-                                </span>
-                                <div className="flex items-center gap-0.5 bg-surface-low rounded p-0.5 flex-shrink-0">
-                                  <button
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setActiveChipTaskId(null);
-                                      if (onViewTask) {
-                                        onViewTask(task);
-                                      } else {
+                      {/* Middle: Task Chips (up to 2 visible, +N more indicator) */}
+                      <div className="space-y-1 my-1">
+                        {dayTasks.slice(0, 2).map((task) => {
+                          const baseTask = (task as any)._baseTask || task;
+                          const baseId = (task as any)._baseTaskId || task.id;
+                          const isChipActive = activeChipTaskId === task.id;
+                          const isRecurring = !!task.repeat && task.repeat !== 'Once';
+
+                          return (
+                            <div
+                              key={task.id}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setActiveChipTaskId(isChipActive ? null : task.id);
+                              }}
+                              className={`text-[11px] leading-tight px-1.5 py-0.5 rounded cursor-pointer transition-colors relative font-sans ${
+                                task.completed
+                                  ? 'line-through text-secondary/60 bg-surface-low'
+                                  : 'text-on-surface bg-surface-low hover:bg-surface-container'
+                              } ${isChipActive ? 'ring-1 ring-primary-container' : ''}`}
+                            >
+                              {/* Active Chip Inline Controls Overlay */}
+                              {isChipActive ? (
+                                <div className="flex items-center justify-between gap-1 py-0.5">
+                                  <span className="truncate font-semibold flex-1">{task.title}</span>
+                                  <div className="flex items-center gap-0.5 flex-shrink-0">
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        onToggleTask(task.id);
+                                      }}
+                                      className="p-1 hover:bg-surface-high text-secondary hover:text-emerald-600 rounded transition-colors"
+                                      title={task.completed ? 'Mark incomplete' : 'Mark completed'}
+                                      aria-label={task.completed ? 'Mark incomplete' : 'Mark completed'}
+                                    >
+                                      <CheckSquare className="w-3 h-3" aria-hidden="true" />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setActiveChipTaskId(null);
                                         onEditTask(baseTask);
-                                      }
-                                    }}
-                                    className="p-1 hover:bg-surface-high text-secondary hover:text-on-surface rounded transition-colors"
-                                    title="View task details"
-                                    aria-label={`View details for ${task.title}`}
-                                  >
-                                    <Eye className="w-3 h-3" aria-hidden="true" />
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setActiveChipTaskId(null);
-                                      onEditTask(baseTask);
-                                    }}
-                                    className="p-1 hover:bg-surface-high text-secondary hover:text-on-surface rounded transition-colors"
-                                    title="Edit task"
-                                    aria-label={`Edit task ${task.title}`}
-                                  >
-                                    <Edit2 className="w-3 h-3" aria-hidden="true" />
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setActiveChipTaskId(null);
-                                      onDeleteTask(baseId);
-                                    }}
-                                    className="p-1 hover:bg-surface-high text-secondary hover:text-red-500 rounded transition-colors"
-                                    title="Delete task"
-                                    aria-label={`Delete task ${task.title}`}
-                                  >
-                                    <Trash2 className="w-3 h-3" aria-hidden="true" />
-                                  </button>
+                                      }}
+                                      className="p-1 hover:bg-surface-high text-secondary hover:text-on-surface rounded transition-colors"
+                                      title="Edit task"
+                                      aria-label={`Edit task ${task.title}`}
+                                    >
+                                      <Edit2 className="w-3 h-3" aria-hidden="true" />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setActiveChipTaskId(null);
+                                        onDeleteTask(baseId);
+                                      }}
+                                      className="p-1 hover:bg-surface-high text-secondary hover:text-red-500 rounded transition-colors"
+                                      title="Delete task"
+                                      aria-label={`Delete task ${task.title}`}
+                                    >
+                                      <Trash2 className="w-3 h-3" aria-hidden="true" />
+                                    </button>
+                                  </div>
                                 </div>
-                              </div>
-                            ) : (
-                              <div className="flex items-center gap-1.5 truncate">
-                                <span
-                                  className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
-                                    task.priority === 'urgent'
-                                      ? 'bg-rose-500'
-                                      : task.priority === 'high'
-                                      ? 'bg-amber-500'
-                                      : task.priority === 'medium'
-                                      ? 'bg-sky-500'
-                                      : 'bg-slate-400'
-                                  }`}
-                                  aria-hidden="true"
-                                />
-                                {isRecurring && (
-                                  <Repeat className="w-2.5 h-2.5 text-secondary flex-shrink-0" aria-label="Recurring" />
-                                )}
-                                <span className="truncate">{task.title}</span>
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
+                              ) : (
+                                <div className="flex items-center gap-1.5 truncate">
+                                  <span
+                                    className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
+                                      task.priority === 'urgent'
+                                        ? 'bg-rose-500'
+                                        : task.priority === 'high'
+                                        ? 'bg-amber-500'
+                                        : task.priority === 'medium'
+                                        ? 'bg-sky-500'
+                                        : 'bg-slate-400'
+                                    }`}
+                                    aria-hidden="true"
+                                  />
+                                  {isRecurring && (
+                                    <Repeat className="w-2.5 h-2.5 text-secondary flex-shrink-0" aria-label="Recurring" />
+                                  )}
+                                  <span className="truncate">{task.title}</span>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
 
-                      {dayTasks.length > 2 && (
-                        <div className="text-[10px] text-secondary font-medium px-1 font-sans">
-                          +{dayTasks.length - 2} more
-                        </div>
-                      )}
+                        {dayTasks.length > 2 && (
+                          <div className="text-[10px] text-secondary font-medium px-1 font-sans">
+                            +{dayTasks.length - 2} more
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      ) : (
+        /* Mobile-Optimized Agenda View */
+        <div className="space-y-4">
+          {agendaDaysWithTasks.length === 0 ? (
+            <div className="bg-surface-lowest border border-outline-subtle rounded-xl p-8 text-center text-secondary text-xs">
+              No tasks scheduled for {monthNames[viewMonth]} {viewYear}.
+            </div>
+          ) : (
+            agendaDaysWithTasks.map((item) => {
+              const { dateString, tasks: dTasks, isToday, isSelected } = item;
+              return (
+                <div
+                  key={dateString}
+                  className={`bg-surface-lowest border rounded-xl p-4 sm:p-5 shadow-card transition-all ${
+                    isSelected ? 'ring-2 ring-primary-container border-transparent' : 'border-outline-subtle'
+                  }`}
+                >
+                  <div className="flex items-center justify-between pb-3 border-b border-outline-subtle">
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-serif text-base font-semibold text-on-surface">
+                        {formatDateLong(dateString)}
+                      </h3>
+                      {isToday && (
+                        <span className="text-[10px] px-2 py-0.5 rounded bg-primary-container/15 text-primary-container font-semibold uppercase tracking-wider font-sans">
+                          Today
+                        </span>
+                      )}
+                      <span className="text-[11px] text-secondary font-sans">
+                        ({dTasks.length})
+                      </span>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => onAddTaskForDate(dateString)}
+                      className="min-h-[36px] px-2.5 py-1 text-xs font-semibold text-primary hover:text-primary-container flex items-center gap-1 rounded transition-colors"
+                    >
+                      <Plus className="w-3.5 h-3.5" aria-hidden="true" />
+                      <span>Add</span>
+                    </button>
+                  </div>
+
+                  {dTasks.length === 0 ? (
+                    <p className="text-xs text-secondary py-3 italic">No tasks scheduled for this day.</p>
+                  ) : (
+                    <div className="divide-y divide-outline-subtle">
+                      {dTasks.map((t) => {
+                        const priorityMeta = getPriorityMeta(t.priority);
+                        return (
+                          <div
+                            key={t.id}
+                            className="py-3 flex items-center justify-between gap-3 group"
+                          >
+                            <div className="flex items-center gap-3 flex-1 min-w-0">
+                              <button
+                                type="button"
+                                onClick={() => onToggleTask(t.id)}
+                                aria-label={t.completed ? `Mark ${t.title} incomplete` : `Mark ${t.title} complete`}
+                                className="w-6 h-6 flex items-center justify-center text-secondary hover:text-emerald-500 transition-colors flex-shrink-0"
+                              >
+                                {t.completed ? (
+                                  <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                                ) : (
+                                  <Circle className="w-5 h-5 text-outline-subtle hover:text-secondary" />
+                                )}
+                              </button>
+
+                              <div className="min-w-0 flex-1">
+                                <p className={`text-xs font-medium truncate ${t.completed ? 'line-through text-secondary' : 'text-on-surface'}`}>
+                                  {t.title}
+                                </p>
+                                <div className="flex items-center gap-2 mt-0.5">
+                                  <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded ${priorityMeta.badgeClass}`}>
+                                    {priorityMeta.label}
+                                  </span>
+                                  {t.category && (
+                                    <span className="text-[10px] text-secondary">
+                                      {t.category}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-1">
+                              <button
+                                type="button"
+                                onClick={() => onEditTask(t)}
+                                aria-label={`Edit task ${t.title}`}
+                                className="min-h-[36px] min-w-[36px] p-2 text-secondary hover:text-on-surface rounded transition-colors"
+                              >
+                                <Edit2 className="w-3.5 h-3.5" aria-hidden="true" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => onDeleteTask(t.id)}
+                                aria-label={`Delete task ${t.title}`}
+                                className="min-h-[36px] min-w-[36px] p-2 text-secondary hover:text-red-500 rounded transition-colors"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })
+          )}
+        </div>
+      )}
 
       {/* Selected Day Inspector Section */}
       <div className="bg-surface-lowest border border-outline-subtle rounded-xl p-5 shadow-card space-y-4">

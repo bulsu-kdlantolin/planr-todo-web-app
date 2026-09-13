@@ -54,7 +54,8 @@ CREATE TABLE IF NOT EXISTS public.tasks (
   tags TEXT[] NOT NULL DEFAULT '{}'::text[],
   created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
-  deleted_at TIMESTAMPTZ
+  deleted_at TIMESTAMPTZ,
+  CONSTRAINT tasks_subtasks_is_array CHECK (jsonb_typeof(subtasks) = 'array')
 );
 
 -- ------------------------------------------------------------------------------
@@ -117,6 +118,7 @@ CREATE INDEX IF NOT EXISTS idx_tasks_user_due ON public.tasks(user_id, due_date)
 CREATE INDEX IF NOT EXISTS idx_tasks_user_completed ON public.tasks(user_id, is_completed);
 CREATE INDEX IF NOT EXISTS idx_tasks_updated_at ON public.tasks(updated_at);
 CREATE INDEX IF NOT EXISTS idx_tasks_deleted_at ON public.tasks(deleted_at);
+CREATE INDEX IF NOT EXISTS idx_tasks_fts ON public.tasks USING GIN (to_tsvector('english', title || ' ' || coalesce(description, '')));
 
 CREATE INDEX IF NOT EXISTS idx_reminders_user_id ON public.reminders(user_id);
 CREATE INDEX IF NOT EXISTS idx_reminders_user_active ON public.reminders(user_id) WHERE deleted_at IS NULL;

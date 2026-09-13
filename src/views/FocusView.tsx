@@ -63,6 +63,38 @@ export const FocusView: React.FC = () => {
     setCustomDuration(Math.max(1, total));
   };
 
+  const [liveAnnouncement, setLiveAnnouncement] = useState<string>('');
+
+  // Screen Wake Lock API during active focus timer
+  useEffect(() => {
+    let wakeLock: any = null;
+    const acquireLock = async () => {
+      if (isRunning && typeof navigator !== 'undefined' && 'wakeLock' in navigator) {
+        try {
+          wakeLock = await (navigator as any).wakeLock.request('screen');
+        } catch {
+          // Wake lock may fail if battery saver or window is obscured
+        }
+      }
+    };
+    acquireLock();
+
+    return () => {
+      if (wakeLock) {
+        wakeLock.release().catch(() => {});
+      }
+    };
+  }, [isRunning]);
+
+  // Accessible Screen Reader Announcement for Timer State
+  useEffect(() => {
+    if (isRunning) {
+      setLiveAnnouncement(`Timer running: ${Math.max(1, Math.round(durationSec / 60))} minutes remaining.`);
+    } else if (durationSec === 0) {
+      setLiveAnnouncement('Focus countdown completed! Take a gentle breath and rest.');
+    }
+  }, [isRunning, durationSec]);
+
   // Clean up audio buffers on unmount
   useEffect(() => {
     return () => {
@@ -101,6 +133,11 @@ export const FocusView: React.FC = () => {
 
   return (
     <div className="max-w-[1500px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-in space-y-7">
+      {/* Screen Reader Live Region for WCAG Phase & Countdown Announcements */}
+      <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+        {liveAnnouncement}
+      </div>
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-5 border-b border-outline-subtle gap-4">
         <div>

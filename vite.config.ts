@@ -46,7 +46,7 @@ export default defineConfig({
       output: {
         manualChunks: {
           supabase: ['@supabase/supabase-js'],
-          vendor: ['react', 'react-dom', 'zustand', 'idb']
+          vendor: ['react', 'react-dom', 'zustand']
         }
       }
     }

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { AuthProvider, useAuth } from './AuthContext';
 import { formatFriendlyAuthError } from '../utils/errors';
 
@@ -15,15 +15,17 @@ const TestComponent = () => {
 };
 
 describe('AuthContext & Error Translations', () => {
-  it('renders AuthProvider and provides initial state', () => {
+  it('renders AuthProvider and provides initial state', async () => {
     render(
       <AuthProvider>
         <TestComponent />
       </AuthProvider>
     );
 
-    expect(screen.getByTestId('online-status')).toBeDefined();
-    expect(screen.getByTestId('configured-status')).toBeDefined();
+    await waitFor(() => {
+      expect(screen.getByTestId('online-status')).toBeInTheDocument();
+    });
+    expect(screen.getByTestId('configured-status')).toBeInTheDocument();
   });
 
   it('translates network and rate-limit errors to friendly user messages', () => {

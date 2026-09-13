@@ -5,6 +5,8 @@ import { insertReminderDb, updateReminderDb, deleteReminderDb } from '../lib/sup
 import { audioManager } from '../utils/audio';
 import { generateUUID } from '../utils/id';
 import { useTaskStore } from './useTaskStore';
+import { ReminderInputSchema } from '../lib/validation/schemas';
+import { databaseWriteLimiter } from '../utils/rateLimiter';
 
 interface ReminderState {
   reminders: Reminder[];
@@ -39,6 +41,12 @@ export const useReminderStore = create<ReminderState>((set, get) => ({
   setFilter: (filter) => set({ filter }),
 
   addReminder: async (remData) => {
+    // Runtime validation with Zod
+    const validation = ReminderInputSchema.safeParse(remData);
+    if (!validation.success) {
+      console.warn('Reminder schema validation warning:', validation.error.flatten().fieldErrors);
+    }
+
     const newRem: Reminder = {
       ...remData,
       id: generateUUID('rem'),
@@ -52,7 +60,7 @@ export const useReminderStore = create<ReminderState>((set, get) => ({
     set((state) => ({ reminders: [...state.reminders, newRem] }));
 
     const userId = await getUserId();
-    if (userId) {
+    if (userId && databaseWriteLimiter.tryAcquire()) {
       insertReminderDb(newRem, userId).catch((err) =>
         console.error('Failed to sync reminder to Supabase:', err)
       );

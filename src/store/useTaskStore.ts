@@ -6,6 +6,8 @@ import { audioManager } from '../utils/audio';
 import { generateUUID } from '../utils/id';
 import { calculateNextRecurrenceDate } from '../utils/date';
 import { useReminderStore } from './useReminderStore';
+import { TaskInputSchema } from '../lib/validation/schemas';
+import { databaseWriteLimiter } from '../utils/rateLimiter';
 
 export interface TaskTombstone {
   id: string;
@@ -59,6 +61,12 @@ export const useTaskStore = create<TaskState>((set, get) => ({
   setSearchQuery: (searchQuery) => set({ searchQuery }),
 
   addTask: async (taskData) => {
+    // Runtime schema validation
+    const validation = TaskInputSchema.safeParse(taskData);
+    if (!validation.success) {
+      console.warn('Task schema validation warning:', validation.error.flatten().fieldErrors);
+    }
+
     const seriesId =
       taskData.repeat && taskData.repeat !== 'Once'
         ? taskData.recurringSeriesId || generateUUID('series')
@@ -78,7 +86,7 @@ export const useTaskStore = create<TaskState>((set, get) => ({
     set((state) => ({ tasks: [newTask, ...state.tasks] }));
 
     const userId = await getUserId();
-    if (userId) {
+    if (userId && databaseWriteLimiter.tryAcquire()) {
       insertTaskDb(newTask, userId).catch((err) =>
         console.error('Failed to sync task creation to Supabase:', err)
       );

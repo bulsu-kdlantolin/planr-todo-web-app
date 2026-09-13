@@ -1,18 +1,20 @@
 import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { ResetPasswordView } from './ResetPasswordView';
 import { AuthProvider } from '../context/AuthContext';
 
 describe('ResetPasswordView Component', () => {
-  it('renders reset password inputs and buttons', () => {
+  it('renders reset password inputs and buttons', async () => {
     render(
       <AuthProvider>
         <ResetPasswordView />
       </AuthProvider>
     );
 
-    expect(screen.getByText('Reset your password')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText('Reset your password')).toBeInTheDocument();
+    });
     expect(screen.getByLabelText(/^New Password/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/^Confirm New Password/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Save New Password & Continue/i })).toBeInTheDocument();

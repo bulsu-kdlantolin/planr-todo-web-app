@@ -6,6 +6,8 @@ import { useAuth } from '../context/AuthContext';
 import { Select } from '../components/common/Select';
 import { ToggleSwitch } from '../components/common/ToggleSwitch';
 import { ProfileModal } from '../components/modals/ProfileModal';
+import { PrivacyModal } from '../components/modals/PrivacyModal';
+import { TermsModal } from '../components/modals/TermsModal';
 import { exportWorkspaceAsJSON, exportTasksAsMarkdown, exportTasksAsCSV, restoreWorkspaceFromJSON } from '../utils/exportEngines';
 import { audioManager } from '../utils/audio';
 import { requestNotificationPermission } from '../utils/notifications';
@@ -50,6 +52,8 @@ export const SettingsView: React.FC = () => {
   const { signOut, sendPasswordResetEmail, session } = useAuth();
 
   const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const [privacyModalOpen, setPrivacyModalOpen] = useState(false);
+  const [termsModalOpen, setTermsModalOpen] = useState(false);
   const [importing, setImporting] = useState(false);
   const [notificationPerm, setNotificationPerm] = useState<NotificationPermission>('default');
 
@@ -645,12 +649,46 @@ export const SettingsView: React.FC = () => {
             />
           </label>
         </div>
+
+        {/* Privacy & Terms Footer */}
+        <div className="pt-3 border-t border-outline-subtle flex flex-wrap items-center justify-between gap-3 text-xs text-secondary">
+          <span>Planr • Open, Zero-Tracking, Local-First Architecture</span>
+          <div className="flex items-center gap-3 font-medium">
+            <button
+              type="button"
+              onClick={() => setPrivacyModalOpen(true)}
+              className="hover:text-on-surface underline transition-colors cursor-pointer"
+            >
+              Privacy Policy & GDPR
+            </button>
+            <span>•</span>
+            <button
+              type="button"
+              onClick={() => setTermsModalOpen(true)}
+              className="hover:text-on-surface underline transition-colors cursor-pointer"
+            >
+              Terms of Service
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Profile Modal */}
       <ProfileModal
         isOpen={profileModalOpen}
         onClose={() => setProfileModalOpen(false)}
+      />
+
+      {/* Privacy Policy Modal */}
+      <PrivacyModal
+        isOpen={privacyModalOpen}
+        onClose={() => setPrivacyModalOpen(false)}
+      />
+
+      {/* Terms of Service Modal */}
+      <TermsModal
+        isOpen={termsModalOpen}
+        onClose={() => setTermsModalOpen(false)}
       />
     </div>
   );

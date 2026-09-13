@@ -17,6 +17,8 @@ import {
 } from 'lucide-react';
 import { PasswordStrengthIndicator } from '../components/auth/PasswordStrengthIndicator';
 import { triggerHapticFeedback, getFieldValidationClass } from '../utils/validation';
+import { PrivacyModal } from '../components/modals/PrivacyModal';
+import { TermsModal } from '../components/modals/TermsModal';
 
 export const SignUpView: React.FC = () => {
   const {
@@ -33,6 +35,8 @@ export const SignUpView: React.FC = () => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({});
+  const [privacyOpen, setPrivacyOpen] = useState(false);
+  const [termsOpen, setTermsOpen] = useState(false);
   const [needsConfirmation, setNeedsConfirmation] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
 
@@ -393,6 +397,28 @@ export const SignUpView: React.FC = () => {
                 Sign In
               </button>
             </div>
+
+            {/* Compliance Links (Privacy Policy & Terms) */}
+            <div className="pt-4 border-t border-outline-subtle text-center text-[11px] text-secondary flex items-center justify-center gap-3">
+              <button
+                type="button"
+                onClick={() => setPrivacyOpen(true)}
+                className="hover:text-on-surface underline transition-colors cursor-pointer"
+              >
+                Privacy Policy
+              </button>
+              <span>•</span>
+              <button
+                type="button"
+                onClick={() => setTermsOpen(true)}
+                className="hover:text-on-surface underline transition-colors cursor-pointer"
+              >
+                Terms of Service
+              </button>
+            </div>
+
+            <PrivacyModal isOpen={privacyOpen} onClose={() => setPrivacyOpen(false)} />
+            <TermsModal isOpen={termsOpen} onClose={() => setTermsOpen(false)} />
           </>
         )}
       </div>
