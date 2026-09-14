@@ -25,6 +25,30 @@ describe('AudioManager Audio Synthesizer', () => {
     expect(() => audioManager.playChime()).not.toThrow();
   });
 
+  it('triggers task and item sound effects without throwing errors', () => {
+    expect(() => audioManager.playTaskComplete()).not.toThrow();
+    expect(() => audioManager.playTaskUncomplete()).not.toThrow();
+    expect(() => audioManager.playSubtaskComplete()).not.toThrow();
+    expect(() => audioManager.playDelete()).not.toThrow();
+    expect(() => audioManager.playTaskCreate()).not.toThrow();
+  });
+
+  it('manages soundEffectsEnabled toggle correctly', () => {
+    audioManager.setSoundEffectsEnabled(true);
+    expect(audioManager.isSoundEffectsEnabled()).toBe(true);
+    expect(() => audioManager.playTaskComplete()).not.toThrow();
+
+    audioManager.setSoundEffectsEnabled(false);
+    expect(audioManager.isSoundEffectsEnabled()).toBe(false);
+    // When disabled, methods should safely short-circuit
+    expect(() => audioManager.playTaskComplete()).not.toThrow();
+    expect(() => audioManager.playDelete()).not.toThrow();
+    expect(() => audioManager.playTaskCreate()).not.toThrow();
+
+    // Re-enable for subsequent tests
+    audioManager.setSoundEffectsEnabled(true);
+  });
+
   it('triggers reminder sound variations without throwing errors', () => {
     expect(() => audioManager.playBell()).not.toThrow();
     expect(() => audioManager.playMarimba()).not.toThrow();

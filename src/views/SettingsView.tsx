@@ -17,7 +17,6 @@ import {
   Sun,
   Volume2,
   VolumeX,
-  Volume1,
   Bell,
   Clock,
   Timer,
@@ -397,11 +396,15 @@ export const SettingsView: React.FC = () => {
           <button
             type="button"
             onClick={() => {
+              if (!settings.soundEffects) {
+                showToast('Enable UI Chimes above to hear sounds 🔔', 'info');
+                return;
+              }
               audioManager.playChime();
               showToast('Previewing audio chime 🔔', 'info');
             }}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-surface-low hover:bg-surface-container border border-outline-variant text-[11px] font-semibold uppercase tracking-wider text-on-surface transition-colors cursor-pointer"
-            title="Test audio chime at current volume"
+            title="Test audio chime"
           >
             <Play className="w-3 h-3 text-tertiary" aria-hidden="true" />
             <span>Test Chime</span>
@@ -419,7 +422,7 @@ export const SettingsView: React.FC = () => {
               )}
               <div>
                 <p className="text-xs font-semibold text-on-surface">UI Chimes & Audio Cues</p>
-                <p className="text-[11px] text-secondary">Acoustic chimes for timer completion, reminders, and checkoffs</p>
+                <p className="text-[11px] text-secondary">Acoustic chimes for task completion, deletion, reminders, and timer cues</p>
               </div>
             </div>
 
@@ -427,32 +430,6 @@ export const SettingsView: React.FC = () => {
               checked={settings.soundEffects}
               onChange={(checked) => updateSettings({ soundEffects: checked })}
               ariaLabel="Toggle sound effects"
-            />
-          </div>
-
-          {/* Master Sound Volume Slider */}
-          <div className="p-3.5 bg-surface-low rounded-lg border border-outline-subtle space-y-2">
-            <div className="flex items-center justify-between text-xs">
-              <div className="flex items-center gap-2 font-semibold text-on-surface">
-                <Volume1 className="w-4 h-4 text-tertiary" aria-hidden="true" />
-                <span>Sound Volume</span>
-              </div>
-              <span className="text-[11px] font-medium text-secondary tabular-nums">
-                {Math.round((settings.soundVolume ?? 0.5) * 100)}%
-              </span>
-            </div>
-            <input
-              type="range"
-              min="0"
-              max="1"
-              step="0.05"
-              value={settings.soundVolume ?? 0.5}
-              onChange={(e) => {
-                const vol = parseFloat(e.target.value);
-                updateSettings({ soundVolume: vol });
-              }}
-              aria-label="Sound volume slider"
-              className="w-full h-1.5 bg-surface-container rounded-lg appearance-none cursor-pointer accent-primary"
             />
           </div>
 

@@ -34,6 +34,7 @@ class ProceduralAudioManager {
   private trackedNodes: AudioNode[] = [];
   private currentAmbientType: string | null = null;
   private masterVolume: number = 0.5;
+  private soundEffectsEnabled: boolean = true;
   private ambientGain: GainNode | null = null;
   private solfeggioFreq: 432 | 528 | 639 = 528;
 
@@ -52,6 +53,14 @@ class ProceduralAudioManager {
     if (this.ctx && this.ctx.state === 'suspended') {
       this.ctx.resume().catch(() => {});
     }
+  }
+
+  setSoundEffectsEnabled(enabled: boolean) {
+    this.soundEffectsEnabled = enabled;
+  }
+
+  isSoundEffectsEnabled(): boolean {
+    return this.soundEffectsEnabled;
   }
 
   setVolume(vol: number) {
@@ -77,6 +86,7 @@ class ProceduralAudioManager {
 
   playTick() {
     try {
+      if (!this.soundEffectsEnabled) return;
       this.init();
       if (!this.ctx) return;
 
@@ -100,8 +110,178 @@ class ProceduralAudioManager {
     }
   }
 
+  /**
+   * Rewarding harmonic dual-tone chime when completing a task or reminder.
+   * Root: C5 (523.25 Hz) then G5 (783.99 Hz) with gentle bell-like resonance.
+   */
+  playTaskComplete() {
+    try {
+      if (!this.soundEffectsEnabled) return;
+      this.init();
+      if (!this.ctx) return;
+
+      const now = this.ctx.currentTime;
+      const notes = [
+        { freq: 523.25, offset: 0, decay: 0.28, gain: 0.20 },
+        { freq: 783.99, offset: 0.08, decay: 0.45, gain: 0.22 }
+      ];
+
+      notes.forEach(({ freq, offset, decay, gain }) => {
+        if (!this.ctx) return;
+        const noteStart = now + offset;
+        const osc = this.ctx.createOscillator();
+        const g = this.ctx.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, noteStart);
+
+        g.gain.setValueAtTime(0.0001, noteStart);
+        g.gain.exponentialRampToValueAtTime(this.masterVolume * gain, noteStart + 0.015);
+        g.gain.exponentialRampToValueAtTime(0.0001, noteStart + decay);
+
+        osc.connect(g);
+        g.connect(this.ctx.destination);
+
+        osc.start(noteStart);
+        osc.stop(noteStart + decay + 0.02);
+      });
+    } catch {
+      // Audio safety fallback
+    }
+  }
+
+  /**
+   * Gentle, soft downward uncheck/unlatch click when marking a task incomplete.
+   */
+  playTaskUncomplete() {
+    try {
+      if (!this.soundEffectsEnabled) return;
+      this.init();
+      if (!this.ctx) return;
+
+      const now = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const g = this.ctx.createGain();
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(520, now);
+      osc.frequency.exponentialRampToValueAtTime(320, now + 0.06);
+
+      g.gain.setValueAtTime(0.0001, now);
+      g.gain.exponentialRampToValueAtTime(this.masterVolume * 0.16, now + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, now + 0.08);
+
+      osc.connect(g);
+      g.connect(this.ctx.destination);
+
+      osc.start(now);
+      osc.stop(now + 0.09);
+    } catch {
+      // Audio safety fallback
+    }
+  }
+
+  /**
+   * Crisp, light single harmonic ping for checking off subtasks.
+   */
+  playSubtaskComplete() {
+    try {
+      if (!this.soundEffectsEnabled) return;
+      this.init();
+      if (!this.ctx) return;
+
+      const now = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const g = this.ctx.createGain();
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(880, now);
+
+      g.gain.setValueAtTime(0.0001, now);
+      g.gain.exponentialRampToValueAtTime(this.masterVolume * 0.18, now + 0.008);
+      g.gain.exponentialRampToValueAtTime(0.0001, now + 0.20);
+
+      osc.connect(g);
+      g.connect(this.ctx.destination);
+
+      osc.start(now);
+      osc.stop(now + 0.22);
+    } catch {
+      // Audio safety fallback
+    }
+  }
+
+  /**
+   * Soft, calm paper-slide / discard swoosh when deleting a task, reminder, or series.
+   */
+  playDelete() {
+    try {
+      if (!this.soundEffectsEnabled) return;
+      this.init();
+      if (!this.ctx) return;
+
+      const now = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const filter = this.ctx.createBiquadFilter();
+      const g = this.ctx.createGain();
+
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(260, now);
+      osc.frequency.exponentialRampToValueAtTime(90, now + 0.12);
+
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(600, now);
+      filter.frequency.exponentialRampToValueAtTime(200, now + 0.12);
+
+      g.gain.setValueAtTime(0.0001, now);
+      g.gain.exponentialRampToValueAtTime(this.masterVolume * 0.18, now + 0.015);
+      g.gain.exponentialRampToValueAtTime(0.0001, now + 0.14);
+
+      osc.connect(filter);
+      filter.connect(g);
+      g.connect(this.ctx.destination);
+
+      osc.start(now);
+      osc.stop(now + 0.15);
+    } catch {
+      // Audio safety fallback
+    }
+  }
+
+  /**
+   * Light, crisp upward placement pop when creating a new task or reminder.
+   */
+  playTaskCreate() {
+    try {
+      if (!this.soundEffectsEnabled) return;
+      this.init();
+      if (!this.ctx) return;
+
+      const now = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const g = this.ctx.createGain();
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(440, now);
+      osc.frequency.exponentialRampToValueAtTime(660, now + 0.05);
+
+      g.gain.setValueAtTime(0.0001, now);
+      g.gain.exponentialRampToValueAtTime(this.masterVolume * 0.14, now + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, now + 0.09);
+
+      osc.connect(g);
+      g.connect(this.ctx.destination);
+
+      osc.start(now);
+      osc.stop(now + 0.10);
+    } catch {
+      // Audio safety fallback
+    }
+  }
+
   playChime() {
     try {
+      if (!this.soundEffectsEnabled) return;
       this.init();
       if (!this.ctx) return;
 
@@ -135,6 +315,7 @@ class ProceduralAudioManager {
 
   playBell() {
     try {
+      if (!this.soundEffectsEnabled) return;
       this.init();
       if (!this.ctx) return;
 
@@ -171,6 +352,7 @@ class ProceduralAudioManager {
 
   playMarimba() {
     try {
+      if (!this.soundEffectsEnabled) return;
       this.init();
       if (!this.ctx) return;
 
@@ -203,6 +385,7 @@ class ProceduralAudioManager {
 
   playBeep() {
     try {
+      if (!this.soundEffectsEnabled) return;
       this.init();
       if (!this.ctx) return;
 
@@ -237,6 +420,7 @@ class ProceduralAudioManager {
 
   playHarp() {
     try {
+      if (!this.soundEffectsEnabled) return;
       this.init();
       if (!this.ctx) return;
 

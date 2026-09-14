@@ -46,9 +46,12 @@ const getInitialSettings = (): AppSettings => {
   return DEFAULT_SETTINGS;
 };
 
+const initialSettings = getInitialSettings();
+audioManager.setSoundEffectsEnabled(initialSettings.soundEffects ?? true);
+
 export const useMetaStore = create<MetaState>((set, get) => ({
   user: DEFAULT_USER_PROFILE,
-  settings: getInitialSettings(),
+  settings: initialSettings,
   intention: '',
   isLoading: true,
   storageUsageBytes: null,
@@ -57,6 +60,12 @@ export const useMetaStore = create<MetaState>((set, get) => ({
   setUser: (user) => set({ user }),
   setSettings: (settings) => {
     set({ settings });
+    if (typeof settings.soundEffects === 'boolean') {
+      audioManager.setSoundEffectsEnabled(settings.soundEffects);
+    }
+    if (typeof settings.soundVolume === 'number') {
+      audioManager.setVolume(settings.soundVolume);
+    }
     try {
       localStorage.setItem('planr_settings', JSON.stringify(settings));
     } catch {}
@@ -118,6 +127,9 @@ export const useMetaStore = create<MetaState>((set, get) => ({
 
     if (updates.theme) {
       document.documentElement.setAttribute('data-theme', updates.theme);
+    }
+    if (typeof updates.soundEffects === 'boolean') {
+      audioManager.setSoundEffectsEnabled(updates.soundEffects);
     }
     if (typeof updates.soundVolume === 'number') {
       audioManager.setVolume(updates.soundVolume);

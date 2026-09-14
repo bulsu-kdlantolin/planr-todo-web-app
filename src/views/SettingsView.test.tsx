@@ -31,7 +31,7 @@ describe('SettingsView Component', () => {
     });
   });
 
-  it('renders Audio & Notifications controls with test chime and volume slider', async () => {
+  it('renders Audio & Notifications controls with sound effects toggle and test chime, without volume slider', async () => {
     render(
       <AuthProvider>
         <SettingsView />
@@ -42,7 +42,8 @@ describe('SettingsView Component', () => {
       expect(screen.getByText('Audio & Notifications')).toBeInTheDocument();
     });
     expect(screen.getByRole('button', { name: /test chime/i })).toBeInTheDocument();
-    expect(screen.getByLabelText(/sound volume slider/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/toggle sound effects/i)).toBeInTheDocument();
+    expect(screen.queryByLabelText(/sound volume slider/i)).toBeNull();
     expect(screen.getByText(/desktop notifications/i)).toBeInTheDocument();
   });
 

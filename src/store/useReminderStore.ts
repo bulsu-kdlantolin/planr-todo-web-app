@@ -57,6 +57,7 @@ export const useReminderStore = create<ReminderState>((set, get) => ({
       updatedAt: new Date().toISOString()
     };
 
+    audioManager.playTaskCreate();
     set((state) => ({ reminders: [...state.reminders, newRem] }));
 
     const userId = await getUserId();
@@ -96,8 +97,12 @@ export const useReminderStore = create<ReminderState>((set, get) => ({
     const rem = get().reminders.find((r) => r.id === id);
     if (!rem) return null;
 
-    audioManager.playTick();
     const nextCompleted = !rem.completed;
+    if (nextCompleted) {
+      audioManager.playTaskComplete();
+    } else {
+      audioManager.playTaskUncomplete();
+    }
     const updated: Reminder = {
       ...rem,
       completed: nextCompleted,
@@ -200,6 +205,7 @@ export const useReminderStore = create<ReminderState>((set, get) => ({
     const target = get().reminders.find((r) => r.id === id) || null;
     if (!target) return null;
 
+    audioManager.playDelete();
     set((state) => ({
       reminders: state.reminders.filter((r) => r.id !== id)
     }));
@@ -223,6 +229,7 @@ export const useReminderStore = create<ReminderState>((set, get) => ({
     });
     if (toDelete.length === 0) return [];
 
+    audioManager.playDelete();
     const deleteIds = new Set(toDelete.map((r) => r.id));
     set((state) => ({
       reminders: state.reminders.filter((r) => !deleteIds.has(r.id))
@@ -244,6 +251,7 @@ export const useReminderStore = create<ReminderState>((set, get) => ({
     const toDelete = get().reminders.filter((r) => r.taskId && taskIdSet.has(r.taskId));
     if (toDelete.length === 0) return [];
 
+    audioManager.playDelete();
     const deleteIds = new Set(toDelete.map((r) => r.id));
     set((state) => ({
       reminders: state.reminders.filter((r) => !deleteIds.has(r.id))

@@ -13,7 +13,8 @@ class AudioContextMock {
       type: 'sine',
       frequency: {
         setValueAtTime: vi.fn(),
-        exponentialRampToValueAtTime: vi.fn()
+        exponentialRampToValueAtTime: vi.fn(),
+        linearRampToValueAtTime: vi.fn()
       },
       connect: vi.fn(),
       start: vi.fn(),
@@ -26,7 +27,8 @@ class AudioContextMock {
     return {
       gain: {
         setValueAtTime: vi.fn(),
-        exponentialRampToValueAtTime: vi.fn()
+        exponentialRampToValueAtTime: vi.fn(),
+        linearRampToValueAtTime: vi.fn()
       },
       connect: vi.fn(),
       disconnect: vi.fn()

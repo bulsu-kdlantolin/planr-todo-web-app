@@ -83,6 +83,7 @@ export const useTaskStore = create<TaskState>((set, get) => ({
       updatedAt: new Date().toISOString()
     };
 
+    audioManager.playTaskCreate();
     set((state) => ({ tasks: [newTask, ...state.tasks] }));
 
     const userId = await getUserId();
@@ -136,7 +137,7 @@ export const useTaskStore = create<TaskState>((set, get) => ({
       const baseTask = get().tasks.find((t) => t.id === baseId);
       if (!baseTask) return;
 
-      audioManager.playTick();
+      audioManager.playTaskComplete();
       const seriesId = baseTask.recurringSeriesId || baseTask.id;
 
       // Materialize this recurring occurrence as completed on this specific projected date
@@ -168,8 +169,12 @@ export const useTaskStore = create<TaskState>((set, get) => ({
     const task = get().tasks.find((t) => t.id === id);
     if (!task) return;
 
-    audioManager.playTick();
     const nextCompleted = !task.completed;
+    if (nextCompleted) {
+      audioManager.playTaskComplete();
+    } else {
+      audioManager.playTaskUncomplete();
+    }
     const seriesId = task.recurringSeriesId || task.id;
 
     let nextRecurringTask: Task | null = null;
@@ -279,7 +284,14 @@ export const useTaskStore = create<TaskState>((set, get) => ({
     const task = get().tasks.find((t) => t.id === taskId);
     if (!task) return;
 
-    audioManager.playTick();
+    const sub = task.subtasks.find((s) => s.id === subtaskId);
+    const willComplete = sub ? !sub.completed : false;
+    if (willComplete) {
+      audioManager.playSubtaskComplete();
+    } else {
+      audioManager.playTaskUncomplete();
+    }
+
     const updatedSubtasks: Subtask[] = task.subtasks.map((s) =>
       s.id === subtaskId ? { ...s, completed: !s.completed } : s
     );
@@ -307,6 +319,7 @@ export const useTaskStore = create<TaskState>((set, get) => ({
     const target = get().tasks.find((t) => t.id === actualId) || null;
     if (!target) return null;
 
+    audioManager.playDelete();
     set((state) => ({
       tasks: state.tasks.filter((t) => t.id !== actualId),
       tombstones: [...state.tombstones, { id: actualId, deletedAt: new Date().toISOString() }]
@@ -332,6 +345,7 @@ export const useTaskStore = create<TaskState>((set, get) => ({
     );
     if (targets.length === 0) return [];
 
+    audioManager.playDelete();
     const targetIds = new Set(targets.map((t) => t.id));
     const nowIso = new Date().toISOString();
 
